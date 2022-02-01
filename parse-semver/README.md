@@ -33,9 +33,9 @@ jobs:
 
 ### Inputs
 
-| Property | Default | Description            |
-| -------- | ------- | ---------------------- |
-| version  |         | Semver string to parse |
+| Property | Required | Description            |
+| -------- | -------- | ---------------------- |
+| version  | yes      | Semver string to parse |
 
 ### Outputs (with `1.2.3rc4` as an example input)
 

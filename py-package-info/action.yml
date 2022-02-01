@@ -1,0 +1,31 @@
+name: "Python Package Info"
+description: "Gets Python package information from PyPI API"
+inputs:
+  package:
+    description: "Python package name"
+    required: true
+  version:
+    description: "Semver string to parse"
+    required: false
+outputs:
+  name:
+    description: "Package name"
+  version:
+    description: "Package version"
+  homepage:
+    description: "Package's homepage"
+  summary:
+    description: "Package summary"
+  author:
+    description: "Package author"
+  author-email:
+    description: "Package author email"
+  source-url:
+    description: "Source distribution URL"
+  source-checksum:
+    description: "Source distribution checksum"
+  source-checksum-type:
+    description: "Source distribution checksum type"
+runs:
+  using: "docker"
+  image: "Dockerfile"

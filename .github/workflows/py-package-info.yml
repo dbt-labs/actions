@@ -1,0 +1,68 @@
+name: Test Python Package Info Action
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "**py-package-info**"
+
+jobs:
+  test-with-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Python Package Info
+        id: with-version
+        uses: ./py-package-info/
+        with:
+          package: "dbt-snowflake"
+          version: "1.0.0"
+
+      - name: Test Valid Version
+        run: |
+          [ "${{ steps.with-version.outputs.name }}" != dbt-snowflake ] && exit 1
+          [ "${{ steps.with-version.outputs.version }}" != 1.0.0 ] && exit 1
+          [ "${{ steps.with-version.outputs.author }}" != "dbt Labs" ] && exit 1
+          [ "${{ steps.with-version.outputs.source-url }}" != "https://files.pythonhosted.org/packages/76/ab/de915468520e061bd2e712a0ce45e7568b06547b6f65321d9ebc7018c2ec/dbt-snowflake-1.0.0.tar.gz" ] && exit 1
+          [ "${{ steps.with-version.outputs.source-checksum }}" != "a263274d6af430edfe33cf57b44c7eba58a73017ec8b1c82cb30b25e42be9a1c" ] && exit 1
+          exit 0
+
+  test-without-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Python Package Info
+        id: without-version
+        uses: ./py-package-info/
+        with:
+          package: "dbt-snowflake"
+
+      - name: Test Valid Version
+        run: |
+          [ "${{ steps.without-version.outputs.name }}" != dbt-snowflake ] && exit 1
+          [ -z "${{ steps.without-version.outputs.source-url }}" ] && exit 1
+          [ -z "${{ steps.without-version.outputs.source-checksum }}" ] && exit 1
+          exit 0
+
+  test-invalid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Python Package Info
+        id: invalid-package
+        continue-on-error: true
+        uses: ./py-package-info/
+        with:
+          package: "asdf-not-a-package"
+
+      - name: Test Invalid Version
+        run: |
+          # docs on conclusion vs outcome - https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context
+          [ "${{ steps.invalid-package.conclusion }}" != success ] && exit 1 # confirm `invalid-package` step ran to completion
+          [ "${{ steps.invalid-package.outcome }}" != failure ] && exit 1 # confirm `invalid-package` step failed
+          exit 0
