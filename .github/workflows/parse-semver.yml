@@ -1,0 +1,55 @@
+name: Test Parse Semver Action
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "**parse-semver**"
+
+jobs:
+  test-valid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Parse Semver
+        id: parse-valid
+        uses: ./parse-semver/
+        with:
+          version: "1.2.3rc4"
+
+      - name: Test Valid Version
+        run: |
+          [ "${{ steps.parse-valid.outputs.version }}" != 1.2.3rc4 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.base-version }}" != 1.2.3 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.major }}" != 1 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.minor }}" != 2 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.patch }}" != 3 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.pre-release }}" != rc4 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.pre-release-type }}" != rc ] && exit 1
+          [ "${{ steps.parse-valid.outputs.pre-release-version }}" != 4 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.is-pre-release }}" != 1 ] && exit 1
+          exit 0
+
+  test-invalid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Parse Semver
+        id: parse-invalid
+        continue-on-error: true
+        uses: ./parse-semver/
+        with:
+          version: "notaversion"
+
+      - name: Test Invalid Version
+        run: |
+          # docs on conclusion vs outcome - https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context
+          [ "${{ steps.parse-invalid.conclusion }}" != success ] && exit 1 # confirm `parse-invalid` step ran to completion
+          [ "${{ steps.parse-invalid.outcome }}" != failure ] && exit 1 # confirm `parse-invalid` step failed
+          exit 0
