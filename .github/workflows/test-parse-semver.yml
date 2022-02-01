@@ -1,4 +1,4 @@
-name: Test Parse Semver Action
+name: Test Parse Semver
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - "**parse-semver**"
 
 jobs:
-  try-push:
+  test-valid:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -21,6 +21,23 @@ jobs:
         with:
           version: "1.2.3rc4"
 
+      - name: Test Valid Version
+        run: |
+          [ "${{ steps.parse-valid.outputs.major }}" != 1 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.minor }}" != 2 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.patch }}" != 3 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.pre-release }}" != rc4 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.pre-release-type }}" != rc ] && exit 1
+          [ "${{ steps.parse-valid.outputs.pre-release-version }}" != 4 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.is-pre-release }}" != 1 ] && exit 1
+          exit 0
+
+  test-invalid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Parse Semver
         id: parse-invalid
         continue-on-error: true
@@ -28,19 +45,8 @@ jobs:
         with:
           version: "notaversion"
 
-      - name: Test Valid Version
-        run: |
-          [ ${{ steps.parse-valid.outputs.major }} != 1 ] && exit 1
-          [ ${{ steps.parse-valid.outputs.minor }} != 2 ] && exit 1
-          [ ${{ steps.parse-valid.outputs.patch }} != 3 ] && exit 1
-          [ ${{ steps.parse-valid.outputs.pre-release }} != rc4 ] && exit 1
-          [ ${{ steps.parse-valid.outputs.pre-release-type }} != rc ] && exit 1
-          [ ${{ steps.parse-valid.outputs.pre-release-version }} != 4 ] && exit 1
-          [ ${{ steps.parse-valid.outputs.is-pre-release }} != 1 ] && exit 1
-          exit 0
-
       - name: Test Invalid Version
         run: |
-          [ ${{ steps.parse-invalid.conclusion }} != success ] && exit 1
-          [ ${{ steps.parse-invalid.outcome }} != failure ] && exit 1
+          [ "${{ steps.parse-invalid.conclusion }}" != success ] && exit 1
+          [ "${{ steps.parse-invalid.outcome }}" != failure ] && exit 1
           exit 0
