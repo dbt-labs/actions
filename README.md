@@ -3,6 +3,7 @@
 A set of [GitHub Actions](https://github.com/features/actions) for automating common tasks related to developing, maintaining, and releasing dbt-core and database adapter plugins. See individual actions for more info and instructions on how to use.
 
 - [Parse Semver Action](parse-semver)
+- [Python Package Info Action](py-package-info)
 
 ### Development
 
