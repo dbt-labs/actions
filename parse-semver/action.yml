@@ -5,6 +5,10 @@ inputs:
     description: "Semver string to parse"
     required: true
 outputs:
+  version:
+    description: "Parsed version"
+  base-version:
+    description: "Base version"
   major:
     description: "Major version"
   minor:

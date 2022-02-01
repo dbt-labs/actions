@@ -1,4 +1,4 @@
-name: Test Parse Semver
+name: Test Parse Semver Action
 
 on:
   push:
@@ -23,6 +23,8 @@ jobs:
 
       - name: Test Valid Version
         run: |
+          [ "${{ steps.parse-valid.outputs.version }}" != 1.2.3rc4 ] && exit 1
+          [ "${{ steps.parse-valid.outputs.base-version }}" != 1.2.3 ] && exit 1
           [ "${{ steps.parse-valid.outputs.major }}" != 1 ] && exit 1
           [ "${{ steps.parse-valid.outputs.minor }}" != 2 ] && exit 1
           [ "${{ steps.parse-valid.outputs.patch }}" != 3 ] && exit 1
@@ -47,6 +49,7 @@ jobs:
 
       - name: Test Invalid Version
         run: |
-          [ "${{ steps.parse-invalid.conclusion }}" != success ] && exit 1
-          [ "${{ steps.parse-invalid.outcome }}" != failure ] && exit 1
+          # docs on conclusion vs outcome - https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context
+          [ "${{ steps.parse-invalid.conclusion }}" != success ] && exit 1 # confirm `parse-invalid` step ran to completion
+          [ "${{ steps.parse-invalid.outcome }}" != failure ] && exit 1 # confirm `parse-invalid` step failed
           exit 0

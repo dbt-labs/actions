@@ -20,6 +20,8 @@ def main():
     is_pre_release = parsed_version.pre is not None
     is_pre_release_truthy = 1 if is_pre_release else 0
 
+    print(f"::set-output name=version::{parsed_version.public}")
+    print(f"::set-output name=base-version::{parsed_version.base_version}")
     print(f"::set-output name=major::{parsed_version.major}")
     print(f"::set-output name=minor::{parsed_version.minor}")
     print(f"::set-output name=patch::{parsed_version.micro}")
