@@ -1,0 +1,60 @@
+# **what?**
+# Transition a Jira issue to a new state
+#
+# Inputs:
+#   JIRA_BASE_URL: your URL to Jira (i.e. https://abc.atlassian.net)
+#   JIRA_USER_EMAIL: user email to log into Jira under
+#   JIRA_API_TOKEN: user's API token
+
+# **why?**
+# Jira issues needs to reflect the state updates to issues in GitHub
+
+# **when?**
+# On GitHub Issue transitions (i.e. closed, reopened)
+
+name: Jira Issue Transition
+
+on:
+  workflow_call:
+    secrets:
+      JIRA_BASE_URL:
+        required: true
+      JIRA_USER_EMAIL:
+        required: true
+      JIRA_API_TOKEN:
+        required: true
+
+jobs:
+  close-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Jira issue ID from title
+        id: extract
+        env:
+          TITLE: "${{ github.event.issue.title }}"
+        run: |
+          issueId=$(echo -n $TITLE | awk '{print $1}' | awk -F'[][]' '{print $2}')
+          echo ::set-output name=issueId::$issueId
+
+      - name: Jira login
+        id: jira-login
+        if: startsWith(steps.extract.outputs.issueId, 'CT-')
+        uses: atlassian/gajira-login@master
+        env:
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+
+      - name: Transition issue in Jira to Done
+        if: github.event.action == 'closed' || github.event.action == 'deleted'
+        uses: atlassian/gajira-transition@master
+        with:
+          issue: "${{ steps.extract.outputs.issueId }}"
+          transition: "Done"
+
+      - name: Transition issue in Jira to To Do
+        if: github.event.action == 'reopened'
+        uses: atlassian/gajira-transition@master
+        with:
+          issue: "${{ steps.extract.outputs.issueId }}"
+          transition: "Backlog"
