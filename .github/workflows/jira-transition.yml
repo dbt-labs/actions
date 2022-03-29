@@ -2,6 +2,7 @@
 # Transition a Jira issue to a new state
 #
 # Inputs:
+#   project_key: the key used to prefix issue id in Jira (i.e. "CT" for issue CT-123)
 #   JIRA_BASE_URL: your URL to Jira (i.e. https://abc.atlassian.net)
 #   JIRA_USER_EMAIL: user email to log into Jira under
 #   JIRA_API_TOKEN: user's API token
@@ -16,6 +17,10 @@ name: Jira Issue Transition
 
 on:
   workflow_call:
+    inputs:
+      project_key:
+        required: true
+        type: string
     secrets:
       JIRA_BASE_URL:
         required: true
@@ -38,7 +43,7 @@ jobs:
 
       - name: Jira login
         id: jira-login
-        if: startsWith(steps.extract.outputs.issueId, 'CT-')
+        if: startsWith(steps.extract.outputs.issueId, format('[{0}-', inputs.project_key))
         uses: atlassian/gajira-login@master
         env:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}

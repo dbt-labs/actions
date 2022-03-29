@@ -3,7 +3,7 @@
 # to an existing issue or removing a label as well
 #
 # Inputs:
-#   issue_key: the key used to prefix issue id in Jira (i.e. "CT" for issue CT-123)
+#   project_key: the key used to prefix issue id in Jira (i.e. "CT" for issue CT-123)
 #   JIRA_BASE_URL: your URL to Jira (i.e. https://abc.atlassian.net)
 #   JIRA_USER_EMAIL: user email to log into Jira under
 #   JIRA_API_TOKEN: user's API token
@@ -19,7 +19,7 @@ name: Jira Label Mirroring
 on:
   workflow_call:
     inputs:
-      issue_key:
+      project_key:
         required: true
         type: string
     secrets:
@@ -36,7 +36,7 @@ permissions:
 jobs:
   extract-id:
     runs-on: ubuntu-latest
-    if: startsWith(github.event.issue.title, format('[{0}-', inputs.issue_key))
+    if: startsWith(github.event.issue.title, format('[{0}-', inputs.project_key))
     outputs:
       issueId: ${{ steps.extract.outputs.issueId }}
     steps:

@@ -3,6 +3,7 @@
 # description, GitHub Issue ID and URL
 #
 # Inputs:
+#   project_key: the key used to prefix issue id in Jira (i.e. "CT" for issue CT-123)
 #   JIRA_BASE_URL: your URL to Jira (i.e. https://abc.atlassian.net)
 #   JIRA_USER_EMAIL: user email to log into Jira under
 #   JIRA_API_TOKEN: user's API token
@@ -17,6 +18,10 @@ name: Jira Issue Creation
 
 on:
   workflow_call:
+    inputs:
+      project_key:
+        required: true
+        type: string
     secrets:
       JIRA_BASE_URL:
         required: true
@@ -48,7 +53,7 @@ jobs:
         id: create
         uses: atlassian/gajira-create@v2.0.1
         with:
-          project: CT
+          project: ${{ inputs.project_key }}
           issuetype: "GitHub Issue"
           summary: "${{ github.event.issue.title }}"
           fields: '{ "customfield_10049": "${{ github.repository }}", "customfield_10048": "${{ github.event.issue.html_url }}", "customfield_10047": ${{ github.event.issue.number }} }'
