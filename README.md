@@ -15,7 +15,14 @@ A set of GitHub [Actions](https://docs.github.com/en/actions/creating-actions/ab
 
 ## Releasing
 
-Create a new tag with the format `v#.#.#`. The [release GHA](https://github.com/dbt-labs/internal-actions/actions/workflows/release.yml) will create or update tags for the major and minor version (e.g. `v1`, `v1.1`).
+Create and push a new tag with the format `v#.#.#`. The [release GHA](https://github.com/dbt-labs/actions/actions/workflows/release.yml) will create or update tags for the major and minor version (e.g. `v1`, `v1.1`). For example:
+
+```
+git tag v1.2.3
+git push --tags
+```
+
+The [release GHA](https://github.com/dbt-labs/actions/actions/workflows/release.yml) will create or update the `v1` and `v1.2` tags to point to the same commit as `v1.2.3`.
 
 ## Development
 
