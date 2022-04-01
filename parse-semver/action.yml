@@ -1,0 +1,28 @@
+name: "Parse Semver"
+description: "Parse a semver string into semantic parts"
+inputs:
+  version:
+    description: "Semver string to parse"
+    required: true
+outputs:
+  version:
+    description: "Parsed version"
+  base-version:
+    description: "Base version"
+  major:
+    description: "Major version"
+  minor:
+    description: "Minor version"
+  patch:
+    description: "Patch version"
+  pre-release:
+    description: "Pre-release type and version (ex: rc1, b2)"
+  pre-release-version:
+    description: "Pre-release version (ex: 1, 2)"
+  pre-release-type:
+    description: "Pre-release type (ex: b, rc)"
+  is-pre-release:
+    description: "Is this version a pre-release? (1 or 0)"
+runs:
+  using: "docker"
+  image: "Dockerfile"
