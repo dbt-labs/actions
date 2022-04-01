@@ -1,0 +1,10 @@
+on: create
+
+name: Release
+jobs:
+  release:
+    name: Release GitHub Actions
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/technote-space/release-github-actions
+      - uses: technote-space/release-github-actions@v6
