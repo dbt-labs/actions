@@ -15,14 +15,10 @@ A set of GitHub [Actions](https://docs.github.com/en/actions/creating-actions/ab
 
 ## Releasing
 
-Create and push a new tag with the format `v#.#.#`. The [release GHA](https://github.com/dbt-labs/actions/actions/workflows/release.yml) will create or update tags for the major and minor version (e.g. `v1`, `v1.1`). For example:
+Either:
 
-```
-git tag v1.2.3
-git push --tags
-```
-
-The [release GHA](https://github.com/dbt-labs/actions/actions/workflows/release.yml) will create or update the `v1` and `v1.2` tags to point to the same commit as `v1.2.3`.
+- Add a label to a PR (`bump:major`, `bump:minor`, `bump:patch`) to determine what part of the version to bump when merging PR. When the PR is merged, the [release GHA](https://github.com/dbt-labs/internal-actions/actions/workflows/release.yml) will create or update tags for the major and minor version (e.g. `v1`, `v1.1`).
+- Create a new tag with the format `v#.#.#`. The [release GHA](https://github.com/dbt-labs/internal-actions/actions/workflows/release.yml) will create or update tags for the major and minor version (e.g. `v1`, `v1.1`).
 
 ## Development
 

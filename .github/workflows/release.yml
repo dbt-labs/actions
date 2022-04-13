@@ -1,10 +1,38 @@
-on: create
-
-name: Release
+name: release
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+  pull_request:
+    types:
+      - labeled
 jobs:
   release:
-    name: Release GitHub Actions
+    if: github.event.action != 'labeled'
     runs-on: ubuntu-latest
     steps:
-      # https://github.com/technote-space/release-github-actions
-      - uses: technote-space/release-github-actions@v6
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      # Bump version on merging Pull Requests with specific labels.
+      # (bump:major,bump:minor,bump:patch)
+      - id: bumpr
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: haya14busa/action-bumpr@v1
+
+      # Update corresponding major and minor tag.
+      # e.g. Update v1 and v1.2 when releasing v1.2.3
+      - uses: haya14busa/action-update-semver@v1
+        if: "!steps.bumpr.outputs.skip"
+        with:
+          tag: ${{ steps.bumpr.outputs.next_version }}
+  release-check:
+    if: github.event.action == 'labeled'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: haya14busa/action-bumpr@v1
