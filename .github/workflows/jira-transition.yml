@@ -43,7 +43,7 @@ jobs:
 
       - name: Jira login
         id: jira-login
-        if: startsWith(steps.extract.outputs.issueId, format('[{0}-', inputs.project_key))
+        if: startsWith(steps.extract.outputs.issueId, format('[{0}-', ${{inputs.project_key}}))
         uses: atlassian/gajira-login@master
         env:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
