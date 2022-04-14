@@ -36,7 +36,7 @@ permissions:
 jobs:
   extract-id:
     runs-on: ubuntu-latest
-    if: startsWith(github.event.issue.title, format('[{0}-', inputs.project_key))
+    if: startsWith(github.event.issue.title, format('[{0}-', ${{inputs.project_key}}))
     outputs:
       issueId: ${{ steps.extract.outputs.issueId }}
     steps:
