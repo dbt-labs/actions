@@ -5,7 +5,7 @@ inputs:
     description: "Python package name"
     required: true
   version:
-    description: "Semver string to parse"
+    description: "Version to get information for"
     required: false
 outputs:
   name:
