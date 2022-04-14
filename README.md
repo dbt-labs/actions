@@ -26,3 +26,10 @@ Either:
 - It is recommended to use [act](https://github.com/nektos/act) for testing locally where possible.
 - Actions have a cooresponding workflow for automated testing.
 - Here is [documentation](https://docs.github.com/en/actions/creating-actions) for creating custom actions.
+
+## Debugging
+
+You can enable debug logging for GHA be setting secret values for your repository. See [docs](https://docs.github.com/en/github-ae@latest/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging) for more info.
+
+- Set `ACTIONS_RUNNER_DEBUG` to `true` to enable runner diagnostic logging.
+- Set `ACTIONS_STEP_DEBUG` to `true` to enable run step debug logging.

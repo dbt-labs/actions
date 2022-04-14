@@ -2,13 +2,11 @@ import codecs
 import json
 import os
 import pkg_resources
-import warnings
 from contextlib import closing
 from dataclasses import dataclass
 from typing import Optional
 from urllib.request import urlopen
 from hashlib import sha256
-import logging
 
 
 class PackageVersionNotFoundWarning(UserWarning):
@@ -51,9 +49,8 @@ def lookup_package(name, version=None):
                         artifact = version_artifact
                         break
         if artifact is None:
-            warnings.warn("Could not find an exact version match for "
-                          "{} version {}; using newest instead".
-                          format(name, version), PackageVersionNotFoundWarning)
+            print("::warning::Could not find an exact version match for "
+                  f"{name} version {version}; using newest instead")
 
     if artifact is None:  # no version given or exact match not found
         for url in pkg_data['urls']:
@@ -65,17 +62,17 @@ def lookup_package(name, version=None):
         d['url'] = artifact['url']
         d['version'] = version
         if 'digests' in artifact and 'sha256' in artifact['digests']:
-            logging.debug("Using provided checksum for %s", name)
+            print(f"::debug::Using provided checksum for {name}")
             d['checksum'] = artifact['digests']['sha256']
         else:
-            logging.debug("Fetching sdist to compute checksum for %s", name)
+            print(f"::debug::Fetching sdist to compute checksum for {name}")
             with closing(urlopen(artifact['url'])) as f:
                 d['checksum'] = sha256(f.read()).hexdigest()
-            logging.debug("Done fetching %s", name)
+            print(f"::debug::Done fetching {name}")
     else:  # no sdist found
         d['url'] = ''
         d['checksum'] = ''
-        warnings.warn("No sdist found for %s" % name)
+        print("::warning::No sdist found for {name}")
     d['checksum_type'] = 'sha256'
     return d
 
