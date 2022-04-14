@@ -29,9 +29,12 @@ class PackageInfo:
 
 
 def lookup_package(name, version=None):
+    pkg_data = None
     with closing(urlopen("https://pypi.io/pypi/{}/json".format(name))) as f:
         reader = codecs.getreader("utf-8")
         pkg_data = json.load(reader(f))
+    if pkg_data is None:
+        raise RuntimeError(f"no package data for: {name}")
     d = {}
     d['name'] = pkg_data['info']['name']
     d['version'] = pkg_data['info'].get('version', '')
@@ -39,33 +42,34 @@ def lookup_package(name, version=None):
     d['summary'] = pkg_data['info'].get('summary', '')
     d['author'] = pkg_data['info'].get('author', '')
     d['author_email'] = pkg_data['info'].get('author_email', '')
-    artefact = None
+    artifact = None
     if version:
         for pypi_version in pkg_data['releases']:
             if pkg_resources.safe_version(pypi_version) == version:
-                for version_artefact in pkg_data['releases'][pypi_version]:
-                    if version_artefact['packagetype'] == 'sdist':
-                        artefact = version_artefact
+                for version_artifact in pkg_data['releases'][pypi_version]:
+                    if version_artifact['packagetype'] == 'sdist':
+                        artifact = version_artifact
                         break
-        if artefact is None:
+        if artifact is None:
             warnings.warn("Could not find an exact version match for "
                           "{} version {}; using newest instead".
                           format(name, version), PackageVersionNotFoundWarning)
 
-    if artefact is None:  # no version given or exact match not found
+    if artifact is None:  # no version given or exact match not found
         for url in pkg_data['urls']:
             if url['packagetype'] == 'sdist':
-                artefact = url
+                artifact = url
                 break
 
-    if artefact:
-        d['url'] = artefact['url']
-        if 'digests' in artefact and 'sha256' in artefact['digests']:
+    if artifact:
+        d['url'] = artifact['url']
+        d['version'] = version
+        if 'digests' in artifact and 'sha256' in artifact['digests']:
             logging.debug("Using provided checksum for %s", name)
-            d['checksum'] = artefact['digests']['sha256']
+            d['checksum'] = artifact['digests']['sha256']
         else:
             logging.debug("Fetching sdist to compute checksum for %s", name)
-            with closing(urlopen(artefact['url'])) as f:
+            with closing(urlopen(artifact['url'])) as f:
                 d['checksum'] = sha256(f.read()).hexdigest()
             logging.debug("Done fetching %s", name)
     else:  # no sdist found
@@ -81,6 +85,18 @@ def main():
     version = os.environ["INPUT_VERSION"]
 
     package_info = PackageInfo(**lookup_package(package, version=version))
+
+    print("::group::Python Package Info Outputs")
+    print(f"name={package_info.name}")
+    print(f"version={package_info.version}")
+    print(f"homepage={package_info.homepage}")
+    print(f"summary={package_info.summary}")
+    print(f"author={package_info.author}")
+    print(f"author-email={package_info.author_email}")
+    print(f"source-url={package_info.url}")
+    print(f"source-checksum={package_info.checksum}")
+    print(f"source-checksum-type={package_info.checksum_type}")
+    print("::endgroup::")
 
     print(f"::set-output name=name::{package_info.name}")
     print(f"::set-output name=version::{package_info.version}")

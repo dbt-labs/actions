@@ -20,6 +20,18 @@ def main():
     is_pre_release = parsed_version.pre is not None
     is_pre_release_truthy = 1 if is_pre_release else 0
 
+    print("::group::Parse Semver Outputs")
+    print(f"version={parsed_version.public}")
+    print(f"base-version={parsed_version.base_version}")
+    print(f"major={parsed_version.major}")
+    print(f"minor={parsed_version.minor}")
+    print(f"patch={parsed_version.micro}")
+    print(f"pre-release-type={pre_release_type}")
+    print(f"pre-release-version={pre_release_version}")
+    print(f"pre-release={pre_release}")
+    print(f"is-pre-release={is_pre_release_truthy}")
+    print("::endgroup::")
+
     print(f"::set-output name=version::{parsed_version.public}")
     print(f"::set-output name=base-version::{parsed_version.base_version}")
     print(f"::set-output name=major::{parsed_version.major}")
