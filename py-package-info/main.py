@@ -47,6 +47,7 @@ def lookup_package(name, version=None):
                 for version_artifact in pkg_data['releases'][pypi_version]:
                     if version_artifact['packagetype'] == 'sdist':
                         artifact = version_artifact
+                        d['version'] = version
                         break
         if artifact is None:
             print("::warning::Could not find an exact version match for "
@@ -60,7 +61,6 @@ def lookup_package(name, version=None):
 
     if artifact:
         d['url'] = artifact['url']
-        d['version'] = version
         if 'digests' in artifact and 'sha256' in artifact['digests']:
             print(f"::debug::Using provided checksum for {name}")
             d['checksum'] = artifact['digests']['sha256']
