@@ -44,6 +44,7 @@ jobs:
       - name: Test Valid Version
         run: |
           [ "${{ steps.without-version.outputs.name }}" != dbt-snowflake ] && exit 1
+          [ -z "${{ steps.without-version.outputs.version }}" ] && exit 1
           [ -z "${{ steps.without-version.outputs.source-url }}" ] && exit 1
           [ -z "${{ steps.without-version.outputs.source-checksum }}" ] && exit 1
           exit 0
