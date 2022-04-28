@@ -20,8 +20,14 @@ def main():
     is_pre_release = parsed_version.pre is not None
     is_pre_release_truthy = 1 if is_pre_release else 0
 
+    semver_complicant_version = parsed_version.base_version
+    if pre_release:
+        semver_complicant_version = f"{semver_complicant_version}-{pre_release}"
+
+
     print("::group::Parse Semver Outputs")
     print(f"version={parsed_version.public}")
+    print(f"semver-complicant-version={semver_complicant_version}")
     print(f"base-version={parsed_version.base_version}")
     print(f"major={parsed_version.major}")
     print(f"minor={parsed_version.minor}")

@@ -1,0 +1,36 @@
+name: "Release to Pypi"
+description: "Release to Pypi"
+inputs:
+  package:
+    description: 'The Python package name'
+    required: true
+  version_number:
+    description: 'The release version number (i.e. 1.0.0b1)'
+    required: true
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Inputs
+      uses: dunno bash?
+      run: |
+          echo The Python package name: ${{ inputs.package_name }}
+          echo The release version number: ${{ inputs.version }}
+
+    - name: Check if release exists already
+      uses: dbt-labs/py-package-info
+      with:
+        package:  ${{ inputs.package_name }}
+        version: ${{ inputs.version }}
+
+    - name: Download artifacts  # TODO: Is this right now that it's in a new workflow?
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: 'dist'
+
+    - name: Publish distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@v1.4.2
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
