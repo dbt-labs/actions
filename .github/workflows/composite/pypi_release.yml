@@ -1,0 +1,40 @@
+# **what?**
+#
+# Inputs:
+#   
+# **why?**
+#
+# **when?**
+#
+
+name: Pypi release
+
+on:
+  workflow_call:
+    secrets:
+      PYPI_API_TOKEN:
+        required: true
+
+permissions:
+  issues: write
+
+jobs:
+  pypi-release:
+    runs-on: ubuntu-latest
+    # if: |    TODO: is it conditional?
+    #   ((github.event.action == 'opened') || 
+    #   (github.event.action == 'labeled' && github.event.label.name == 'jira'))
+    # outputs:   TODO: are outputs needed?
+    #   issueId: ${{ steps.save-id.outputs.issueId }}
+  
+    environment: PypiProd  # TODO: what's this? COuld make be input for testing purposes?
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: 'dist'
+
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}

@@ -1,0 +1,41 @@
+name: "Build"
+description: "Build"
+inputs:
+  sha:
+    description: 'The last commit sha in the release'
+    required: true
+  version_number:
+    description: 'The release version number (ie. 1.0.0b1)'
+    required: true
+  build_script_path:
+    description: 'The path to the build script(default: ./scripts/build-dist.sh))'
+    default: './scripts/build-dist.sh'
+    required: true
+# outputs:
+#   name:
+    # description: "Package name"
+
+runs:
+  using: "composite"
+
+  steps:
+
+    - name: Build
+      uses: ./.github/workflows/composite/build
+      with:
+        python-version: 1
+
+    - name: Test Build
+      uses: ./.github/workflows/composite/test_build
+      with:
+        python-version: 1
+
+    - name: Github Release
+      uses: ./.github/workflows/composite/github_release
+      with:
+        python-version: 1
+
+    - name: PyPi Release
+      uses: ./.github/workflows/composite/pypi_release
+      with: 
+        python-version: 1

@@ -1,0 +1,62 @@
+# **what?**
+#
+# Inputs:
+#   
+# **why?**
+#
+# **when?**
+#
+
+name: GitHub Release
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+      version_number:
+        required: true
+        type: string
+
+permissions:
+  issues: write
+
+jobs:
+  github-release:
+    runs-on: ubuntu-latest
+    # if: |    TODO: is it conditional?
+    #   ((github.event.action == 'opened') || 
+    #   (github.event.action == 'labeled' && github.event.label.name == 'jira'))
+    # outputs:   TODO: are outputs needed?
+    #   issueId: ${{ steps.save-id.outputs.issueId }}
+  
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: '.'
+
+      # Need to set an output variable because env variables can't be taken as input
+      # This is needed for the next step with releasing to GitHub
+      - name: Find release type
+        id: release_type
+        env:
+          IS_PRERELEASE: ${{ contains(github.event.inputs.version_number, 'rc') ||  contains(github.event.inputs.version_number, 'b') }}
+        run: |
+          echo ::set-output name=isPrerelease::$IS_PRERELEASE
+
+      - name: Creating GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: dbt-core v${{github.event.inputs.version_number}}
+          tag_name: v${{github.event.inputs.version_number}}
+          prerelease: ${{ steps.release_type.outputs.isPrerelease }}
+          target_commitish: ${{github.event.inputs.sha}}
+          body: |
+            [Release notes](https://github.com/dbt-labs/dbt-core/blob/main/CHANGELOG.md)
+          files: |
+            dbt_postgres-${{github.event.inputs.version_number}}-py3-none-any.whl
+            dbt_core-${{github.event.inputs.version_number}}-py3-none-any.whl
+            dbt-postgres-${{github.event.inputs.version_number}}.tar.gz
+            dbt-core-${{github.event.inputs.version_number}}.tar.gz

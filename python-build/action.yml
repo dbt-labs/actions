@@ -5,7 +5,11 @@ inputs:
     description: 'The last commit sha in the release'
     required: true
   version_number:
-    description: 'The release version number (i.e. 1.0.0b1)'
+    description: 'The release version number (ie. 1.0.0b1)'
+    required: true
+  build_script_path:
+    description: 'The path to the build script(default: ./scripts/build-dist.sh))'
+    default: './scripts/build-dist.sh'
     required: true
 # outputs:
 #   name:
@@ -19,34 +23,32 @@ runs:
       uses: actions/checkout@v2
       with:
         persist-credentials: false
-        ref: ${{ github.event.inputs.sha }}
+        ref: ${{ inputs.sha }}
 
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
 
-    - name: Install python dependencies
+    - name: Install Python dependencies
       run: |
         pip install --user --upgrade pip
         pip install --upgrade setuptools wheel twine check-wheel-contents
         pip --version
 
     - name: Build distributions
-      run: ./scripts/build-dist.sh
+      run: ${{ inputs.build_script_path }}
 
     - name: Show distributions
       run: ls -lh dist/
 
     - name: Check distribution descriptions
-      run: |
-        twine check dist/*
+      run: twine check dist/*
 
     - name: Check wheel contents
-      run: |
-        check-wheel-contents dist/*.whl --ignore W007,W008
+      run: check-wheel-contents dist/*.whl --ignore W007,W008
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v2  # TODO: this should go to S3
       with:
         name: dist
         path: |

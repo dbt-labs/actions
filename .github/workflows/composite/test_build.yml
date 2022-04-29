@@ -1,0 +1,61 @@
+  # **what?**
+#
+# Inputs:
+#   
+# **why?**
+#
+# **when?**
+#
+
+name: verify/test packages
+
+on:
+  workflow_call:
+
+permissions:
+  issues: write
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    # if: |    TODO: is it conditional?
+    #   ((github.event.action == 'opened') || 
+    #   (github.event.action == 'labeled' && github.event.label.name == 'jira'))
+    # outputs:   TODO: are outputs needed?
+    #   issueId: ${{ steps.save-id.outputs.issueId }}
+  
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install python dependencies
+        run: |
+          pip install --user --upgrade pip
+          pip install --upgrade wheel
+          pip --version
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: dist/
+
+      - name: Show distributions
+        run: ls -lh dist/
+
+      - name: Install wheel distributions
+        run: |
+          find ./dist/*.whl -maxdepth 1 -type f | xargs pip install --force-reinstall --find-links=dist/
+
+      - name: Check wheel distributions
+        run: |
+          dbt --version
+
+      - name: Install source distributions
+        run: |
+          find ./dist/*.gz -maxdepth 1 -type f | xargs pip install --force-reinstall --find-links=dist/
+
+      - name: Check source distributions
+        run: |
+          dbt --version
