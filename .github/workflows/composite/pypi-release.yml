@@ -11,6 +11,9 @@ name: Pypi release
 
 on:
   workflow_call:
+    inputs:
+      is_prod:
+        default: false # https://packaging.python.org/en/latest/guides/using-testpypi/
     secrets:
       PYPI_API_TOKEN:
         required: true
@@ -35,6 +38,14 @@ jobs:
           path: 'dist'
 
       - name: Publish distribution to PyPI
+        if: ${{ inputs.is_prod }} == 'true'
         uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Publish distribution to PyPI
+        if: ${{ inputs.is_prod }} == 'false'
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/

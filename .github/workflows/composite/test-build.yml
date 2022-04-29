@@ -1,4 +1,4 @@
-  # **what?**
+# **what?**
 #
 # Inputs:
 #   
@@ -36,7 +36,7 @@ jobs:
           pip install --upgrade wheel
           pip --version
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v2   # TODO: from S3?
         with:
           name: dist
           path: dist/

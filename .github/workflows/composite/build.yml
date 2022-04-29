@@ -50,7 +50,7 @@ jobs:
           pip --version
 
       - name: Build distributions
-        run: ./scripts/build-dist.sh
+        run: ${{ inputs.build_script_path }}
 
       - name: Show distributions
         run: ls -lh dist/
@@ -68,4 +68,4 @@ jobs:
           name: dist
           path: |
             dist/
-            !dist/dbt-${{github.event.inputs.version_number}}.tar.gz
+            !dist/dbt-${{ inputs.version_number }}.tar.gz

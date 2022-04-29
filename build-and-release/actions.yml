@@ -11,6 +11,10 @@ inputs:
     description: 'The path to the build script(default: ./scripts/build-dist.sh))'
     default: './scripts/build-dist.sh'
     required: true
+  is_prod:
+    # TODO: need an action to clean up test builds for testing purposes
+    description: 'Is this a production build/release'
+    default: 'false'
 # outputs:
 #   name:
     # description: "Package name"
@@ -20,22 +24,58 @@ runs:
 
   steps:
 
+    - name: Set variables
+      id: set
+      run: |
+          echo The last commit sha in the release: ${{ inputs.sha }}
+          echo The release version number: ${{ inputs.version_number }}
+          echo The path to the build script: ${{ inputs.build_script_path }}
+          echo This a production build/release: ${{ inputs.is_prod }}
+
+    - name: Check if build exists
+      id: check_build
+      uses: ./.github/workflows/composite/check-build-exists
+      with:
+        python-version: TODO
+    
     - name: Build
+      if: steps.check_build.outputs.exists == 'false'
       uses: ./.github/workflows/composite/build
       with:
-        python-version: 1
+        sha: ${{ inputs.sha }}
+        version_number:  ${{ inputs.version_number }}
+        build_script_path: ${{ inputs.build_script_path }}
 
     - name: Test Build
-      uses: ./.github/workflows/composite/test_build
+      # should we test the build every time, even if it already exists? probably.
+      uses: ./.github/workflows/composite/test-build
       with:
-        python-version: 1
+        python-version: TODO
+
+    - name: Check if GitHub Release exists
+      id: check_github_release
+      uses: ./.github/workflows/composite/check-release-exists
+      with:
+        python-version: TODO
 
     - name: Github Release
-      uses: ./.github/workflows/composite/github_release
+      if: steps.check_github_release.outputs.exists == 'false'
+      uses: ./.github/workflows/composite/github-release
       with:
-        python-version: 1
+        sha: ${{ inputs.sha }}
+        version_number:  ${{ inputs.version_number }}
+
+    - name: Check if PyPi Release exists
+      #TODO: leverage get-py-package action?
+      id: check_pypi_release
+      uses: ./.github/workflows/composite/check-pypi-exists
+      with:
+        is_prod: ${{ inputs.is_prod }}  # todo: need to know where to check!
+        python-version: TODO
 
     - name: PyPi Release
-      uses: ./.github/workflows/composite/pypi_release
+      if: steps.check_pypi_release.outputs.exists == 'false'
+      uses: ./.github/workflows/composite/pypi-release
       with: 
-        python-version: 1
+        is_prod: ${{ inputs.is_prod }}
+        PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}  #todo: need a pypi test api token
