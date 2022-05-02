@@ -36,6 +36,7 @@ jobs:
         run: echo '::set-output name=exists::"true"'
 
   github-release:
+    needs: [check-release-exists]
     if: jobs.check-release-exists.exists == 'false'
     runs-on: ubuntu-latest
   

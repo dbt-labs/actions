@@ -33,6 +33,7 @@ jobs:
         run: echo '::set-output name=exists::"true"'
 
   pypi-release:
+    needs: [check-pypi-exists]
     if: jobs.check-pypi-exists.exists == 'false'
     runs-on: ubuntu-latest
   

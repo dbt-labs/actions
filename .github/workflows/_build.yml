@@ -39,6 +39,7 @@ jobs:
         run: echo '::set-output name=exists::"true"'
 
   build-packages:
+    needs: [check-build-exists]
     if: jobs.check-build-exists.exists == 'false'
     runs-on: ubuntu-latest
 
