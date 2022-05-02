@@ -20,6 +20,11 @@ on:
         type: string
       build_script_path:
         required: true
+        default: dbt --version
+        type: string
+      package_test_command:
+        required: true
+        default: dbt --version
         type: string
 
 permissions:
@@ -125,7 +130,7 @@ jobs:
 
       - name: Check wheel distributions
         run: |
-          dbt --version
+          ${{ github.event.inputs.package_test_command }}
 
       - name: Install source distributions
         run: |
@@ -133,4 +138,4 @@ jobs:
 
       - name: Check source distributions
         run: |
-          dbt --version
+          ${{ github.event.inputs.package_test_command }}
