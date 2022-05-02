@@ -36,12 +36,14 @@ jobs:
         run: echo Workflow is not built
       - name: Set output
         id: set_existence
-        run: echo '::set-output name=exists::"true"'
+        run: echo '::set-output name=exists::"false"'
 
   build-packages:
     needs: [check-build-exists]
     if: needs.check-build-exists.exists == 'false'
     runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.set_success.outputs.finished }}
 
     steps:
       - name: Check out the repository
@@ -81,10 +83,15 @@ jobs:
           path: |
             dist/
             !dist/dbt-${{ inputs.version_number }}.tar.gz
+      
+      - name: If we made it here we need to test what we built
+        id: set_success
+        run: echo '::set-output name=finished::"true"'
 
   test-build:
+    needs: [check-build-exists, build-packages]
+    if: needs.check-build-exists.exists == 'false' || needs.build-packages.finished == 'true'
     runs-on: ubuntu-latest
-    # TODO: always run this?
   
     steps:
       - name: Set up Python

@@ -33,7 +33,7 @@ jobs:
         run: echo Workflow is not built
       - name: Set output
         id: set_existence
-        run: echo '::set-output name=exists::"true"'
+        run: echo '::set-output name=exists::"false"'
 
   github-release:
     needs: [check-release-exists]
