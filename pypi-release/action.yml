@@ -9,7 +9,7 @@ inputs:
     required: true
 
 runs:
-  using: "composite"
+  using: "composite"  # Nope
 
   steps:
     - name: Inputs
