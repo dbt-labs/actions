@@ -36,9 +36,9 @@ jobs:
         run: echo '::set-output name=exists::"false"'
 
   github-release:
+    runs-on: ubuntu-latest
     needs: [check-release-exists]
     if: needs.check-release-exists.exists == 'false'
-    runs-on: ubuntu-latest
   
     steps:
       - uses: actions/download-artifact@v2
