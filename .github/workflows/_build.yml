@@ -20,7 +20,7 @@ on:
         type: string
       build_script_path:
         required: true
-        default: dbt --version
+        default: scripts/build-dist.sh
         type: string
       package_test_command:
         required: true
