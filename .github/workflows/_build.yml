@@ -40,7 +40,7 @@ jobs:
 
   build-packages:
     needs: [check-build-exists]
-    if: jobs.check-build-exists.exists == 'false'
+    if: needs.check-build-exists.exists == 'false'
     runs-on: ubuntu-latest
 
     steps:

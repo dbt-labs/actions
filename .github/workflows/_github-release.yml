@@ -37,7 +37,7 @@ jobs:
 
   github-release:
     needs: [check-release-exists]
-    if: jobs.check-release-exists.exists == 'false'
+    if: needs.check-release-exists.exists == 'false'
     runs-on: ubuntu-latest
   
     steps:
