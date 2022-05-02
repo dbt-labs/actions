@@ -62,6 +62,12 @@ jobs:
           pip install --user --upgrade pip
           pip install --upgrade setuptools wheel twine check-wheel-contents
           pip --version
+      
+      - name: Sanity check ls
+        run: ls -al
+
+      - name: Sanity check pwd
+        run: pwd
 
       - name: Build distributions
         run: ./${{ inputs.build_script_path }}
