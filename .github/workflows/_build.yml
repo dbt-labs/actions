@@ -49,7 +49,7 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
         with:
-          # persist-credentials: false
+          # persist-credentials: false  # TODO: with this false I get an error checking it out, it's what existed in previous release version though
           ref: ${{ github.event.inputs.sha }}
 
       - name: Set up Python
@@ -64,7 +64,7 @@ jobs:
           pip --version
 
       - name: Build distributions
-        run: ${{ inputs.build_script_path }}
+        run: ./${{ inputs.build_script_path }}
 
       - name: Show distributions
         run: ls -lh dist/
