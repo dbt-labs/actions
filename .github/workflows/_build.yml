@@ -39,11 +39,11 @@ jobs:
         run: echo '::set-output name=exists::"false"'
 
   build-packages:
-    needs: [check-build-exists]
-    if: needs.check-build-exists.exists == 'false'
     runs-on: ubuntu-latest
+    needs: [check-build-exists]
+    if: ${{ needs.check-build-exists.exists }} == "false"
     outputs:
-      exists: ${{ steps.set_success.outputs.finished }}
+      finished: ${{ steps.set_success.outputs.finished }}
 
     steps:
       - name: Check out the repository
@@ -90,7 +90,7 @@ jobs:
 
   test-build:
     needs: [check-build-exists, build-packages]
-    if: needs.check-build-exists.exists == 'false' || needs.build-packages.finished == 'true'
+    if: ${{ needs.check-build-exists.exists }} == 'false' || ${{ needs.build-packages.finished }} == 'true'
     runs-on: ubuntu-latest
   
     steps:
