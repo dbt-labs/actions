@@ -18,6 +18,9 @@ on:
       version_number:
         required: true
         type: string
+      build_script_path:
+        required: true
+        type: string
 
 permissions:
   contents: write

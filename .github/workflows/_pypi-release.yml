@@ -13,10 +13,8 @@ on:
   workflow_call:
     inputs:
       is_prod:
-        default: false # https://packaging.python.org/en/latest/guides/using-testpypi/
-    secrets:
-      PYPI_API_TOKEN:
         required: true
+        type: string
 
 permissions:
   contents: read
@@ -55,5 +53,5 @@ jobs:
         if: ${{ inputs.is_prod }} == 'false'
         uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.PYPI_API_TOKEN }}  # TODO: document need for this secret
           repository_url: https://test.pypi.org/legacy/
