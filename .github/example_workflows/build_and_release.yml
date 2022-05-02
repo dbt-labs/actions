@@ -1,0 +1,69 @@
+# TODO: add comments/descriptions
+
+name: "Build and Release"
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        description: 'The last commit sha in the release'
+        required: true
+        type: string
+      version_number:
+        description: 'The release version number (ie. 1.0.0b1)'
+        required: true
+        type: string
+      build_script_path:
+        description: 'The path to the build script(default: ./scripts/build-dist.sh))'
+        default: './scripts/build-dist.sh'
+        required: true
+        type: string
+      is_prod:
+        # TODO: need an action to clean up test builds for testing purposes
+        description: 'Is this a production build/release'
+        default: 'false'
+        required: true
+        type: string
+    secrets:  # not sure if this should be here
+      PYPI_API_TOKEN:
+        required: true
+    # outputs:
+    #   name:
+        # description: "Package name"
+
+# TODO: validate
+permissions:
+  issues: write
+
+jobs:
+  log-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set variables
+        id: set
+        run: |
+            echo The last commit sha in the release: ${{ inputs.sha }}
+            echo The release version number: ${{ inputs.version_number }}
+            echo The path to the build script: ${{ inputs.build_script_path }}
+            echo This a production build/release: ${{ inputs.is_prod }}
+
+  build:
+    uses: dbt-labs/actions/.github/workflows/_build.yml@er/release
+    with:
+      sha: ${{ inputs.sha }}
+      version_number: ${{ inputs.version_number }}
+      build_script_path: ${{ inputs.build_script_path }}
+
+  github_release:
+    needs: [test-build]
+    uses: dbt-labs/actions/.github/workflows/_github-release.yml@er/release
+    with:
+      sha: ${{ inputs.sha }}
+      version_number: ${{ inputs.version_number }}
+
+  pypi_release:
+    needs: [github_release]
+    uses: dbt-labs/actions/.github/workflows/_pypi-release.yml@er/release
+    with:
+      is_prod: ${{ inputs.is_prod }}
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}

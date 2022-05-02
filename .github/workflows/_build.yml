@@ -1,0 +1,119 @@
+# **what?**
+#
+# Inputs:
+#   
+# **why?**
+#
+# **when?**
+#
+
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+      version_number:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  check-build-exists:
+    runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.set_existence.outputs.exists }}
+  
+    steps:
+      - name: Placeholder
+        run: echo Workflow is not built
+      - name: Set output
+        id: set_existence
+        run: echo '::set-output name=exists::"true"'
+
+  build-packages:
+    if: jobs.check-build-exists.exists == 'false'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.inputs.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install python dependencies
+        run: |
+          pip install --user --upgrade pip
+          pip install --upgrade setuptools wheel twine check-wheel-contents
+          pip --version
+
+      - name: Build distributions
+        run: ${{ inputs.build_script_path }}
+
+      - name: Show distributions
+        run: ls -lh dist/
+
+      - name: Check distribution descriptions
+        run: |
+          twine check dist/*
+
+      - name: Check wheel contents
+        run: |
+          check-wheel-contents dist/*.whl --ignore W007,W008
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: |
+            dist/
+            !dist/dbt-${{ inputs.version_number }}.tar.gz
+
+  test-build:
+    runs-on: ubuntu-latest
+    # TODO: always run this?
+  
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install python dependencies
+        run: |
+          pip install --user --upgrade pip
+          pip install --upgrade wheel
+          pip --version
+
+      - uses: actions/download-artifact@v2   # TODO: from S3?
+        with:
+          name: dist
+          path: dist/
+
+      - name: Show distributions
+        run: ls -lh dist/
+
+      - name: Install wheel distributions
+        run: |
+          find ./dist/*.whl -maxdepth 1 -type f | xargs pip install --force-reinstall --find-links=dist/
+
+      - name: Check wheel distributions
+        run: |
+          dbt --version
+
+      - name: Install source distributions
+        run: |
+          find ./dist/*.gz -maxdepth 1 -type f | xargs pip install --force-reinstall --find-links=dist/
+
+      - name: Check source distributions
+        run: |
+          dbt --version

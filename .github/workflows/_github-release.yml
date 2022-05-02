@@ -20,16 +20,24 @@ on:
         type: string
 
 permissions:
-  issues: write
+  contents: write
 
 jobs:
-  github-release:
+  check-release-exists:
     runs-on: ubuntu-latest
-    # if: |    TODO: is it conditional?
-    #   ((github.event.action == 'opened') || 
-    #   (github.event.action == 'labeled' && github.event.label.name == 'jira'))
-    # outputs:   TODO: are outputs needed?
-    #   issueId: ${{ steps.save-id.outputs.issueId }}
+    outputs:
+      exists: ${{ steps.set_existence.outputs.exists }}
+  
+    steps:
+      - name: Placeholder
+        run: echo Workflow is not built
+      - name: Set output
+        id: set_existence
+        run: echo '::set-output name=exists::"true"'
+
+  github-release:
+    if: jobs.check-release-exists.exists == 'false'
+    runs-on: ubuntu-latest
   
     steps:
       - uses: actions/download-artifact@v2

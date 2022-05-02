@@ -19,18 +19,26 @@ on:
         required: true
 
 permissions:
-  issues: write
+  contents: read
 
 jobs:
-  pypi-release:
+  check-pypi-exists:
     runs-on: ubuntu-latest
-    # if: |    TODO: is it conditional?
-    #   ((github.event.action == 'opened') || 
-    #   (github.event.action == 'labeled' && github.event.label.name == 'jira'))
-    # outputs:   TODO: are outputs needed?
-    #   issueId: ${{ steps.save-id.outputs.issueId }}
+    outputs:
+      exists: ${{ steps.set_existence.outputs.exists }}
   
-    environment: PypiProd  # TODO: what's this? COuld make be input for testing purposes?
+    steps:
+      - name: Placeholder
+        run: echo Workflow is not built
+      - name: Set output
+        id: set_existence
+        run: echo '::set-output name=exists::"true"'
+
+  pypi-release:
+    if: jobs.check-pypi-exists.exists == 'false'
+    runs-on: ubuntu-latest
+  
+    environment: PypiProd  # TODO: what's this? Could make be input for testing purposes?
     steps:
       - uses: actions/download-artifact@v2
         with:
