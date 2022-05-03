@@ -34,15 +34,16 @@ jobs:
         run: |
             echo The last commit sha in the release: ${{ github.event.inputs.sha }}
             echo The release version number: ${{ github.event.inputs.version_number }}
-            echo The file_uploads include: ${{ github.event.inputs.file_uploads }}
             echo Expected Changlog path: "${{ github.workspace }}/.changes/${{ github.event.inputs.version_number }}.md"
-            - name: Sanity check ls
         
       - name: sanity
         run: ls -al
 
-      - name: Sanity check ls on scripts dir
-        run: ls -al ./scripts
+      - name: Sanity check ls on .changes dir
+        run: ls -al ./.changes
+
+      - name: Sanity check 3
+        run: ls al ${{ github.workspace }}/.changes
 
   check-release-exists:
     runs-on: ubuntu-latest
