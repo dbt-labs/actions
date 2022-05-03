@@ -41,7 +41,7 @@ jobs:
 
   pypi-release:
     needs: [check-pypi-exists]
-    if: ${{ needs.check-pypi-exists.exists }} == 'false'
+    if: ${{ needs.check-pypi-exists.outputs.exists }} == 'false'
     runs-on: ubuntu-latest
   
     environment: PypiProd  # TODO: what's this? Could make be input for testing purposes?
