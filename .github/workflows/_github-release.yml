@@ -56,7 +56,7 @@ jobs:
 
       
       - name: Check previous output
-        run: echo steps.checkTag.outputs.exists "${{steps.checkTag.outputs.exists}}""
+        run: echo steps.checkTag.outputs.exists "${{steps.checkTag.outputs.exists}}"
 
       - name: Set output
         id: set_existence
