@@ -49,6 +49,12 @@ jobs:
     steps:
       - name: Placeholder
         run: echo Workflow is not built
+      
+      # - uses: actions/download-artifact@v2   # TODO: from S3?
+      #   with:
+      #     name: ${{ github.event.inputs.version_number }}
+      #     path: dist/
+      
       - name: Set output
         id: set_existence
         run: echo '::set-output name=exists::"false"'
@@ -77,7 +83,7 @@ jobs:
           pip install --user --upgrade pip
           pip install --upgrade setuptools wheel twine check-wheel-contents
           pip --version
-      
+
       - name: Build distributions
         run: ./${{ inputs.build_script_path }}
 
@@ -94,10 +100,21 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: dist
+          name: ${{ github.event.inputs.version_number }}
           path: |
             dist/
             !dist/dbt-${{ inputs.version_number }}.tar.gz
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v2
+        # upload the changelog as an artifact for the release notes
+        # Would be nice to strip out the formatting on contributors here so that we
+          # can leverage GitHubs native contributor recognition
+        with:
+          name: ${{ github.event.inputs.version_number }}
+          path: |
+            .changes/${{ github.event.inputs.version_number }}.md
+          if-no-files-found: error
       
       - name: If we made it here we need to test what we built
         id: set_success
@@ -122,9 +139,12 @@ jobs:
 
       - uses: actions/download-artifact@v2   # TODO: from S3?
         with:
-          name: dist
+          name: ${{ github.event.inputs.version_number }}
           path: dist/
 
+      - name: Display structure of all downloaded files
+        run: ls -R
+      
       - name: Show distributions
         run: ls -lh dist/
 

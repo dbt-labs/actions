@@ -36,6 +36,13 @@ jobs:
             echo The release version number: ${{ github.event.inputs.version_number }}
             echo The file_uploads include: ${{ github.event.inputs.file_uploads }}
             echo Expected Changlog path: "${{ github.workspace }}/.changes/${{ github.event.inputs.version_number }}.md"
+            - name: Sanity check ls
+        
+      - name: sanity
+        run: ls -al
+
+      - name: Sanity check ls on scripts dir
+        run: ls -al ./scripts
 
   check-release-exists:
     runs-on: ubuntu-latest
@@ -57,7 +64,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v2
         with:
-          name: dist
+          name: ${{github.event.inputs.version_number}}
           path: '.'
 
       # Need to set an output variable because env variables can't be taken as input
@@ -76,11 +83,6 @@ jobs:
           tag_name: v${{github.event.inputs.version_number}}
           prerelease: ${{ steps.release_type.outputs.isPrerelease }}
           target_commitish: ${{github.event.inputs.sha}}
-          # This works by assuming you are using changie for your changelogs
-          # Would be super cool to strip out the formatting on contributors here so that we
-          # can leverage GitHubs native contributor recognition
-          # ex: https://github.com/dbt-labs/dbt-core/tree/1.1.latest/.changes/1.0.2-rc1.md
-          #TODO: need to get the semver complicant version!
           body_path: ${{ github.workspace }}/.changes/${{ github.event.inputs.version_number }}.md
           files: ${{ github.event.inputs.file_uploads }}
             # dbt_postgres-${{github.event.inputs.version_number}}-py3-none-any.whl
