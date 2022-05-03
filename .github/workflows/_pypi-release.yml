@@ -14,7 +14,7 @@ on:
     inputs:
       is_prod:
         required: true
-        type: string
+        type: boolean
 
 permissions:
   contents: read
@@ -45,13 +45,13 @@ jobs:
           path: 'dist'
 
       - name: Publish distribution to PyPI
-        if: ${{ inputs.is_prod }} == 'true'
+        if: ${{ inputs.is_prod }} == true
         uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Publish distribution to PyPI
-        if: ${{ inputs.is_prod }} == 'false'
+        if: ${{ inputs.is_prod }} == false
         uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}  # TODO: document need for this secret

@@ -18,6 +18,10 @@ on:
       version_number:
         required: true
         type: string
+      file_uploads:
+        description: Newline-delimited globs of paths to assets to upload for release
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -62,10 +66,13 @@ jobs:
           tag_name: v${{github.event.inputs.version_number}}
           prerelease: ${{ steps.release_type.outputs.isPrerelease }}
           target_commitish: ${{github.event.inputs.sha}}
-          body: |
-            [Release notes](https://github.com/dbt-labs/dbt-core/blob/main/CHANGELOG.md)
-          files: |
-            dbt_postgres-${{github.event.inputs.version_number}}-py3-none-any.whl
-            dbt_core-${{github.event.inputs.version_number}}-py3-none-any.whl
-            dbt-postgres-${{github.event.inputs.version_number}}.tar.gz
-            dbt-core-${{github.event.inputs.version_number}}.tar.gz
+          # This works by assuming you are using changie for your changelogs
+          # Would be super cool to strip out the formatting on contributors here so that we
+          # can leverage GitHubs native contributor recognition
+          # ex: https://github.com/dbt-labs/dbt-core/tree/1.1.latest/.changes/1.0.2-rc1.md
+          body_path: https://github.com/${{ github.repository }}/tree/${{ github.ref_name }}/.changes/${{  }}.md
+          files: ${{ github.event.inputs.file_uploads }}
+            # dbt_postgres-${{github.event.inputs.version_number}}-py3-none-any.whl
+            # dbt_core-${{github.event.inputs.version_number}}-py3-none-any.whl
+            # dbt-postgres-${{github.event.inputs.version_number}}.tar.gz
+            # dbt-core-${{github.event.inputs.version_number}}.tar.gz
