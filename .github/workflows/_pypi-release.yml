@@ -20,6 +20,13 @@ permissions:
   contents: read
 
 jobs:
+  log-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print variables
+        run: |
+            echo Run for prod Pypi: ${{ github.event.inputs.is_prod }}
+
   check-pypi-exists:
     runs-on: ubuntu-latest
     outputs:

@@ -27,6 +27,15 @@ permissions:
   contents: write
 
 jobs:
+  log-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print variables
+        run: |
+            echo The last commit sha in the release: ${{ github.event.inputs.sha }}
+            echo The release version number: ${{ github.event.inputs.version_number }}
+            echo The file_uploads include: ${{ github.event.inputs.file_uploads }}
+
   check-release-exists:
     runs-on: ubuntu-latest
     outputs:
