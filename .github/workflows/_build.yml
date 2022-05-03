@@ -85,7 +85,7 @@ jobs:
             dist/
             ${{ env.changelog_path }}
           if-no-files-found: error
-          retention-days: ${{ artifact_retention_days }}
+          retention-days: ${{ env.artifact_retention_days }}
 
       - name: Set Exisistence for Other Jobs
         id: set_existence
@@ -154,7 +154,7 @@ jobs:
             !dist/dbt-${{ inputs.version_number }}.tar.gz
             ${{ env.changelog_path }}
           if-no-files-found: error
-          retention-days: ${{ artifact_retention_days }}
+          retention-days: ${{ env.artifact_retention_days }}
 
       # Put all artifacts into S3 in case something goes wrong along the way we can get them
       - name: Upload Build Artifacts to S3
