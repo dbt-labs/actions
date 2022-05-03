@@ -56,20 +56,20 @@ jobs:
         id: set_existence
         run: echo '::set-output name=exists::false'
 
-  # skip-build:
-  #   runs-on: ubuntu-latest
-  #   needs: [check-build-exists]
-  #   if: needs.check-build-exists.outputs.exists == true
+  skip-build:
+    runs-on: ubuntu-latest
+    needs: [check-build-exists]
+    if: needs.check-build-exists.outputs.exists == 'true'
 
-  #   steps:
-  #     - name: Build Exists, Skip To Test
-  #       run: |
-  #         echo A build already exists for version ${{github.event.inputs.version_number}}, skipping build job
+    steps:
+      - name: Build Exists, Skip To Test
+        run: |
+          echo A build already exists for version ${{github.event.inputs.version_number}}, skipping build job
 
   build-packages:
     runs-on: ubuntu-latest
     needs: [check-build-exists]
-    # if: needs.check-build-exists.outputs.exists == false
+    if: needs.check-build-exists.outputs.exists == 'false'
 
     outputs:
       finished: ${{ steps.set_success.outputs.finished }}
