@@ -81,7 +81,7 @@ jobs:
           # can leverage GitHubs native contributor recognition
           # ex: https://github.com/dbt-labs/dbt-core/tree/1.1.latest/.changes/1.0.2-rc1.md
           #TODO: need to get the semver complicant version!
-          body_path: "https://github.com/${{ github.repository }}/tree/${{ github.ref_name }}/.changes/${{ github.event.inputs.version_number }}.md"
+          body_path: https://github.com/${{ github.repository }}/tree/${{ github.ref_name }}/.changes/${{ github.event.inputs.version_number }}.md
           files: ${{ github.event.inputs.file_uploads }}
             # dbt_postgres-${{github.event.inputs.version_number}}-py3-none-any.whl
             # dbt_core-${{github.event.inputs.version_number}}-py3-none-any.whl
