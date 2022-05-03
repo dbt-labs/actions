@@ -49,6 +49,8 @@ jobs:
     steps:
       - name: Placeholder
         run: echo Workflow is not built
+
+      # - maybe use https://github.com/keithweaver/aws-s3-github-action/blob/master/entrypoint.sh
       
       - name: Set output
         id: set_existence

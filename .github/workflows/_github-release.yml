@@ -44,9 +44,19 @@ jobs:
     steps:
       - name: Placeholder
         run: echo Workflow is not built
+
+      - uses: mukunku/tag-exists-action@v1.0.0
+        # check if the tag already exists for this release.  If it does, the release has already been done
+        # If there was a failure delete the tag and re-run
+        id: checkTag
+        with: 
+          tag: v${{github.event.inputs.version_number}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set output
         id: set_existence
-        run: echo '::set-output name=exists::"false"'
+        run: echo '::set-output name=exists::steps.checkTag.outputs.exists'
 
   github-release:
     runs-on: ubuntu-latest
