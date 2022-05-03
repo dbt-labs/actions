@@ -30,6 +30,11 @@ on:
 permissions:
   contents: write
 
+env:
+  changelog_path: ".changes/${{ github.event.inputs.version_number }}.md"
+  s3_bucket: "s3://core-team-artifacts/${{ github.repository }}/${{ github.event.inputs.version_number }}"
+  artifact_retention_days: 2
+
 jobs:
   log-inputs:
     runs-on: ubuntu-latest
@@ -50,11 +55,42 @@ jobs:
       - name: Placeholder
         run: echo Workflow is not built
 
-      # - maybe use https://github.com/keithweaver/aws-s3-github-action/blob/master/entrypoint.sh
+      - name: Copy Artifacts from S3
+        uses: keithweaver/aws-s3-github-action@v1.0.0
+        with:
+          command: cp
+          source: ${{ env.s3_bucket }}
+          destination: .
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws_region: us-east-1
+          flags: --recursive  # since it's an entire directory
       
-      - name: Set output
+      - name: Check file existence
+        id: check_files
+        uses: andstor/file-existence-action@v1
+        with:
+          # TODO: is this a good check?  first pass.
+          files: "${{ changelog_path }}, dist/*.tar.gz, dist/*.whl"
+
+      # upload the files downloaded from S3 to artifacts so we don't have to keep 
+      # downloading from S3
+      - name: upload artifacts
+        if: steps.check_files.outputs.files_exists == 'true'
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.event.inputs.version_number }}
+          path: |
+            dist/
+            ${{ env.changelog_path }}
+          if-no-files-found: error
+          retention-days: ${{ artifact_retention_days }}
+
+      - name: Set Exisistence for Other Jobs
         id: set_existence
-        run: echo '::set-output name=exists::false'
+        run: echo '::set-output name=exists::${{steps.check_files.outputs.files_exists}}'
+
 
   skip-build:
     runs-on: ubuntu-latest
@@ -107,6 +143,8 @@ jobs:
         run: |
           check-wheel-contents dist/*.whl --ignore W007,W008
 
+      # We want the artifacts available for release/pypi steps
+      # so we don't havew to reach back out top S3
       - name: upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -114,18 +152,31 @@ jobs:
           path: |
             dist/
             !dist/dbt-${{ inputs.version_number }}.tar.gz
+            ${{ env.changelog_path }}
           if-no-files-found: error
+          retention-days: ${{ artifact_retention_days }}
 
-      - name: upload changelog markdown for release notes
-        uses: actions/upload-artifact@v2
-        # upload the changelog as an artifact for the release notes
-        # Would be nice to strip out the formatting on contributors here so that we
-          # can leverage GitHubs native contributor recognition
+      # Put all artifacts into S3 in case something goes wrong along the way we can get them
+      - name: Upload Build Artifacts to S3
+        uses: keithweaver/aws-s3-github-action@v1.0.0
         with:
-          name: ${{ github.event.inputs.version_number }}
-          path: |
-            .changes/${{ github.event.inputs.version_number }}.md
-          if-no-files-found: error
+          command: cp
+          source: dist/
+          destination: ${{ env.s3_bucket }}/dist
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: us-east-1
+          flags: --recursive  # needed because we're uploading a directory
+
+      - name: Upload Changelog to S3 to Release Notes
+        uses: keithweaver/aws-s3-github-action@v1.0.0
+        with:
+          command: cp
+          source: ${{ env.changelog_path }}
+          destination: ${{ env.s3_bucket }}/${{ env.changelog_path }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: us-east-1
       
       - name: If we made it here we need to test what we built
         id: set_success
