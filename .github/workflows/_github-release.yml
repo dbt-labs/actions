@@ -39,9 +39,6 @@ jobs:
       - name: sanity
         run: ls -al
 
-      - name: Sanity check ls on .changes dir
-        run: ls -al ./.changes
-
       - name: Sanity check 3
         run: ls al ${{ github.workspace }}/.changes
 
