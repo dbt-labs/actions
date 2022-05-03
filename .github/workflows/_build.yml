@@ -71,6 +71,9 @@ jobs:
     needs: [check-build-exists]
     if: needs.check-build-exists.outputs.exists == false
 
+    outputs:
+      finished: ${{ steps.set_success.outputs.finished }}
+
     steps:
       - name: Check out the repository
         uses: actions/checkout@v3
@@ -123,9 +126,14 @@ jobs:
             .changes/${{ github.event.inputs.version_number }}.md
           if-no-files-found: error
       
+      - name: If we made it here we need to test what we built
+        id: set_success
+        run: echo '::set-output name=finished::true'
+      
   test-build:
-    # needs: [check-build-exists, build-packages]  # TODO: will this work when skipping the build step?
     runs-on: ubuntu-latest
+    needs: [check-build-exists, build-packages]
+    if: ${{ needs.check-build-exists.outputs.exists }} == false || ${{ needs.build-packages.outputs.finished }} == true
   
     steps:
       - name: Set up Python
