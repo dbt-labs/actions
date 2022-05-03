@@ -65,7 +65,7 @@ jobs:
   github-release:
     runs-on: ubuntu-latest
     needs: [check-release-exists]
-    if: ${{needs.check-release-exists.outputs.exists }} == false
+    if: needs.check-release-exists.outputs.exists == false
   
     steps:
       - name: Check previous output
