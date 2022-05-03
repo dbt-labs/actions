@@ -54,6 +54,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      
+      - name: Check previous output
+        run: echo steps.checkTag.outputs.exists ${{steps.checkTag.outputs.exists}}
+
       - name: Set output
         id: set_existence
         run: echo '::set-output name=exists::${{steps.checkTag.outputs.exists}}'
@@ -64,6 +68,9 @@ jobs:
     if: ${{needs.check-release-exists.exists }} == 'false'
   
     steps:
+      - name: Check previous output
+        run: echo needs.check-release-exists.exists ${{needs.check-release-exists.exists }}
+
       - uses: actions/download-artifact@v2
         with:
           name: ${{github.event.inputs.version_number}}
