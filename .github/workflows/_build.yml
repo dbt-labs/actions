@@ -72,7 +72,7 @@ jobs:
         uses: andstor/file-existence-action@v1
         with:
           # TODO: is this a good check?  first pass.
-          files: "${{ changelog_path }}, dist/*.tar.gz, dist/*.whl"
+          files: "${{ env.changelog_path }}, dist/*.tar.gz, dist/*.whl"
 
       # upload the files downloaded from S3 to artifacts so we don't have to keep 
       # downloading from S3
