@@ -56,7 +56,7 @@ jobs:
 
       
       - name: Check previous output
-        run: echo steps.checkTag.outputs.exists ${{steps.checkTag.outputs.exists}}
+        run: echo steps.checkTag.outputs.exists "${{steps.checkTag.outputs.exists}}""
 
       - name: Set output
         id: set_existence
@@ -65,11 +65,11 @@ jobs:
   github-release:
     runs-on: ubuntu-latest
     needs: [check-release-exists]
-    if: ${{needs.check-release-exists.exists }} == 'false'
+    if: ${{needs.check-release-exists.exists }} == false
   
     steps:
       - name: Check previous output
-        run: echo needs.check-release-exists.exists ${{needs.check-release-exists.exists }}
+        run: echo needs.check-release-exists.exists "${{needs.check-release-exists.exists }}"
 
       - uses: actions/download-artifact@v2
         with:
