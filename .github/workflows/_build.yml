@@ -102,7 +102,8 @@ jobs:
         run: |
           check-wheel-contents dist/*.whl --ignore W007,W008
 
-      - uses: actions/upload-artifact@v2
+      - name: upload artifacts
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ github.event.inputs.version_number }}
           path: |
@@ -110,7 +111,8 @@ jobs:
             !dist/dbt-${{ inputs.version_number }}.tar.gz
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v2
+      - name: upload changelog markdown for release notes
+        uses: actions/upload-artifact@v2
         # upload the changelog as an artifact for the release notes
         # Would be nice to strip out the formatting on contributors here so that we
           # can leverage GitHubs native contributor recognition
