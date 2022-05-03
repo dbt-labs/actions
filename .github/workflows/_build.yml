@@ -75,6 +75,9 @@ jobs:
       finished: ${{ steps.set_success.outputs.finished }}
 
     steps:
+      - name: TODO debug
+        run: echo needs.check-build-exists.outputs.exists ${{ needs.check-build-exists.outputs.exists }}
+
       - name: Check out the repository
         uses: actions/checkout@v3
         with:
