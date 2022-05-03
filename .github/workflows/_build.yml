@@ -50,11 +50,6 @@ jobs:
       - name: Placeholder
         run: echo Workflow is not built
       
-      # - uses: actions/download-artifact@v2   # TODO: from S3?
-      #   with:
-      #     name: ${{ github.event.inputs.version_number }}
-      #     path: dist/
-      
       - name: Set output
         id: set_existence
         run: echo '::set-output name=exists::"false"'

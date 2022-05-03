@@ -34,7 +34,7 @@ jobs:
         run: |
             echo The last commit sha in the release: ${{ github.event.inputs.sha }}
             echo The release version number: ${{ github.event.inputs.version_number }}
-            echo Expected Changlog path: "${{ github.workspace }}/.changes/${{ github.event.inputs.version_number }}.md"
+            echo Expected Changlog path: "${{ github.workspace }}/${{ github.event.inputs.version_number }}.md"
 
   check-release-exists:
     runs-on: ubuntu-latest
@@ -59,11 +59,8 @@ jobs:
           name: ${{github.event.inputs.version_number}}
           path: '.'
 
-      - name: sanity 1
+      - name: List artifact contents (expect dist/ and <version>.md)
         run: ls -al
-
-      - name: Sanity check 2
-        run: ls al ${{ github.workspace }}/.changes
 
       # Need to set an output variable because env variables can't be taken as input
       # This is needed for the next step with releasing to GitHub
@@ -81,7 +78,7 @@ jobs:
           tag_name: v${{github.event.inputs.version_number}}
           prerelease: ${{ steps.release_type.outputs.isPrerelease }}
           target_commitish: ${{github.event.inputs.sha}}
-          body_path: ${{ github.workspace }}/.changes/${{ github.event.inputs.version_number }}.md
+          body_path: ${{ github.workspace }}/${{ github.event.inputs.version_number }}.md
           files: ${{ github.event.inputs.file_uploads }}
             # dbt_postgres-${{github.event.inputs.version_number}}-py3-none-any.whl
             # dbt_core-${{github.event.inputs.version_number}}-py3-none-any.whl
