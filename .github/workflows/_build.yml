@@ -54,12 +54,12 @@ jobs:
       
       - name: Set output
         id: set_existence
-        run: echo '::set-output name=exists::"false"'
+        run: echo '::set-output name=exists::false'
 
   build-packages:
     runs-on: ubuntu-latest
     needs: [check-build-exists]
-    if: ${{ needs.check-build-exists.outputs.exists }} == "false"
+    if: needs.check-build-exists.outputs.exists == false
     outputs:
       finished: ${{ steps.set_success.outputs.finished }}
 

@@ -37,11 +37,11 @@ jobs:
         run: echo Workflow is not built
       - name: Set output
         id: set_existence
-        run: echo '::set-output name=exists::"false"'
+        run: echo '::set-output name=exists::false'
 
   pypi-release:
     needs: [check-pypi-exists]
-    if: ${{ needs.check-pypi-exists.outputs.exists }} == 'false'
+    if: needs.check-pypi-exists.outputs.exists == false
     runs-on: ubuntu-latest
   
     environment: PypiProd  # TODO: what's this? Could make be input for testing purposes?
