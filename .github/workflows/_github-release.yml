@@ -60,7 +60,7 @@ jobs:
 
       - name: Set output
         id: set_existence
-        run: echo '::set-output name=exists::"${{steps.checkTag.outputs.exists}}"'
+        run: echo '::set-output name=exists::${{steps.checkTag.outputs.exists}}'
 
   github-release:
     runs-on: ubuntu-latest
