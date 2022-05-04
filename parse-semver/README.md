@@ -2,6 +2,8 @@
 
 A [GitHub Action](https://github.com/features/actions) for parsing a semver string into a parts and return if the version is a pre-release. This action uses the Python [`packaging`](https://packaging.pypa.io/en/latest/) library for parsing version string. Version strings can be prefixed be `v` (ex. `v1.4.2`).
 
+Python semver does not contain dashes (`1.2.3rc1`) while other semver docs do (`1.2.3-rc1`).  This returns both, with default being the python compliant version.
+
 Example usage:
 
 ```yaml
@@ -39,17 +41,19 @@ jobs:
 
 ### Outputs (with `1.2.3rc4` as an example input)
 
-| Property            | Example    | Description                                     |
-| ------------------- | ---------- | ----------------------------------------------- |
-| version             | `1.2.3rc4` | Parsed version                                  |
-| base-version        | `1.2.3`    | Base version                                    |
-| major               | `1`        | Major version                                   |
-| minor               | `2`        | Major version                                   |
-| patch               | `3`        | Patch version                                   |
-| pre-release         | `rc4`      | Entire pre-release version                      |
-| pre-release-version | `4`        | Version part of pre-release                     |
-| pre-release-type    | `rc`       | Type of pre-release                             |
-| is-pre-release      | `1`        | Determines if version is a pre-release (1 \| 0) |
+| Property            | Example     | Description                                     |
+| ------------------- | ----------  | ----------------------------------------------- |
+| version             | `1.2.3rc4`  | Python Parsed version                           |
+| version-semver      | `1.2.3-rc4` | Fully Semver compliant version                  |
+| base-version        | `1.2.3`     | Base version                                    |
+| major               | `1`         | Major version                                   |
+| minor               | `2`         | Major version                                   |
+| patch               | `3`         | Patch version                                   |
+| pre-release         | `rc4`       | Entire pre-release version                      |
+| pre-release-version | `4`         | Version part of pre-release                     |
+| pre-release-type    | `rc`        | Type of pre-release                             |
+| is-pre-release      | `1`         | Determines if version is a pre-release (1 \| 0) |
+| is-pre-release      | `1`         | Determines if version is a pre-release (1 \| 0) |
 
 ### Development
 

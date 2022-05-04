@@ -26,6 +26,10 @@ on:
 permissions:
   contents: write
 
+env:
+  tag: v${{github.event.inputs.version_number}}
+
+
 jobs:
   log-inputs:
     runs-on: ubuntu-latest
@@ -42,25 +46,33 @@ jobs:
       exists: ${{ steps.set_existence.outputs.exists }}
   
     steps:
-      - name: Placeholder
-        run: echo Workflow is not built
-
-      - uses: mukunku/tag-exists-action@v1.0.0
-        # check if the tag already exists for this release.  If it does, the release has likely already 
-        # been done. If there was a failure delete the tag and re-run
-        id: checkTag
-        with: 
-          tag: v${{github.event.inputs.version_number}}
+      - name: Check if release already exists for commit
+        uses: cardinalby/git-get-release-action@v1
+        id: check_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+        with:
+          commitSha: ${{github.event.inputs.sha}}
+          doNotFailIfNotFound: true
+          searchLimit: 15 # Since we only care about recent releases, speed up the process
       
-      - name: Check previous output
-        run: echo steps.checkTag.outputs.exists ${{steps.checkTag.outputs.exists}}
-
-      - name: Set output
+      - name: Check if tag for this release matches expected version_number
+        if: |
+          steps.check_release.outputs.id != ''
+          && steps.check_release.outputs.tag_name != ${{ env.tag }}
+        run: |
+          echo Tag "${{ steps.check_release.outputs.tag_name}}" already exists for this commit!
+          echo Cannot create a new tag for "${{ env.tag }}"
+          exit 1
+    
+      - name: Set Output
         id: set_existence
-        run: echo '::set-output name=exists::${{steps.checkTag.outputs.exists}}'
+        run: |
+          if ${{ steps.check_release.outputs.id }} == ''
+            echo '::set-output name=exists::false'
+          else
+            echo '::set-output name=exists::true'
+          fi
 
   skip-github-release:
     runs-on: ubuntu-latest
