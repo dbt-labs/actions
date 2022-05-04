@@ -1,10 +1,22 @@
 # **what?**
+# Build release artifacts and store them to S3 bucket if they do not already exist.
+#
+# Build artifacts get stored in S3 to a bucket with the following directory structure:
+#       "s3://<s3_bucket>/<org>/<repo>/<version>/<commit>/"
+#   ex: "s3://core-team-artifacts/dbt-labs/dbt-core/1.2.3/ce98e6f067d9fa63a9b213bf99ebaf0c29d2b7eb/"
 #
 # Inputs:
+#  sha: the commit to attache to this release
+#  version_number: version number for the release (ex: 1.2.3rc2)
+#  build_script_path: Path to the build script
+#  s3_bucket: Bucket name
+#  package_test_command: Command to use to check package runs
 #   
 # **why?**
+# Reusable and consistent build process.
 #
 # **when?**
+# Call when you have a commit to build and want to trigger a release.
 #
 
 name: Build
@@ -22,6 +34,10 @@ on:
         required: true
         default: scripts/build-dist.sh
         type: string
+      s3_bucket:
+        required: true
+        default: core-team-artifacts
+        type: string
       package_test_command:
         required: true
         default: dbt --version
@@ -33,7 +49,7 @@ permissions:
 
 env:
   # include commit in path in case release commit gets updates on subsequent runs
-  s3_bucket: "s3://core-team-artifacts/${{ github.repository }}/${{ github.event.inputs.sha }}/${{ github.event.inputs.version_number }}"
+  s3_bucket: "s3://${{ github.event.inputs.s3_bucket }}/${{ github.repository }}/${{ github.event.inputs.version_number }}/${{ github.event.inputs.sha }}"
   artifact_retention_days: 2
 
 jobs:
@@ -48,12 +64,13 @@ jobs:
             echo The package_test_command: ${{ github.event.inputs.package_test_command }}
 
   build-changelog-path:
+    # the changelog uses semver per https://semver.org/ so we need to build the path to the file to use it in the release notes
     runs-on: ubuntu-latest
     outputs:
       changelog_path: ${{ steps.set_existence.outputs.exists }}
 
     steps:
-      - name: Convert Version to semver
+      - name: Convert Version to semver.org
         id: parse-valid
         uses: dbt-labs/actions/parse-semver
         with:
@@ -156,8 +173,8 @@ jobs:
         run: |
           check-wheel-contents dist/*.whl --ignore W007,W008
 
-      # We want the artifacts available for release/pypi steps
-      # so we don't havew to reach back out top S3
+      # We want the artifacts available for release and Pypi steps
+      # so we don't have to reach back out to S3
       - name: upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -205,7 +222,7 @@ jobs:
           pip install --upgrade wheel
           pip --version
 
-      - uses: actions/download-artifact@v2   # TODO: from S3?
+      - uses: actions/download-artifact@v2
         with:
           name: ${{ github.event.inputs.version_number }}
           path: dist/

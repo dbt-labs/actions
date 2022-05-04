@@ -11,45 +11,39 @@ on:
         description: 'The release version number (ie. 1.0.0b1)'
         required: true
         type: string
-      build_script_path:
-        description: 'The path to the build script(default: ./scripts/build-dist.sh))'
-        default: 'scripts/build-dist.sh'
-        required: true
-        type: string
       is_prod:
         # TODO: need an action to clean up test builds for testing purposes
         description: 'Is this a production build/release'
         default: false
         required: true
         type: boolean
-    # outputs:
-    #   name:
-        # description: "Package name"
 
-# TODO: validate
 permissions:
   contents: write
 
 jobs:
 
   build:
-    uses: dbt-labs/actions/.github/workflows/_build.yml@er/release
+    uses: dbt-labs/actions/.github/workflows/_build.yml@er/release  # TODO: This should be a tag
     with:
       sha: ${{ github.event.inputs.sha }}
       version_number: ${{ github.event.inputs.version_number }}
-      build_script_path: ${{ github.event.inputs.build_script_path }}
-      package_test_command: "pip freeze"  # this should not be input at this level, defaults to `dbt --version``
+      # the following values should be the same for all runs in a repository so do not need to be input
+      build_script_path: scripts/build-dist.sh
+      s3_bucket: core-team-artifacts
+      package_test_command: dbt --version
 
   github_release:
     needs: [build]
-    uses: dbt-labs/actions/.github/workflows/_github-release.yml@er/release
+    uses: dbt-labs/actions/.github/workflows/_github-release.yml@er/release  # TODO: This should be a tag
     with:
       sha: ${{ github.event.inputs.sha }}
       version_number: ${{ github.event.inputs.version_number }}
       file_uploads: |
-        action_testing-${{github.event.inputs.version_number}}-py3-none-any.whl
-        action_testing-${{github.event.inputs.version_number}}.tar.gz
+        test-github-actions-${{github.event.inputs.version_number}}-py3-none-any.whl
+        test-github-actions-${{github.event.inputs.version_number}}.tar.gz
 
+  # this is still WIP
   # pypi_release:
   #   needs: [github_release]
   #   uses: dbt-labs/actions/.github/workflows/_pypi-release.yml@er/release

@@ -1,10 +1,20 @@
 # **what?**
+# If no release already exists for this commit and version, create the tag and release it to GitHub.
+# If a release already exists for this commit, skip creating the release but finish with a success.
+# If a release exists for this commit under a different tag, fail.
 #
 # Inputs:
+#  sha: the commit to attache to this release
+#  version_number: version number for the release (ex: 1.2.3rc2)
+#  file_uploads: Newline-delimited globs of paths to assets to upload for release
 #   
 # **why?**
+# Reusable and consistent GitHUb release process.
 #
 # **when?**
+# Call after the build process.
+#
+# This workflow expects the artifacts to already be built and living in the artifact store of the workflow.
 #
 
 name: GitHub Release
@@ -29,7 +39,6 @@ permissions:
 env:
   tag: v${{github.event.inputs.version_number}}
 
-
 jobs:
   log-inputs:
     runs-on: ubuntu-latest
@@ -44,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       exists: ${{ steps.set_existence.outputs.exists }}
-  
+
     steps:
       - name: Check if release already exists for commit
         uses: cardinalby/git-get-release-action@v1
@@ -53,17 +62,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           commitSha: ${{github.event.inputs.sha}}
-          doNotFailIfNotFound: true
+          doNotFailIfNotFound: true # returns blank outputs when not found
           searchLimit: 15 # Since we only care about recent releases, speed up the process
-      
-      - name: Print Tag Details
+
+      - name: Print Release Details
         run: |
           echo steps.check_release.outputs.id ${{ steps.check_release.outputs.id}}
           echo steps.check_release.outputs.tag_name ${{ steps.check_release.outputs.tag_name}}
           echo steps.check_release.outputs.target_commitish ${{ steps.check_release.outputs.target_commitish}}
           echo steps.check_release.outputs.prerelease ${{ steps.check_release.outputs.prerelease}}
-      
-      - name: Check if tag for this release matches expected version_number
+
+      - name: Check if the tag matches the version number
         if: |
           steps.check_release.outputs.id != ''
           && steps.check_release.outputs.tag_name != env.tag 
@@ -71,7 +80,7 @@ jobs:
           echo Tag "${{ steps.check_release.outputs.tag_name}}" already exists for this commit!
           echo Cannot create a new tag for "${{ env.tag }}"
           exit 1
-    
+
       - name: Set Output
         id: set_existence
         run: |
@@ -89,13 +98,13 @@ jobs:
 
     steps:
       - name: Tag Exists, Skip GitHub Release Job
-        run: echo A tag already exists for this version v${{github.event.inputs.version_number}}, skipping release
+        run: echo A tag already exists for ${{ env.tag }} and commit, skipping release
 
   github-release:
     runs-on: ubuntu-latest
     needs: [check-release-exists]
     if: needs.check-release-exists.outputs.exists == 'false'
-  
+
     steps:
       - name: Check previous output
         run: echo needs.check-release-exists.outputs.exists ${{needs.check-release-exists.outputs.exists }}
@@ -126,7 +135,3 @@ jobs:
           target_commitish: ${{github.event.inputs.sha}}
           body_path: ${{ github.workspace }}/${{ github.event.inputs.version_number }}.md
           files: ${{ github.event.inputs.file_uploads }}
-            # dbt_postgres-${{github.event.inputs.version_number}}-py3-none-any.whl
-            # dbt_core-${{github.event.inputs.version_number}}-py3-none-any.whl
-            # dbt-postgres-${{github.event.inputs.version_number}}.tar.gz
-            # dbt-core-${{github.event.inputs.version_number}}.tar.gz
