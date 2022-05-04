@@ -72,7 +72,8 @@ jobs:
     steps:
       - name: Convert Version to semver.org
         id: parse-valid
-        uses: dbt-labs/actions/parse-semver
+        # TODO: point this to a tag, not my branch
+        uses: dbt-labs/actions/parse-semver/action.yml@er/release
         with:
           version: ${{ github.event.inputs.version_number }}
 
