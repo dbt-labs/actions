@@ -66,7 +66,7 @@ jobs:
       - name: Check if tag for this release matches expected version_number
         if: |
           steps.check_release.outputs.id != ''
-          && steps.check_release.outputs.tag_name != ${{ env.tag }}
+          && steps.check_release.outputs.tag_name != env.tag 
         run: |
           echo Tag "${{ steps.check_release.outputs.tag_name}}" already exists for this commit!
           echo Cannot create a new tag for "${{ env.tag }}"
