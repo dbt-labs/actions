@@ -78,7 +78,7 @@ jobs:
       - name: Convert Version to semver.org
         id: parse-valid
         # TODO: point this to a tag in actions repo
-        uses: ../parse-semver
+        uses: ./parse-semver
         with:
           version: ${{ github.event.inputs.version_number }}
 
