@@ -71,9 +71,17 @@ jobs:
       changelog_path: ${{ steps.set_existence.outputs.exists }}
 
     steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+        with:
+          # persist-credentials: false  # TODO: with this false I get an error checking it out, it's what existed in previous release version though
+          ref: "er/release"
+          repository: "dbt-labs/actions"
+
+
       - name: Convert Version to semver.org
         id: parse-valid
-        # TODO: point this to a tag, not my branch
+        # TODO: point this to a tag to not have to check it out, not my branch
         uses: dbt-labs/actions/parse-semver/action.yml@er/release
         with:
           version: ${{ github.event.inputs.version_number }}
