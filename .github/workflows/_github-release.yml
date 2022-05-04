@@ -57,7 +57,7 @@ jobs:
     steps:
       - name: Check if release already exists for commit
         uses: cardinalby/git-get-release-action@v1
-        id: check_release
+        id: check_release_commit
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -67,24 +67,53 @@ jobs:
 
       - name: Print Release Details
         run: |
+          echo steps.check_release_commit.outputs.id ${{ steps.check_release_commit.outputs.id}}
+          echo steps.check_release_commit.outputs.tag_name ${{ steps.check_release_commit.outputs.tag_name}}
+          echo steps.check_release_commit.outputs.target_commitish ${{ steps.check_release_commit.outputs.target_commitish}}
+          echo steps.check_release_commit.outputs.prerelease ${{ steps.check_release_commit.outputs.prerelease}}
+
+      - name: Check if the tag matches the version number
+        if: |
+          steps.check_release_commit.outputs.id != ''
+          && steps.check_release_commit.outputs.tag_name != env.tag 
+        run: |
+          echo Tag "${{ steps.check_release_commit.outputs.tag_name}}" already exists for this commit!
+          echo Cannot create a new tag for "${{ env.tag }}"
+          exit 1
+      
+      # If no releases were found for the commit, check to see if any releases exists for the tag already.
+      # If any release exists, immediately fail because we can't know what to do since the release exists
+      # but it is against a different commit than was input.
+      - name: Check if release already exists for this tag
+        if: steps.check_release_commit.outputs.id != ''
+        uses: cardinalby/git-get-release-action@v1
+        id: check_release_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag: ${{ env.tag }}
+          doNotFailIfNotFound: true # returns blank outputs when not found
+          searchLimit: 15 # Since we only care about recent releases, speed up the process
+
+      - name: Check if the tag matches the version number
+        if: steps.check_release_tag.outputs.id != ''
+        run: |
+          echo Tag "${{ steps.check_release_tag.outputs.tag_name}}" already exists for a different commit!
+          echo Check your releases!  This should not happen.
+          exit 1
+
+      - name: Print Release Details
+        run: |
           echo steps.check_release.outputs.id ${{ steps.check_release.outputs.id}}
           echo steps.check_release.outputs.tag_name ${{ steps.check_release.outputs.tag_name}}
           echo steps.check_release.outputs.target_commitish ${{ steps.check_release.outputs.target_commitish}}
           echo steps.check_release.outputs.prerelease ${{ steps.check_release.outputs.prerelease}}
 
-      - name: Check if the tag matches the version number
-        if: |
-          steps.check_release.outputs.id != ''
-          && steps.check_release.outputs.tag_name != env.tag 
-        run: |
-          echo Tag "${{ steps.check_release.outputs.tag_name}}" already exists for this commit!
-          echo Cannot create a new tag for "${{ env.tag }}"
-          exit 1
-
       - name: Set Output
+        # use the output from the check_release_commit step here since the check_release_tag should have retuyrned nothing
         id: set_existence
         run: |
-          if [ -z "${{ steps.check_release.outputs.id }}" ]
+          if [ -z "${{ steps.check_release_commit.outputs.id }}" ]
           then
             echo '::set-output name=exists::false'
           else
