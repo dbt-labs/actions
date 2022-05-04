@@ -56,7 +56,7 @@ jobs:
           doNotFailIfNotFound: true
           searchLimit: 15 # Since we only care about recent releases, speed up the process
       
-      - name: Print outputs
+      - name: Print Tag Details
         run: |
           echo steps.check_release.outputs.id ${{ steps.check_release.outputs.id}}
           echo steps.check_release.outputs.tag_name ${{ steps.check_release.outputs.tag_name}}
@@ -76,6 +76,7 @@ jobs:
         id: set_existence
         run: |
           if ${{ steps.check_release.outputs.id }}
+          then
             echo '::set-output name=exists::false'
           else
             echo '::set-output name=exists::true'
