@@ -72,12 +72,18 @@ jobs:
 
     steps:
 
+      - name: Check out the repository
+        uses: actions/checkout@v3
+        with:
+          # persist-credentials: false  # TODO: with this false I get an error checking it out, it's what existed in previous release version though
+          ref: ${{ github.event.inputs.sha }}
+
       - name: ls
         run: ls -al
 
       - name: Convert Version to semver.org
         id: parse-valid
-        # TODO: point this to a tag in actions repo
+        # TODO: point this to a tag in actions repo - delete all above
         uses: ./parse-semver
         with:
           version: ${{ github.event.inputs.version_number }}
