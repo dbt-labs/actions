@@ -75,7 +75,7 @@ jobs:
       - name: Set Output
         id: set_existence
         run: |
-          if ${{ steps.check_release.outputs.id }} == ''
+          if ${{ steps.check_release.outputs.id }}
             echo '::set-output name=exists::false'
           else
             echo '::set-output name=exists::true'
