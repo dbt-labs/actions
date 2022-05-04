@@ -72,10 +72,13 @@ jobs:
 
     steps:
 
+      - name: ls
+        run: ls -al
+
       - name: Convert Version to semver.org
         id: parse-valid
-        # TODO: point this to a tag to not have to check it out, not my branch
-        uses: ./parse-semver
+        # TODO: point this to a tag in actions repo
+        uses: ../parse-semver
         with:
           version: ${{ github.event.inputs.version_number }}
 
