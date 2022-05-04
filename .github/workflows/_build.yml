@@ -36,11 +36,11 @@ on:
         type: string
       s3_bucket:
         required: true
-        default: core-team-artifacts
+        default: "core-team-artifacts"
         type: string
       package_test_command:
         required: true
-        default: dbt --version
+        default: "dbt --version"
         type: string
 
 permissions:
@@ -62,6 +62,7 @@ jobs:
             echo The last commit sha in the release: ${{ github.event.inputs.sha }}
             echo The release version number: ${{ github.event.inputs.version_number }}
             echo The build_script_path: ${{ github.event.inputs.build_script_path }}
+            echo The s3_bucket: ${{ github.event.inputs.s3_bucket }}
             echo The package_test_command: ${{ github.event.inputs.package_test_command }}
 
   build-changelog-path:
@@ -75,7 +76,6 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
         with:
-          # persist-credentials: false  # TODO: with this false I get an error checking it out, it's what existed in previous release version though
           ref: ${{ github.event.inputs.sha }}
 
       - name: ls
@@ -83,7 +83,7 @@ jobs:
 
       - name: Convert Version to semver.org
         id: parse-valid
-        # TODO: point this to a tag in actions repo - delete all above
+        # TODO: point this to a tag in actions repo - delete steps all above
         uses: ./parse-semver
         with:
           version: ${{ github.event.inputs.version_number }}
