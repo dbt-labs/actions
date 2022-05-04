@@ -45,7 +45,8 @@ on:
 
 permissions:
   contents: write
-  id-token: write  # https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-cloud-providers#adding-permissions-settings
+  # this will be needed if we go with OIDC for auth instead of manageing secrets in github for AWS
+  # id-token: write  # https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-cloud-providers#adding-permissions-settings
 
 env:
   # include commit in path in case release commit gets updates on subsequent runs
