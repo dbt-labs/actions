@@ -7,9 +7,6 @@ inputs:
 outputs:
   version:
     description: "Parsed version"
-  semver-compliant-version:
-    # details: https://peps.python.org/pep-0440/#:~:text=clause%2011)%20are-,not%20compatible,-with%20this%20PEP
-    description: 'Semver complicant version with dash'
   base-version:
     description: "Base version"
   major:
