@@ -98,7 +98,7 @@ jobs:
 
       - name: Set Changelog Path
         run: |
-          echo '::set-output name=changelog_path::".changes/${{ steps.parse-valid.outputs.semver-version  }}.md"'
+          echo '::set-output name=changelog_path::".changes/'${{ steps.parse-valid.outputs.semver-version  }}'.md"'
 
   check-build-exists:
     needs: [build-changelog-path]
@@ -194,8 +194,6 @@ jobs:
         run: |
           check-wheel-contents dist/*.whl --ignore W007,W008
 
-      # We want the artifacts available for release and Pypi steps
-      # so we don't have to reach back out to S3
       - name: upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -207,30 +205,9 @@ jobs:
           if-no-files-found: error
           retention-days: ${{ env.artifact_retention_days }}
 
-      - name: Configure AWS credentials from Test account
-      # TODO: do i need to do this once per job?
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Upload Artifacts to S3 via CLI
-        run: |
-          aws s3 cp ${{ needs.build-changelog-path.outputs.changelog_path }} ${{ env.s3_bucket }}/dist --recursive  # since it's an entire directory
-
-      - name: Upload Changelog to S3 via CLI
-        run: |
-          aws s3 cp ${{ needs.build-changelog-path.outputs.changelog_path }} ${{ env.s3_bucket }}/${{ needs.build-changelog-path.outputs.changelog_path }}
-
-      - name: If we made it here we need to test what we built
-        id: set_success
-        run: echo '::set-output name=finished::true'
-      
   test-build:
     runs-on: ubuntu-latest
-    needs: [check-build-exists, build-packages]
-    if: ${{ needs.check-build-exists.outputs.exists }} == false || ${{ needs.build-packages.outputs.finished }} == true
+    needs: [build-packages]
   
     steps:
       - name: Set up Python
@@ -270,3 +247,29 @@ jobs:
       - name: Check source distributions
         run: |
           ${{ inputs.package_test_command }}
+
+  upload-artifacts-aws:
+    runs-on: ubuntu-latest
+    needs: [test-build]
+  
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{inputs.version_number}}
+          path: '.'
+
+      - name: Configure AWS credentials
+      # TODO: do i need to do this once per job?
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Upload Artifacts to S3 via CLI
+        run: |
+          aws s3 cp ${{ needs.build-changelog-path.outputs.changelog_path }} ${{ env.s3_bucket }}/dist --recursive  # since it's an entire directory
+
+      - name: Upload Changelog to S3 via CLI
+        run: |
+          aws s3 cp ${{ needs.build-changelog-path.outputs.changelog_path }} ${{ env.s3_bucket }}/${{ needs.build-changelog-path.outputs.changelog_path }}
