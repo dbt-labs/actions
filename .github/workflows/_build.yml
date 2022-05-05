@@ -32,9 +32,9 @@ on:
         type: string
       build_script_path:
         required: true
-        default: scripts/build-dist.sh
+        default: "scripts/build-dist.sh"
         type: string
-      s3_bucket:
+      s3_bucket_name:
         required: true
         default: "core-team-artifacts"
         type: string
@@ -42,6 +42,14 @@ on:
         required: true
         default: "dbt --version"
         type: string
+    # pass through secrets so every repo can have their own and won't depend on a name
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        description: AWS Access Key ID
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        description: AWS Access Key
+        required: true
 
 permissions:
   contents: write
@@ -50,7 +58,7 @@ permissions:
 
 env:
   # include commit in path in case release commit gets updates on subsequent runs
-  s3_bucket: "s3://${{ github.event.inputs.s3_bucket }}/${{ github.repository }}/${{ github.event.inputs.version_number }}/${{ github.event.inputs.sha }}"
+  s3_bucket: "s3://${{ github.event.inputs.s3_bucket_name }}/${{ github.repository }}/${{ github.event.inputs.version_number }}/${{ github.event.inputs.sha }}"
   artifact_retention_days: 2
 
 jobs:
@@ -62,7 +70,7 @@ jobs:
             echo The last commit sha in the release: ${{ github.event.inputs.sha }}
             echo The release version number: ${{ github.event.inputs.version_number }}
             echo The build_script_path: ${{ github.event.inputs.build_script_path }}
-            echo The s3_bucket: ${{ github.event.inputs.s3_bucket }}
+            echo The s3_bucket_name: ${{ github.event.inputs.s3_bucket_name }}
             echo The package_test_command: ${{ github.event.inputs.package_test_command }}
 
   build-changelog-path:
@@ -103,7 +111,8 @@ jobs:
       - name: Configure AWS credentials from Test account
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::111111111111:role/my-github-actions-role-test   # TODO: fill
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       
       - name: Copy Artifacts from S3 via CLI
@@ -202,7 +211,8 @@ jobs:
       # TODO: do i need to do this once per job?
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::111111111111:role/my-github-actions-role-test   # TODO: fill
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
       - name: Upload Artifacts to S3 via CLI
