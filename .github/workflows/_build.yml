@@ -98,8 +98,8 @@ jobs:
       - name: Set Changelog Path
         run: |
           if ${{ steps.semver.outputs.is-pre-release }} == 1
-            then
-            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.version }}-${{ steps.semver.outputs.pre-release }}.md"'
+          then
+            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.base-version }}-${{ steps.semver.outputs.pre-release }}.md"'
           else
             echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.version }}.md"'
           fi
