@@ -89,19 +89,19 @@ jobs:
       - name: ls
         run: ls -al
 
-      - name: Convert Version to semver.org
-        id: parse-valid
+      - name: Audit Version and Parse Into Parts
+        id: semver
         uses: dbt-labs/actions/parse-semver@v1
         with:
           version: ${{ inputs.version_number }}
 
       - name: Set Changelog Path
         run: |
-          if ${{ steps.parse-valid.outputs.is-pre-release }}
+          if ${{ steps.semver.outputs.is-pre-release }}
             then
-            echo '::set-output name=changelog_path::".changes/${{ steps.parse-valid.outputs.version }}-${{ steps.parse-valid.outputs.pre-release }}.md"'
+            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.version }}-${{ steps.semver.outputs.pre-release }}.md"'
           else
-            echo '::set-output name=changelog_path::".changes/${{ steps.parse-valid.outputs.version }}.md"'
+            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.version }}.md"'
           fi
 
   check-build-exists:
