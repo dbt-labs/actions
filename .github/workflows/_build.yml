@@ -98,7 +98,7 @@ jobs:
 
       - name: Set Changelog Path
         run: |
-          echo '::set-output name=changelog_path::".changes/${{ steps.parse-valid.outputs.semver_version  }}.md"'
+          echo '::set-output name=changelog_path::".changes/${{ steps.parse-valid.outputs.semver-version  }}.md"'
 
   check-build-exists:
     needs: [build-changelog-path]
