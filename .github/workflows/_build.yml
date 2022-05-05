@@ -96,9 +96,14 @@ jobs:
         with:
           version: ${{ inputs.version_number }}
 
+      - name: Echo Output
+        run: |
+            echo steps.parse-valid.outputs.semver-version ${{ steps.parse-valid.outputs.semver-version  }}
+            echo steps.parse-valid.outputs.version ${{ steps.parse-valid.outputs.version }}
+
       - name: Set Changelog Path
         run: |
-          echo '::set-output name=changelog_path::".changes/'${{ steps.parse-valid.outputs.semver-version  }}'.md"'
+          echo '::set-output name=changelog_path::".changes/${{ steps.parse-valid.outputs.semver-version  }}.md"'
 
   check-build-exists:
     needs: [build-changelog-path]
