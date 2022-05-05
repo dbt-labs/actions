@@ -58,7 +58,7 @@ permissions:
 
 env:
   # include commit in path in case release commit gets updates on subsequent runs
-  s3_bucket: "s3://${{ github.event.inputs.s3_bucket_name }}/${{ github.repository }}/${{ github.event.inputs.version_number }}/${{ github.event.inputs.sha }}"
+  s3_bucket: "s3://${{ inputs.s3_bucket_name }}/${{ github.repository }}/${{ inputs.version_number }}/${{ inputs.sha }}"
   artifact_retention_days: 2
 
 jobs:
@@ -67,11 +67,11 @@ jobs:
     steps:
       - name: Print variables
         run: |
-            echo The last commit sha in the release: ${{ github.event.inputs.sha }}
-            echo The release version number: ${{ github.event.inputs.version_number }}
-            echo The build_script_path: ${{ github.event.inputs.build_script_path }}
-            echo The s3_bucket_name: ${{ github.event.inputs.s3_bucket_name }}
-            echo The package_test_command: ${{ github.event.inputs.package_test_command }}
+            echo The last commit sha in the release: ${{ inputs.sha }}
+            echo The release version number: ${{ inputs.version_number }}
+            echo The build_script_path: ${{ inputs.build_script_path }}
+            echo The s3_bucket_name: ${{ inputs.s3_bucket_name }}
+            echo The package_test_command: ${{ inputs.package_test_command }}
 
   build-changelog-path:
     # the changelog uses semver per https://semver.org/ so we need to build the path to the file to use it in the release notes
@@ -84,7 +84,7 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.inputs.sha }}
+          ref: ${{ inputs.sha }}
 
       - name: ls
         run: ls -al
@@ -94,7 +94,7 @@ jobs:
         # TODO: point this to a tag in actions repo - delete steps all above
         uses: ./parse-semver
         with:
-          version: ${{ github.event.inputs.version_number }}
+          version: ${{ inputs.version_number }}
 
       - name: Set Changelog Path
         run: |
@@ -132,7 +132,7 @@ jobs:
         if: steps.check_files.outputs.files_exists == 'true'
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.event.inputs.version_number }}
+          name: ${{ inputs.version_number }}
           path: |
             dist/
             ${{ needs.build-changelog-path.outputs.changelog_path }}
@@ -151,7 +151,7 @@ jobs:
     steps:
       - name: Build Exists, Skip To Test
         run: |
-          echo A build already exists for version ${{github.event.inputs.version_number}}, skipping build job
+          echo A build already exists for version ${{inputs.version_number}}, skipping build job
 
   build-packages:
     runs-on: ubuntu-latest
@@ -167,7 +167,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           # persist-credentials: false  # TODO: with this false I get an error checking it out, it's what existed in previous release version though
-          ref: ${{ github.event.inputs.sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -199,7 +199,7 @@ jobs:
       - name: upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.event.inputs.version_number }}
+          name: ${{ inputs.version_number }}
           path: |
             dist/
             !dist/dbt-${{ inputs.version_number }}.tar.gz
@@ -246,7 +246,7 @@ jobs:
 
       - uses: actions/download-artifact@v2
         with:
-          name: ${{ github.event.inputs.version_number }}
+          name: ${{ inputs.version_number }}
           path: dist/
 
       - name: Display structure of all downloaded files
@@ -261,7 +261,7 @@ jobs:
 
       - name: Check wheel distributions
         run: |
-          ${{ github.event.inputs.package_test_command }}
+          ${{ inputs.package_test_command }}
 
       - name: Install source distributions
         run: |
@@ -269,4 +269,4 @@ jobs:
 
       - name: Check source distributions
         run: |
-          ${{ github.event.inputs.package_test_command }}
+          ${{ inputs.package_test_command }}
