@@ -117,13 +117,9 @@ jobs:
 
       - name: Set version value
         id: variables
-        env:
-          VERSION_NUMBER: ${{ inputs.version_number }}
-          BRANCH_NAME: prep-release/${{ inputs.version_number }}_$GITHUB_RUN_ID
         run: |
-          echo Workflow dispatch event version: ${{ inputs.version_number }}
-          echo ::set-output name=VERSION_NUMBER::$VERSION_NUMBER
-          echo ::set-output name=BRANCH_NAME::$BRANCH_NAME
+          echo "::set-output name=VERSION_NUMBER::'${{ inputs.version_number }}'"
+          echo "::set-output name=BRANCH_NAME::'prep-release/${{ inputs.version_number }}_$GITHUB_RUN_ID'"
 
       - uses: actions/setup-python@v2
         with:
@@ -134,6 +130,9 @@ jobs:
           python3 -m venv env
           source env/bin/activate
           pip install --upgrade pip
+
+      - name: Install changie
+        run: brew install changie  #TODO: pin version?
 
       - name: Create branch
         run: |
@@ -148,9 +147,6 @@ jobs:
           env/bin/bumpversion --allow-dirty --new-version ${{steps.variables.outputs.VERSION_NUMBER}} major
           git status
       
-      - name: Install changie
-        run: brew install changie  #TODO: pin version?
-
       - name: Generate Pre Release Changelog
         if: needs.audit-changelog.outputs.is_prerelease == 1
         run: |
