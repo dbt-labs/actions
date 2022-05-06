@@ -132,7 +132,9 @@ jobs:
           pip install --upgrade pip
 
       - name: Install changie
-        run: brew install changie  #TODO: pin version?
+        run: |
+          brew tap miniscruff/changie https://github.com/miniscruff/changie
+          brew install changie  #TODO: pin version?
 
       - name: Create branch
         run: |
