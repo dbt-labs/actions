@@ -75,9 +75,10 @@ jobs:
 
   build-changelog-path:
     # the changelog uses semver per https://semver.org/ so we need to build the path to the file to use it in the release notes
+    # TODO: use the path built in `_release-prep.yml`
     runs-on: ubuntu-latest
     outputs:
-      changelog_path: ${{ steps.set_existence.outputs.exists }}
+      changelog_path: ${{ steps.set_existence.outputs.changelog_path }}
 
     steps:
 

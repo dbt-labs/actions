@@ -4,12 +4,12 @@
 # If a release exists for this commit under a different tag, fail.
 #
 # Inputs:
-#  sha: the commit to attache to this release
+#  sha: the commit to attach to this release
 #  version_number: version number for the release (ex: 1.2.3rc2)
 #  file_uploads: Newline-delimited globs of paths to assets to upload for release
 #   
 # **why?**
-# Reusable and consistent GitHUb release process.
+# Reusable and consistent GitHub release process.
 #
 # **when?**
 # Call after the build process.
@@ -32,12 +32,16 @@ on:
         description: Newline-delimited globs of paths to assets to upload for release
         required: true
         type: string
+    outputs:
+      tag:
+        description: The tag we release
+        value: ${{ jobs.check-release-exists.outputs.tag }}
 
 permissions:
   contents: write
 
 env:
-  tag: v${{inputs.version_number}}
+  tag: v${{ inputs.version_number }}
 
 jobs:
   log-inputs:
@@ -53,6 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       exists: ${{ steps.set_existence.outputs.exists }}
+      tag: ${{ steps.set_tag.outputs.tag }}
 
     steps:
       - name: Check if release already exists for commit
@@ -62,7 +67,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           commitSha: ${{inputs.sha}}
-          doNotFailIfNotFound: true # returns blank outputs when not found
+          doNotFailIfNotFound: true # returns blank outputs when not found instead of error
           searchLimit: 15 # Since we only care about recent releases, speed up the process
 
       - name: Print Release Details
@@ -109,8 +114,8 @@ jobs:
           echo steps.check_release.outputs.target_commitish ${{ steps.check_release.outputs.target_commitish}}
           echo steps.check_release.outputs.prerelease ${{ steps.check_release.outputs.prerelease}}
 
-      - name: Set Output
-        # use the output from the check_release_commit step here since the check_release_tag should have retuyrned nothing
+      - name: Set Output for Release Exisistence
+        # use the output from the check_release_commit step here since the check_release_tag should have returned nothing
         id: set_existence
         run: |
           if [ -z "${{ steps.check_release_commit.outputs.id }}" ]
@@ -119,6 +124,11 @@ jobs:
           else
             echo '::set-output name=exists::true'
           fi
+
+      - name: Set Tag Output
+        id: set_tag
+        run: |
+          echo '::set-output name=tag::${{ env.tag }}'
 
   skip-github-release:
     runs-on: ubuntu-latest

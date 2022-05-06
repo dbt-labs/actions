@@ -12,8 +12,8 @@ name: Pypi release
 on:
   workflow_call:
     inputs:
-      version_number:
-        description: 'The release version number (ie. 1.0.0b1)'
+      tag:
+        description: 'The tag for the release (ie. v1.0.0b1)'
         required: true
         type: string
       is_prod:
@@ -22,9 +22,6 @@ on:
 
 permissions:
   contents: read
-
-env:
-  tag: v${{ inputs.version_number }}
 
 jobs:
   log-inputs:
@@ -53,7 +50,7 @@ jobs:
 
     steps:
       - name: Pypi Release Exists, Skip
-        run: echo A release already exists for this version ${{ env.tag }} on Pypi, skipping
+        run: echo A release already exists for this version ${{ inputs.tag }} on Pypi, skipping
 
   pypi-release:
     needs: [check-pypi-exists]
@@ -69,13 +66,13 @@ jobs:
 
       - name: Publish distribution to PyPI
         if: ${{ inputs.is_prod }} == true
-        uses: pypa/gh-action-pypi-publish@v1.4.2
+        uses: pypa/gh-action-pypi-publish@v1.5
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Publish distribution to PyPI
         if: ${{ inputs.is_prod }} == false
-        uses: pypa/gh-action-pypi-publish@v1.4.2
+        uses: pypa/gh-action-pypi-publish@v1.5
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}  # TODO: document need for this secret
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}  # TODO: document need for this secret
           repository_url: https://test.pypi.org/legacy/
