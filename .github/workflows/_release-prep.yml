@@ -179,7 +179,7 @@ jobs:
 
   unit-test:
     runs-on: ubuntu-latest
-    needs: [version-bump, generate-changelog]
+    needs: [start-release-prep]
 
     # env:
     #   TOXENV: "unit"
@@ -211,7 +211,7 @@ jobs:
   
   functional-test:
     runs-on: ubuntu-latest
-    needs: [version-bump, generate-changelog]
+    needs: [start-release-prep]
 
     steps:
       - name: Run Functional Tests
