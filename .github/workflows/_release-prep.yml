@@ -31,7 +31,7 @@ on:
     outputs:
       final_sha:
         description: The new commit that includes the changelog and version bump.
-        value: ${{ jobs.merge-for-release.outputs.final_sha }}
+        value: ${{ jobs.get-release-sha.outputs.final_sha }}
       changelog_path:
         description: The path to the changelog for this version
         value: ${{ jobs.check-changelog-exists.outputs.changelog_path }}
@@ -82,6 +82,7 @@ jobs:
           fi
 
       - name: Set Changelog Exists
+        # TODO: if the changelog file exists is ti safe to assume we want to run this from the HEAD of the target branch?
         id: check_changelog
         uses: andstor/file-existence-action@v1
         with:
@@ -173,8 +174,8 @@ jobs:
           author_name: 'Github Build Bot'
           author_email: 'buildbot@fishtownanalytics.com'
           message: 'Bumping version to ${{steps.variables.outputs.VERSION_NUMBER}}, generating changelog'
-          branch: '${{ BRANCH_NAME }}'
-          push: 'origin origin/${{ BRANCH_NAME }}'
+          branch: '${{steps.variables.outputs.BRANCH_NAME}}'
+          push: 'origin origin/${{steps.variables.outputs.BRANCH_NAME}}'
 
   unit-test:
     runs-on: ubuntu-latest
@@ -217,15 +218,12 @@ jobs:
         run: echo Runnign functional tests Not implemented - How to make this reusable?
   
   merge-for-release:
-    outputs:
-      final_sha: ${{ steps.final_sha.outputs.final_sha }}
     runs-on: ubuntu-latest
     needs: [unit-test, functional-test, start-release-prep]
 
     steps:
       - name: Merge changes
         run: |
-          echo Merge Changes Not implemented
           echo inputs.target_branch ${{ inputs.target_branch }}
           echo needs.start-release-pre.outputs.BRANCH_NAME ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
       
@@ -234,8 +232,15 @@ jobs:
           git checkout ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
           git merge ${{ inputs.target_branch }}
 
+
+  get-release-sha:
+    outputs:
+      final_sha: ${{ steps.final_sha.outputs.final_sha }}
+    runs-on: ubuntu-latest
+    needs: [merge-for-release]
+    steps:
       - name: Pass Final sha
-        # TODO: does this work???
+      # TODO: does this work???
         id: final_sha
         run: |
           git checkout ${{ inputs.target_branch }}
