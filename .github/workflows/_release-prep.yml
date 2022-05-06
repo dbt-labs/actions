@@ -89,9 +89,9 @@ jobs:
           # TODO: is this a good check?  first pass...
           files: "${{ steps.set_path.outputs.changelog_path }}"
 
-      - name: Set Exisistence for Other Jobs
+      - name: Set Changelog Exisistence for Other Jobs
         id: set_existence
-        run: echo '::set-output name=exists::${{steps.check_changelog.outputs.exists}}'
+        run: echo '::set-output name=exists::${{steps.check_changelog.outputs.files_exists}}'
 
   skip-release-prep:
     runs-on: ubuntu-latest
