@@ -226,8 +226,10 @@ jobs:
       
       - name: Check out target branch
         uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.target_branch }}
       
-      # TODO: is there a betetr wya to merge/commit? 
+      # TODO: is there a better way to merge/commit? 
       - name: Merge changes with target branch
         uses: devmasx/merge-branch@v1.4.0
         with:
