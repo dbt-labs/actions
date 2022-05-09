@@ -264,5 +264,6 @@ jobs:
       # TODO: does this work???
         id: final_sha
         run: |
+          echo $(git rev-parse HEAD)
           echo "::set-output name=final_sha::$(git rev-parse HEAD)"
 
