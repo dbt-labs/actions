@@ -164,11 +164,6 @@ jobs:
       - name: Check Changelog Exists
         run: |
           echo TODO check file generated
-      
-      - name: Check Git Status
-        run: |
-          git status
-          git branch
 
       - name: Commit version bump to branch
         uses: EndBug/add-and-commit@v7
@@ -177,7 +172,7 @@ jobs:
           author_email: 'buildbot@fishtownanalytics.com'
           message: 'Bumping version to ${{steps.variables.outputs.VERSION_NUMBER}} and generating changelog'
           branch: ${{steps.variables.outputs.BRANCH_NAME}}
-          # push: origin origin/${{steps.variables.outputs.BRANCH_NAME}}
+          push: origin origin/${{steps.variables.outputs.BRANCH_NAME}}
 
   unit-test:
     runs-on: ubuntu-latest
@@ -230,10 +225,9 @@ jobs:
           echo needs.start-release-pre.outputs.BRANCH_NAME ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
       
       - name: Merge to target_branch
-        run:
-          git checkout ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
+        run: |
+          git checkout ${{ needs.start-release-prep.outputs.BRANCH_NAME }}
           git merge ${{ inputs.target_branch }}
-
 
   get-release-sha:
     outputs:
