@@ -164,13 +164,17 @@ jobs:
       - name: Check Changelog Exists
         run: |
           echo TODO check file generated
+      
+      - name: Check Git Status
+        run: |
+          echo git status
 
       - name: Commit version bump to branch
         uses: EndBug/add-and-commit@v7
         with:
           author_name: 'Github Build Bot'
           author_email: 'buildbot@fishtownanalytics.com'
-          message: 'Bumping version to ${{steps.variables.outputs.VERSION_NUMBER}}, generating changelog'
+          message: 'Bumping version to ${{steps.variables.outputs.VERSION_NUMBER}} and generating changelog'
           branch: '${{steps.variables.outputs.BRANCH_NAME}}'
           push: 'origin origin/${{steps.variables.outputs.BRANCH_NAME}}'
 
