@@ -289,8 +289,8 @@ jobs:
 
       - name: Upload Artifacts to S3 via CLI
         run: |
-          aws s3 cp /dist ${{ env.s3_bucket }}/dist --recursive  # since it's an entire directory
+          aws s3 cp . ${{ env.s3_bucket }} --recursive  # since it's an entire directory
 
-      - name: Upload Changelog to S3 via CLI
-        run: |
-          aws s3 cp ${{ needs.build-changelog-path.outputs.changelog_path }} ${{ env.s3_bucket }}/${{ needs.build-changelog-path.outputs.changelog_path }}
+      # - name: Upload Changelog to S3 via CLI
+      #   run: |
+      #     aws s3 cp ${{ needs.build-changelog-path.outputs.changelog_path }} ${{ env.s3_bucket }}/${{ needs.build-changelog-path.outputs.changelog_path }}
