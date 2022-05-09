@@ -252,7 +252,7 @@ jobs:
 
   upload-artifacts-aws:
     runs-on: ubuntu-latest
-    needs: [test-build]
+    needs: [test-build, build-changelog-path]
   
     steps:
       - uses: actions/download-artifact@v2
