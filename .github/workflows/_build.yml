@@ -50,6 +50,8 @@ on:
       AWS_SECRET_ACCESS_KEY:
         description: AWS Access Key
         required: true
+    outputs:
+      CHANGELOG_PATH: ${{ jobs.build-changelog-path.outputs.changelog_path }}
 
 permissions:
   contents: write

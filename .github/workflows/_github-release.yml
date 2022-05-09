@@ -28,6 +28,10 @@ on:
       version_number:
         required: true
         type: string
+      changelog_path:
+        description: Path to the changelog file for release notes
+        required: true
+        type: string
       file_uploads:
         description: Newline-delimited globs of paths to assets to upload for release
         required: true
@@ -51,7 +55,7 @@ jobs:
         run: |
             echo The last commit sha in the release: ${{ inputs.sha }}
             echo The release version number: ${{ inputs.version_number }}
-            echo Expected Changlog path: "${{ github.workspace }}/${{ inputs.version_number }}.md"
+            echo Expected Changlog path: "${{ inputs.changelog_path }}"
 
   check-release-exists:
     runs-on: ubuntu-latest
@@ -153,8 +157,8 @@ jobs:
           name: ${{inputs.version_number}}
           path: '.'
 
-      - name: List artifact contents (expect dist/ and <version>.md)
-        run: ls -al
+      - name: Display structure of all downloaded files
+        run: ls -R
 
       # Need to set an output variable because env variables can't be taken as input
       # This is needed for the next step with releasing to GitHub
@@ -172,5 +176,5 @@ jobs:
           tag_name: ${{ env.tag }}
           prerelease: ${{ steps.release_type.outputs.isPrerelease }}
           target_commitish: ${{inputs.sha}}
-          body_path: ${{ github.workspace }}/${{ inputs.version_number }}.md
+          body_path: ${{ inputs.changelog_path }}
           files: ${{ inputs.file_uploads }}
