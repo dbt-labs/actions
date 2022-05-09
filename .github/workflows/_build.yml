@@ -109,14 +109,14 @@ jobs:
             echo "${{ steps.generate_path.outputs.changelog_path }} exists."
           else
               echo "${{ steps.generate_path.outputs.changelog_path }} does not exist!"
-              echo "The changelog for thsi release must exists before running this workflow."
+              echo "The changelog for this release must exists before running this workflow."
               exit 1
           fi
 
       - name: Set Changelog Path
         id: set_path
         run: |
-          echo '::set-output name=changelog_path::.changes/${{ steps.generate_path.outputs.changelog_path }}'
+          echo '::set-output name=changelog_path::${{ steps.generate_path.outputs.changelog_path }}'
 
   check-build-exists:
     needs: [build-changelog-path]
@@ -289,7 +289,7 @@ jobs:
 
       - name: Upload Artifacts to S3 via CLI
         run: |
-          aws s3 cp ${{ needs.build-changelog-path.outputs.changelog_path }} ${{ env.s3_bucket }}/dist --recursive  # since it's an entire directory
+          aws s3 cp /dist ${{ env.s3_bucket }}/dist --recursive  # since it's an entire directory
 
       - name: Upload Changelog to S3 via CLI
         run: |
