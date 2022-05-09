@@ -167,7 +167,8 @@ jobs:
       
       - name: Check Git Status
         run: |
-          echo git status
+          git status
+          git branch
 
       - name: Commit version bump to branch
         uses: EndBug/add-and-commit@v7
