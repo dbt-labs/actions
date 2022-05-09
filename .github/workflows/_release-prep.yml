@@ -239,7 +239,6 @@ jobs:
       - name: Merge changes with target branch
         uses: everlytic/branch-merge@1.1.2
         with:
-          type: now
           source_ref: ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
           target_branch: ${{ inputs.target_branch }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
