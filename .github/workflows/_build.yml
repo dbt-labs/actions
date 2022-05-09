@@ -98,9 +98,9 @@ jobs:
         run: |
           if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
           then
-            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.base-version }}-${{ steps.semver.outputs.pre-release }}.md"'
+            echo '::set-output name=changelog_path::.changes/${{ steps.semver.outputs.base-version }}-${{ steps.semver.outputs.pre-release }}.md'
           else
-            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.version }}.md"'
+            echo '::set-output name=changelog_path::.changes/${{ steps.semver.outputs.version }}.md'
           fi
 
   check-build-exists:
@@ -224,10 +224,10 @@ jobs:
           pip install --upgrade wheel
           pip --version
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: ${{ inputs.version_number }}
-          path: dist/
+          path: .
 
       - name: Display structure of all downloaded files
         run: ls -R
@@ -256,10 +256,10 @@ jobs:
     needs: [test-build, build-changelog-path]
   
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: ${{inputs.version_number}}
-          path: '.'
+          path: .
 
       - name: Configure AWS credentials
       # TODO: do i need to do this once per job?
