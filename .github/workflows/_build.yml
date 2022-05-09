@@ -51,7 +51,9 @@ on:
         description: AWS Access Key
         required: true
     outputs:
-      CHANGELOG_PATH: ${{ jobs.build-changelog-path.outputs.changelog_path }}
+      CHANGELOG_PATH: 
+        description: Path to the cahngelog fdor this release
+        value: ${{ jobs.build-changelog-path.outputs.changelog_path }}
 
 permissions:
   contents: write
