@@ -219,15 +219,28 @@ jobs:
     needs: [unit-test, functional-test, start-release-prep]
 
     steps:
-      - name: Merge changes
+      - name: Log Outputs
         run: |
           echo inputs.target_branch ${{ inputs.target_branch }}
           echo needs.start-release-pre.outputs.BRANCH_NAME ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
       
+      - name: Check out target branch
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.target_branch }}
+
       - name: Merge to target_branch
         run: |
-          git checkout ${{ inputs.target_branch }}
-          git merge origin/${{ needs.start-release-prep.outputs.BRANCH_NAME }}
+          git checkout ${{ needs.start-release-prep.outputs.BRANCH_NAME }}
+          git merge ${{ inputs.target_branch }}
+      
+      - name: Merge changes into target branch
+        uses: EndBug/add-and-commit@v7
+        with:
+          author_name: 'Github Build Bot'
+          author_email: 'buildbot@fishtownanalytics.com'
+          message: 'Merge in version bump and changelog'
+          branch: ${{ inputs.target_branch }}
 
   get-release-sha:
     outputs:
