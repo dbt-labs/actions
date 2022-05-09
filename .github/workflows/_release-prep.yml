@@ -233,22 +233,17 @@ jobs:
       - name: Check out target branch
         uses: actions/checkout@v2
         with:
-          ref: ${{ inputs.target_branch }}
+          ref: ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
       
       # TODO: is there a better way to merge/commit? 
       - name: Merge changes with target branch
-        uses: devmasx/merge-branch@v1.4.0
+        uses: everlytic/branch-merge@1.1.2
         with:
           type: now
-          from_branch: ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
+          source_ref: ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
           target_branch: ${{ inputs.target_branch }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ inputs.target_branch }}
+          commit_message_template: '[Automated] Merged {source_ref} into target {target_branch} during release process'
 
   get-release-sha:
     outputs:
