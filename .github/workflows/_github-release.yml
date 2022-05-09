@@ -87,14 +87,14 @@ jobs:
           && steps.check_release_commit.outputs.tag_name != env.tag 
         run: |
           echo Tag "${{ steps.check_release_commit.outputs.tag_name}}" already exists for this commit!
-          echo Cannot create a new tag for "${{ env.tag }}"
+          echo Cannot create a new tag for "${{ env.tag }}" for the same commit.
           exit 1
       
       # If no releases were found for the commit, check to see if any releases exists for the tag already.
       # If any release exists, immediately fail because we can't know what to do since the release exists
       # but it is against a different commit than was input.
       - name: Check if release already exists for this tag
-        if: steps.check_release_commit.outputs.id != ''
+        if: steps.check_release_commit.outputs.id == ''
         uses: cardinalby/git-get-release-action@v1
         id: check_release_tag
         env:
@@ -104,10 +104,11 @@ jobs:
           doNotFailIfNotFound: true # returns blank outputs when not found
           searchLimit: 15 # Since we only care about recent releases, speed up the process
 
+      # If a release was found for the tag, fail here because we already know one did not exists for our commit
       - name: Check if the tag matches the version number
         if: steps.check_release_tag.outputs.id != ''
         run: |
-          echo Tag "${{ steps.check_release_tag.outputs.tag_name}}" already exists for a different commit!
+          echo Tag "${{ steps.check_release_tag.outputs.tag_name}}" already exists for a different commit (${{ steps.check_release_tag.outputs.target_commitish }})!
           echo Check your releases!  This should not happen.
           exit 1
 
@@ -172,7 +173,7 @@ jobs:
       - name: Creating GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          name: dbt-core ${{ env.tag }}
+          name: ${{ github.event.repository.name }} ${{ env.tag }}
           tag_name: ${{ env.tag }}
           prerelease: ${{ steps.release_type.outputs.isPrerelease }}
           target_commitish: ${{inputs.sha}}
