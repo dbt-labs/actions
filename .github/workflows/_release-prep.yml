@@ -228,7 +228,7 @@ jobs:
         uses: actions/checkout@v2
       
       - name: Merge changes with target branch
-        uses: devmasx/merge-branch@v1.4
+        uses: devmasx/merge-branch@v1.4.0
         with:
           type: now
           from_branch: ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
