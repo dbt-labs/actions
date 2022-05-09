@@ -174,11 +174,11 @@ jobs:
           branch: ${{ steps.variables.outputs.BRANCH_NAME }}
           push: origin origin/${{ steps.variables.outputs.BRANCH_NAME }}
       
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.variables.outputs.BRANCH_NAME }}
+      # - name: Push changes
+      #   uses: ad-m/github-push-action@master
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     branch: ${{ steps.variables.outputs.BRANCH_NAME }}
 
   unit-test:
     runs-on: ubuntu-latest
@@ -228,7 +228,7 @@ jobs:
       - name: Log Outputs
         run: |
           echo inputs.target_branch ${{ inputs.target_branch }}
-          echo needs.start-release-pre.outputs.BRANCH_NAME ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
+          echo needs.start-release-pre.outputs.BRANCH_NAME ${{ needs.start-release-prep.outputs.BRANCH_NAME }}
       
       - name: Check out target branch
         uses: actions/checkout@v2
