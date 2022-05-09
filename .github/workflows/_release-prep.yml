@@ -232,8 +232,6 @@ jobs:
       
       - name: Check out target branch
         uses: actions/checkout@v2
-        with:
-          ref: ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
       
       # TODO: is there a better way to merge/commit? 
       - name: Merge changes with target branch
@@ -241,7 +239,7 @@ jobs:
         with:
           source_ref: ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
           target_branch: ${{ inputs.target_branch }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}  # probably need to use a custom token to override .latests protection rules
           commit_message_template: '[Automated] Merged {source_ref} into target {target_branch} during release process'
 
   get-release-sha:
