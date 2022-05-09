@@ -226,8 +226,8 @@ jobs:
       
       - name: Merge to target_branch
         run: |
-          git checkout ${{ needs.start-release-prep.outputs.BRANCH_NAME }}
-          git merge ${{ inputs.target_branch }}
+          git checkout ${{ inputs.target_branch }}
+          git merge ${{ needs.start-release-prep.outputs.BRANCH_NAME }}
 
   get-release-sha:
     outputs:
