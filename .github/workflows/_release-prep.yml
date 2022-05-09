@@ -176,8 +176,8 @@ jobs:
           author_name: 'Github Build Bot'
           author_email: 'buildbot@fishtownanalytics.com'
           message: 'Bumping version to ${{steps.variables.outputs.VERSION_NUMBER}} and generating changelog'
-          branch: '${{steps.variables.outputs.BRANCH_NAME}}'
-          push: 'origin origin/${{steps.variables.outputs.BRANCH_NAME}}'
+          branch: ${{steps.variables.outputs.BRANCH_NAME}}
+          push: origin origin/${{steps.variables.outputs.BRANCH_NAME}}
 
   unit-test:
     runs-on: ubuntu-latest
