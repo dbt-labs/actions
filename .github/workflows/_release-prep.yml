@@ -227,21 +227,20 @@ jobs:
       - name: Check out target branch
         uses: actions/checkout@v2
       
+      # TODO: is there a betetr wya to merge/commit? 
       - name: Merge changes with target branch
         uses: devmasx/merge-branch@v1.4.0
         with:
           type: now
           from_branch: ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
           target_branch: ${{ inputs.target_branch }}
-          github_token: ${{ github.token }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       
-      # - name: Merge changes into target branch
-      #   uses: EndBug/add-and-commit@v7
-      #   with:
-      #     author_name: 'Github Build Bot'
-      #     author_email: 'buildbot@fishtownanalytics.com'
-      #     message: 'Merge in version bump and changelog'
-      #     branch: ${{ inputs.target_branch }}
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ inputs.target_branch }}
 
   get-release-sha:
     outputs:
@@ -249,10 +248,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [merge-for-release]
     steps:
+      - name: Check out target branch
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.target_branch }}
       - name: Pass Final sha
       # TODO: does this work???
         id: final_sha
         run: |
-          git checkout ${{ inputs.target_branch }}
           echo "::set-output name=final_sha::$(git rev-parse HEAD)"
 
