@@ -78,7 +78,7 @@ jobs:
     # TODO: use the path built in `_release-prep.yml`
     runs-on: ubuntu-latest
     outputs:
-      changelog_path: ${{ steps.set_existence.outputs.changelog_path }}
+      changelog_path: ${{ steps.set_path.outputs.changelog_path }}
 
     steps:
 
@@ -94,6 +94,7 @@ jobs:
           version: ${{ inputs.version_number }}
 
       - name: Set Changelog Path
+        id: set_path
         run: |
           if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
           then
