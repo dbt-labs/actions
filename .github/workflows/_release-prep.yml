@@ -171,8 +171,8 @@ jobs:
           author_name: 'Github Build Bot'
           author_email: 'buildbot@fishtownanalytics.com'
           message: 'Bumping version to ${{steps.variables.outputs.VERSION_NUMBER}} and generating changelog'
-          branch: ${{steps.variables.outputs.BRANCH_NAME}}
-          push: origin origin/${{steps.variables.outputs.BRANCH_NAME}}
+          branch: ${{ steps.variables.outputs.BRANCH_NAME }}
+          push: origin origin/${{ steps.variables.outputs.BRANCH_NAME }}
 
   unit-test:
     runs-on: ubuntu-latest
@@ -226,21 +226,22 @@ jobs:
       
       - name: Check out target branch
         uses: actions/checkout@v2
-        with:
-          ref: ${{ inputs.target_branch }}
-
-      - name: Merge to target_branch
-        run: |
-          git checkout ${{ needs.start-release-prep.outputs.BRANCH_NAME }}
-          git merge ${{ inputs.target_branch }}
       
-      - name: Merge changes into target branch
-        uses: EndBug/add-and-commit@v7
+      - name: Merge changes with target branch
+        uses: devmasx/merge-branch@v1.4
         with:
-          author_name: 'Github Build Bot'
-          author_email: 'buildbot@fishtownanalytics.com'
-          message: 'Merge in version bump and changelog'
-          branch: ${{ inputs.target_branch }}
+          type: now
+          from_branch: ${{ needs.start-release-pre.outputs.BRANCH_NAME }}
+          target_branch: ${{ inputs.target_branch }}
+          github_token: ${{ github.token }}
+      
+      # - name: Merge changes into target branch
+      #   uses: EndBug/add-and-commit@v7
+      #   with:
+      #     author_name: 'Github Build Bot'
+      #     author_email: 'buildbot@fishtownanalytics.com'
+      #     message: 'Merge in version bump and changelog'
+      #     branch: ${{ inputs.target_branch }}
 
   get-release-sha:
     outputs:
