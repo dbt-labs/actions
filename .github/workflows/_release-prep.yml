@@ -167,7 +167,6 @@ jobs:
 
       - name: Commit version bump to branch
         uses: EndBug/add-and-commit@v7
-        if: ${{ steps.variables.outputs.IS_DRY_RUN == 'true' }}
         with:
           author_name: 'Github Build Bot'
           author_email: 'buildbot@fishtownanalytics.com'
