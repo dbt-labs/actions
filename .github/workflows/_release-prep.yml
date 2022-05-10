@@ -39,7 +39,7 @@ on:
         value: ${{ jobs.get-release-sha.outputs.final_sha }}
       changelog_path:
         description: The path to the changelog for this version
-        value: ${{ jobs.check-changelog-exists.outputs.changelog_path }}
+        value: ${{ jobs.audit-changelog.outputs.changelog_path }}
 
 permissions:
   contents: write
