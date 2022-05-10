@@ -208,7 +208,7 @@ jobs:
       
       - name: Check Changelog Created Successfully
         run: |
-          if [[ -f ${{ needs.audit-changelog.outputs.base_version }} ]]
+          if [[ -f ${{ needs.audit-changelog.outputs.changelog_path }} ]]
           then
             echo Changelog file created successfully
           else
