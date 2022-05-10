@@ -107,15 +107,14 @@ jobs:
           ref: ${{ inputs.sha }}
 
       - name: Check Current Version in code
-        id: current_version
-        run: |
-          source env/bin/activate
-          pip install -r dev-requirements.txt
-          bump2version --dry-run --list <part> | grep <field name> | sed -r s,"^.*=",,
-
-      - name: Set Version Status for Other Jobs
         id: set_status
-        run: echo '::set-output name=up_to_date::${{steps.check_changelog.outputs.files_exists}}'
+        run: |
+          if grep -Fxq "current_version = ${{ inputs.version_number }}" .bumpversion.cfg
+          then
+            echo '::set-output name=up_to_date::'true'
+          else
+            echo '::set-output name=up_to_date::'false'
+          fi
 
   skip-generate-changelog:
     runs-on: ubuntu-latest
