@@ -142,10 +142,14 @@ jobs:
     if: needs.audit-changelog.outputs.exists == 'false' || needs.check-current-version.outputs.up-to-date == 'false'
 
     steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+
       - name: Set version value
         id: variables
         run: |
           echo "::set-output name=BRANCH_NAME::prep-release/${{ inputs.version_number }}_$GITHUB_RUN_ID"
+
       - name: Create branch
         run: |
           git checkout -b ${{steps.variables.outputs.BRANCH_NAME}}
