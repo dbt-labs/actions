@@ -80,9 +80,9 @@ jobs:
         run: |
           if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
           then
-            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.base-version }}-${{ steps.semver.outputs.pre-release }}.md"'
+            echo '::set-output name=changelog_path::.changes/${{ steps.semver.outputs.base-version }}-${{ steps.semver.outputs.pre-release }}.md'
           else
-            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.version }}.md"'
+            echo '::set-output name=changelog_path::.changes/${{ steps.semver.outputs.version }}.md'
           fi
 
       - name: Set Changelog Existence for Other Jobs

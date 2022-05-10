@@ -30,6 +30,9 @@ on:
       version_number:
         required: true
         type: string
+      changelog_path:
+        required: true
+        type: string
       build_script_path:
         required: true
         default: "scripts/build-dist.sh"
@@ -50,10 +53,6 @@ on:
       AWS_SECRET_ACCESS_KEY:
         description: AWS Access Key
         required: true
-    outputs:
-      changelog_path:
-        description: path to the changelog for this release
-        value: ${{ jobs.audit-version-changelog.outputs.changelog_path }}
 
 permissions:
   contents: write
@@ -81,8 +80,6 @@ jobs:
   audit-version-changelog:
     # Make sure the changelog has been generated and the version is up to date
     runs-on: ubuntu-latest
-    outputs:
-      changelog_path: ${{ steps.set_path.outputs.changelog_path }}
 
     steps:
       - name: Check out the repository
@@ -96,23 +93,13 @@ jobs:
         with:
           version: ${{ inputs.version_number }}
 
-      - name: Set Changelog Path
-        id: set_path
-        run: |
-          if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
-          then
-            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.base-version }}-${{ steps.semver.outputs.pre-release }}.md"'
-          else
-            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.version }}.md"'
-          fi
-
       - name: Audit Changelog Exists
         run: |
-          if test -f ${{ steps.set_path.outputs.changelog_path }}
+          if test -f ${{ inputs.changelog_path }}
           then
-            echo ${{ steps.set_path.outputs.changelog_path }} exists.
+            echo ${{ inputs.changelog_path }} exists.
           else
-              echo ${{ steps.set_path.outputs.changelog_path }} does not exist!
+              echo ${{ inputs.changelog_path }} does not exist!
               echo The changelog for this release must exists before running this workflow.
               exit 1
           fi
@@ -135,7 +122,6 @@ jobs:
       exists: ${{ steps.set_existence.outputs.exists }}
   
     steps:
-      
       - name: Configure AWS credentials from Test account
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -151,18 +137,18 @@ jobs:
         id: check_files
         uses: andstor/file-existence-action@v1
         with:
-          files: "${{ needs.audit-version-changelog.outputs.changelog_path }}, dist/*.tar.gz, dist/*.whl"
+          files: "${{ inputs.changelog_path }}, dist/*.tar.gz, dist/*.whl"
 
       # upload the files downloaded from S3 to artifacts so we don't have to keep 
       # downloading from S3
       - name: upload artifacts
         if: steps.check_files.outputs.files_exists == 'true'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.version_number }}
           path: |
             dist/
-            ${{ needs.audit-version-changelog.outputs.changelog_path }}
+            ${{ inputs.changelog_path }}
           if-no-files-found: error
           retention-days: ${{ env.artifact_retention_days }}
       
@@ -226,7 +212,7 @@ jobs:
           path: |
             dist/
             !dist/dbt-${{ inputs.version_number }}.tar.gz
-            ${{ needs.audit-version-changelog.outputs.changelog_path }}
+            ${{ inputs.changelog_path }}
           if-no-files-found: error
           retention-days: ${{ env.artifact_retention_days }}
 
