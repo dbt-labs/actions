@@ -110,8 +110,7 @@ jobs:
       # a lof of bash doesn't like that the inputs from GitHub put double quotes around strings so strip them off for later use
         id: strip
         run: |
-          clean_changelog_path = ${{ inputs.changelog_path }} | tr -d '"'
-          echo '::set-output name=clean_changelog_path::$clean_changelog_path'
+          echo `::set-output name=clean_changelog_path::$(${{ inputs.changelog_path }} | tr -d '"')`
 
       - name: Check Current Version in code
         id: set_status
