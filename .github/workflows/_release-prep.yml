@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changelog_path: ${{ steps.set_path.outputs.changelog_path }}
-      exists:  ${{ steps.set_existence.outputs.exists }}
+      exists: ${{ steps.set_existence.outputs.exists }}
       base_version: ${{ steps.semver.outputs.base-version }}
       prerelease: ${{ steps.semver.outputs.pre-release }}
       is_prerelease: ${{ steps.semver.outputs.is-pre-release }}
@@ -88,12 +88,20 @@ jobs:
       - name: Set Changelog Existence for Other Jobs
         id: set_existence
         run: |
-          if [[ -f ${{ steps.set_path.outputs.changelog_path }} ]]
+          if test -f ${{ steps.set_path.outputs.changelog_path }}
           then
             echo "::set-output name=exists::'true'"
           else
             echo "::set-output name=exists::'false'"
           fi
+
+      - name: Print Output
+        run: |
+          echo changelog_path ${{ steps.set_path.outputs.changelog_path }}
+          echo exists ${{ steps.set_existence.outputs.exists }}
+          echo base_version ${{ steps.semver.outputs.base-version }}
+          echo prerelease ${{ steps.semver.outputs.pre-release }}
+          echo is_prerelease ${{ steps.semver.outputs.is-pre-release }}
 
   check-current-version:
     runs-on: ubuntu-latest
@@ -115,6 +123,9 @@ jobs:
           else
             echo "::set-output name=up_to_date::'false'"
           fi
+
+      - name: Print Output
+        run: echo up_to_date ${{ steps.set_status.outputs.up_to_date }}
 
   skip-generate-changelog:
     runs-on: ubuntu-latest
@@ -163,6 +174,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ steps.variables.outputs.BRANCH_NAME }}
+
+      - name: Print Output
+        run: echo BRANCH_NAME ${{ steps.variables.outputs.BRANCH_NAME }}
 
   generate-changelog:
     runs-on: ubuntu-latest
@@ -326,6 +340,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: ${{ inputs.target_branch }}
+
       - name: Set sha for release
         id: final_sha
         run: |
@@ -335,3 +350,6 @@ jobs:
           else
             echo "::set-output name=final_sha::${{ inputs.sha }}"
           fi
+
+      - name: Print Output
+        run: echo final_sha ${{ steps.final_sha.outputs.final_sha }}
