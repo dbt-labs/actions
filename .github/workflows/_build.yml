@@ -30,9 +30,6 @@ on:
       version_number:
         required: true
         type: string
-      changelog_path:
-        required: true
-        type: string
       build_script_path:
         required: true
         default: "scripts/build-dist.sh"
@@ -53,6 +50,11 @@ on:
       AWS_SECRET_ACCESS_KEY:
         description: AWS Access Key
         required: true
+    outputs:
+      changelog_path:
+        description: path to the changelog for this release
+        value: ${{ jobs.audit-version-changelog.outputs.changelog_path }}
+        type: string
 
 permissions:
   contents: write
@@ -81,7 +83,7 @@ jobs:
     # Make sure the changelog has been generated and the version is up to date
     runs-on: ubuntu-latest
     outputs:
-      clean_changelog_path: ${{ steps.strip.outputs.clean_changelog_path }}
+      changelog_path: ${{ steps.set_path.outputs.changelog_path }}
 
     steps:
       - name: Check out the repository
@@ -89,29 +91,33 @@ jobs:
         with:
           ref: ${{ inputs.sha }}
 
-      - name: Audit Version
+      - name: Audit Version and Parse Into Parts
         id: semver
         uses: dbt-labs/actions/parse-semver@v1
         with:
           version: ${{ inputs.version_number }}
 
+      - name: Set Changelog Path
+        id: set_path
+        run: |
+          if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
+          then
+            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.base-version }}-${{ steps.semver.outputs.pre-release }}.md"'
+          else
+            echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.version }}.md"'
+          fi
+
       - name: Audit Changelog Exists
         run: |
-          if test -f ${{ inputs.changelog_path }}
+          if test -f ${{ steps.set_path.outputs.changelog_path }}
           then
-            echo ${{ inputs.changelog_path }} exists.
+            echo ${{ steps.set_path.outputs.changelog_path }} exists.
           else
-              echo ${{ inputs.changelog_path }} does not exist!
+              echo ${{ steps.set_path.outputs.changelog_path }} does not exist!
               echo The changelog for this release must exists before running this workflow.
               exit 1
           fi
       
-      - name: Strip Changelog Quotes
-      # a lof of bash doesn't like that the inputs from GitHub put double quotes around strings so strip them off for later use
-        id: strip
-        run: |
-          echo `::set-output name=clean_changelog_path::$(${{ inputs.changelog_path }} | tr -d '"')`
-
       - name: Check Current Version in code
         id: set_status
         run: |
@@ -146,7 +152,7 @@ jobs:
         id: check_files
         uses: andstor/file-existence-action@v1
         with:
-          files: "${{ needs.audit-version-changelog.outputs.clean_changelog_path }}, dist/*.tar.gz, dist/*.whl"
+          files: "${{ needs.audit-version-changelog.outputs.changelog_path }}, dist/*.tar.gz, dist/*.whl"
 
       # upload the files downloaded from S3 to artifacts so we don't have to keep 
       # downloading from S3
@@ -157,7 +163,7 @@ jobs:
           name: ${{ inputs.version_number }}
           path: |
             dist/
-            ${{ needs.audit-version-changelog.outputs.clean_changelog_path }}
+            ${{ needs.audit-version-changelog.outputs.changelog_path }}
           if-no-files-found: error
           retention-days: ${{ env.artifact_retention_days }}
       
@@ -221,7 +227,7 @@ jobs:
           path: |
             dist/
             !dist/dbt-${{ inputs.version_number }}.tar.gz
-            ${{ needs.audit-version-changelog.outputs.clean_changelog_path }}
+            ${{ needs.audit-version-changelog.outputs.changelog_path }}
           if-no-files-found: error
           retention-days: ${{ env.artifact_retention_days }}
 
