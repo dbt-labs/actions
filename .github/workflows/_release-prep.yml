@@ -130,7 +130,7 @@ jobs:
   skip-generate-changelog:
     runs-on: ubuntu-latest
     needs: [audit-changelog]
-    if: needs.audit-changelog.outputs.exists == true
+    if: needs.audit-changelog.outputs.exists == 'true'
 
     steps:
       - name: Changelog Exists, Skip Release Prep
@@ -139,7 +139,7 @@ jobs:
   skip-version-bump:
     runs-on: ubuntu-latest
     needs: [check-current-version]
-    if: needs.check-current-version.outputs.up_to_date == true
+    if: needs.check-current-version.outputs.up_to_date == 'true'
 
     steps:
       - name: Version Already bumped
@@ -150,7 +150,7 @@ jobs:
       branch_name: ${{steps.variables.outputs.BRANCH_NAME}}
     runs-on: ubuntu-latest
     needs: [audit-changelog, check-current-version]
-    if: needs.audit-changelog.outputs.exists == false || needs.check-current-version.outputs.up-to-date == false
+    if: needs.audit-changelog.outputs.exists == 'false' || needs.check-current-version.outputs.up_to_date == 'false'
 
     steps:
       - name: Check out the repository
@@ -181,7 +181,7 @@ jobs:
   generate-changelog:
     runs-on: ubuntu-latest
     needs: [audit-changelog, create-new-branch]
-    if: needs.audit-changelog.outputs.exists == false
+    if: needs.audit-changelog.outputs.exists == 'false'
 
     steps:
       - name: Check out the repository
@@ -234,7 +234,7 @@ jobs:
   bump-version:
     runs-on: ubuntu-latest
     needs: [check-current-version, create-new-branch]
-    if: needs.check-current-version.outputs.up_to_date == false
+    if: needs.check-current-version.outputs.up_to_date == 'false'
 
     steps:
       - name: Check out the repository
