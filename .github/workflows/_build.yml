@@ -80,6 +80,8 @@ jobs:
   audit-version-changelog:
     # Make sure the changelog has been generated and the version is up to date
     runs-on: ubuntu-latest
+    outputs:
+      clean_changelog_path: steps.strip.outputs.clean_changelog_path
 
     steps:
       - name: Check out the repository
@@ -103,6 +105,13 @@ jobs:
               echo The changelog for this release must exists before running this workflow.
               exit 1
           fi
+      
+      - name: Strip Changelog Quotes
+      # a lof of bash doesn't like that the inputs from GitHub put double quotes around strings so strip them off for later use
+        id: strip
+        run: |
+          clean_changelog_path = ${{ inputs.changelog_path }} | tr -d '"'
+          echo '::set-output name=clean_changelog_path::$clean_changelog_path'
 
       - name: Check Current Version in code
         id: set_status
@@ -138,7 +147,7 @@ jobs:
         id: check_files
         uses: andstor/file-existence-action@v1
         with:
-          files: "${{ inputs.changelog_path }}, dist/*.tar.gz, dist/*.whl"
+          files: "${{ needs.audit-version-changelog.outputs.clean_changelog_path }}, dist/*.tar.gz, dist/*.whl"
 
       # upload the files downloaded from S3 to artifacts so we don't have to keep 
       # downloading from S3
@@ -149,7 +158,7 @@ jobs:
           name: ${{ inputs.version_number }}
           path: |
             dist/
-            ${{ inputs.changelog_path }}
+            ${{ needs.audit-version-changelog.outputs.clean_changelog_path }}
           if-no-files-found: error
           retention-days: ${{ env.artifact_retention_days }}
       
@@ -169,7 +178,7 @@ jobs:
 
   build-packages:
     runs-on: ubuntu-latest
-    needs: [check-build-exists, check-build-exists]
+    needs: [audit-version-changelog, check-build-exists, check-build-exists]
     if: needs.check-build-exists.outputs.exists == 'false'
 
     outputs:
@@ -207,13 +216,13 @@ jobs:
           check-wheel-contents dist/*.whl --ignore W007,W008
 
       - name: upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.version_number }}
           path: |
             dist/
             !dist/dbt-${{ inputs.version_number }}.tar.gz
-            ${{ inputs.changelog_path }}
+            ${{ needs.audit-version-changelog.outputs.clean_changelog_path }}
           if-no-files-found: error
           retention-days: ${{ env.artifact_retention_days }}
 
