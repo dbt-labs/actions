@@ -285,8 +285,7 @@ jobs:
   
   merge-for-release:
     runs-on: ubuntu-latest
-    # audit-changelog in depen dency so we don't always completely skip this so the get-release-sha step can trigger
-    needs: [run-tests, create-new-branch, audit-changelog]
+    needs: [run-tests, create-new-branch]
 
     steps:
       - name: Log Values
@@ -315,6 +314,9 @@ jobs:
     runs-on: ubuntu-latest
     # TODO: below never triggers because merge-for-release never triggers when version and changelog are already done
     needs: [merge-for-release, audit-changelog, check-current-version]
+    # always run this job regardness of if the dependant jobs were skipped
+    if: always()
+
     steps:
       - name: Check out target branch
         uses: actions/checkout@v2
