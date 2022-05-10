@@ -72,6 +72,7 @@ jobs:
         run: |
             echo The last commit sha in the release: ${{ inputs.sha }}
             echo The release version number: ${{ inputs.version_number }}
+            echo The changelog_path: ${{ inputs.changelog_path }}
             echo The build_script_path: ${{ inputs.build_script_path }}
             echo The s3_bucket_name: ${{ inputs.s3_bucket_name }}
             echo The package_test_command: ${{ inputs.package_test_command }}
@@ -86,7 +87,7 @@ jobs:
         with:
           ref: ${{ inputs.sha }}
 
-      - name: Audit Version and Parse Into Parts
+      - name: Audit Version
         id: semver
         uses: dbt-labs/actions/parse-semver@v1
         with:
@@ -108,9 +109,10 @@ jobs:
         run: |
           if grep -Fxq "current_version = ${{ inputs.version_number }}" .bumpversion.cfg
           then
-            echo "::set-output name=up_to_date::true"
+            echo Version set to ${{ inputs.version_number }}
           else
-            echo "::set-output name=up_to_date::false"
+            echo Version not set to ${{ inputs.version_number }}.  versionbump must be complete before running this workflow.
+            exit 1
           fi
 
   check-build-exists:
