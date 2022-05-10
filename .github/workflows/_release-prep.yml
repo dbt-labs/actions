@@ -285,7 +285,8 @@ jobs:
   
   merge-for-release:
     runs-on: ubuntu-latest
-    needs: [run-tests, create-new-branch]
+    # audit-changelog in depen dency so we don't always completely skip this so the get-release-sha step can trigger
+    needs: [run-tests, create-new-branch, audit-changelog]
 
     steps:
       - name: Log Values
@@ -312,6 +313,7 @@ jobs:
     outputs:
       final_sha: ${{ steps.final_sha.outputs.final_sha }}
     runs-on: ubuntu-latest
+    # TODO: below never triggers because merge-for-release never triggers when version and changelog are already done
     needs: [merge-for-release, audit-changelog, check-current-version]
     steps:
       - name: Check out target branch
