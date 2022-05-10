@@ -155,7 +155,6 @@ jobs:
           git checkout -b ${{steps.variables.outputs.BRANCH_NAME}}
           git push origin ${{steps.variables.outputs.BRANCH_NAME}}
           git branch --set-upstream-to=origin/${{steps.variables.outputs.BRANCH_NAME}} ${{steps.variables.outputs.BRANCH_NAME}}
-            - name: Push changes
 
       - name: Push branch
         uses: ad-m/github-push-action@master
