@@ -54,7 +54,6 @@ on:
       changelog_path:
         description: path to the changelog for this release
         value: ${{ jobs.audit-version-changelog.outputs.changelog_path }}
-        type: string
 
 permissions:
   contents: write
