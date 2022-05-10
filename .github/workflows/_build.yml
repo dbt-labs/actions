@@ -42,6 +42,9 @@ on:
         required: true
         default: "dbt --version"
         type: string
+      changelog_path:
+        required: true
+        type: string
     # pass through secrets so every repo can have their own and won't depend on a name
     secrets:
       AWS_ACCESS_KEY_ID:
@@ -50,10 +53,6 @@ on:
       AWS_SECRET_ACCESS_KEY:
         description: AWS Access Key
         required: true
-    outputs:
-      CHANGELOG_PATH: 
-        description: Path to the cahngelog fdor this release
-        value: ${{ jobs.build-changelog-path.outputs.changelog_path }}
 
 permissions:
   contents: write
@@ -77,15 +76,11 @@ jobs:
             echo The s3_bucket_name: ${{ inputs.s3_bucket_name }}
             echo The package_test_command: ${{ inputs.package_test_command }}
 
-  build-changelog-path:
-    # the changelog uses semver per https://semver.org/ so we need to build the path to the file to use it in the release notes
-    # TODO: use the path built in `_release-prep.yml`
+  audit-version-changelog:
+    # Make sure the changelog has been generated and the version is up to date
     runs-on: ubuntu-latest
-    outputs:
-      changelog_path: ${{ steps.set_path.outputs.changelog_path }}
 
     steps:
-
       - name: Check out the repository
         uses: actions/checkout@v3
         with:
@@ -97,34 +92,29 @@ jobs:
         with:
           version: ${{ inputs.version_number }}
 
-      - name: Set Changelog Path
-        id: generate_path
-        run: |
-          if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
-          then
-            echo '::set-output name=changelog_path::.changes/${{ steps.semver.outputs.base-version }}-${{ steps.semver.outputs.pre-release }}.md'
-          else
-            echo '::set-output name=changelog_path::.changes/${{ steps.semver.outputs.version }}.md'
-          fi
-      
       - name: Audit Changelog Exists
         run: |
-          if test -f ${{ steps.generate_path.outputs.changelog_path }}
+          if test -f ${{ inputs.changelog_path }}
           then
-            echo "${{ steps.generate_path.outputs.changelog_path }} exists."
+            echo ${{ inputs.changelog_path }} exists.
           else
-              echo "${{ steps.generate_path.outputs.changelog_path }} does not exist!"
-              echo "The changelog for this release must exists before running this workflow."
+              echo ${{ inputs.changelog_path }} does not exist!
+              echo The changelog for this release must exists before running this workflow.
               exit 1
           fi
 
-      - name: Set Changelog Path
-        id: set_path
+      - name: Check Current Version in code
+        id: set_status
         run: |
-          echo '::set-output name=changelog_path::${{ steps.generate_path.outputs.changelog_path }}'
+          if grep -Fxq "current_version = ${{ inputs.version_number }}" .bumpversion.cfg
+          then
+            echo "::set-output name=up_to_date::true"
+          else
+            echo "::set-output name=up_to_date::false"
+          fi
 
   check-build-exists:
-    needs: [build-changelog-path]
+    needs: [audit-version-changelog]
     runs-on: ubuntu-latest
     outputs:
       exists: ${{ steps.set_existence.outputs.exists }}
@@ -146,8 +136,7 @@ jobs:
         id: check_files
         uses: andstor/file-existence-action@v1
         with:
-          # TODO: is this a good check?  first pass...
-          files: "${{ needs.build-changelog-path.outputs.changelog_path }}, dist/*.tar.gz, dist/*.whl"
+          files: "${{ inputs.changelog_path }}, dist/*.tar.gz, dist/*.whl"
 
       # upload the files downloaded from S3 to artifacts so we don't have to keep 
       # downloading from S3
@@ -158,13 +147,13 @@ jobs:
           name: ${{ inputs.version_number }}
           path: |
             dist/
-            ${{ needs.build-changelog-path.outputs.changelog_path }}
+            ${{ inputs.changelog_path }}
           if-no-files-found: error
           retention-days: ${{ env.artifact_retention_days }}
       
       - name: Set Exisistence for Other Jobs
         id: set_existence
-        run: echo '::set-output name=exists::${{steps.check_files.outputs.files_exists}}'
+        run: echo '::set-output name=exists::${{ steps.check_files.outputs.files_exists }}'
 
   skip-build:
     runs-on: ubuntu-latest
@@ -174,7 +163,7 @@ jobs:
     steps:
       - name: Build Exists, Skip To Test
         run: |
-          echo A build already exists for version ${{inputs.version_number}}, skipping build job
+          echo A build already exists for version ${{ inputs.version_number }}, skipping build job
 
   build-packages:
     runs-on: ubuntu-latest
@@ -185,11 +174,9 @@ jobs:
       finished: ${{ steps.set_success.outputs.finished }}
 
     steps:
-
       - name: Check out the repository
         uses: actions/checkout@v3
         with:
-          # persist-credentials: false  # TODO: with this false I get an error checking it out, it's what existed in previous release version though
           ref: ${{ inputs.sha }}
 
       - name: Set up Python
@@ -224,7 +211,7 @@ jobs:
           path: |
             dist/
             !dist/dbt-${{ inputs.version_number }}.tar.gz
-            ${{ needs.build-changelog-path.outputs.changelog_path }}
+            ${{ inputs.changelog_path }}
           if-no-files-found: error
           retention-days: ${{ env.artifact_retention_days }}
 
@@ -273,7 +260,7 @@ jobs:
 
   upload-artifacts-aws:
     runs-on: ubuntu-latest
-    needs: [test-build, build-changelog-path]
+    needs: [test-build]
   
     steps:
       - uses: actions/download-artifact@v3
