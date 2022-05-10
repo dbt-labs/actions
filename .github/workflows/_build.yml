@@ -30,6 +30,9 @@ on:
       version_number:
         required: true
         type: string
+      changelog_path:
+        required: true
+        type: string
       build_script_path:
         required: true
         default: "scripts/build-dist.sh"
@@ -41,9 +44,6 @@ on:
       package_test_command:
         required: true
         default: "dbt --version"
-        type: string
-      changelog_path:
-        required: true
         type: string
     # pass through secrets so every repo can have their own and won't depend on a name
     secrets:
