@@ -111,9 +111,9 @@ jobs:
         run: |
           if grep -Fxq "current_version = ${{ inputs.version_number }}" .bumpversion.cfg
           then
-            echo '::set-output name=up_to_date::'true'
+            echo '::set-output name=up_to_date::true'
           else
-            echo '::set-output name=up_to_date::'false'
+            echo '::set-output name=up_to_date::false'
           fi
 
   skip-generate-changelog:
