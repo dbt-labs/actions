@@ -81,7 +81,7 @@ jobs:
     # Make sure the changelog has been generated and the version is up to date
     runs-on: ubuntu-latest
     outputs:
-      clean_changelog_path: steps.strip.outputs.clean_changelog_path
+      clean_changelog_path: ${{ steps.strip.outputs.clean_changelog_path }}
 
     steps:
       - name: Check out the repository

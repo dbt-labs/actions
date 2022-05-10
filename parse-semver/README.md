@@ -44,7 +44,6 @@ jobs:
 | Property            | Example     | Description                                     |
 | ------------------- | ----------  | ----------------------------------------------- |
 | version             | `1.2.3rc4`  | Python Parsed version                           |
-| version-semver      | `1.2.3-rc4` | Fully Semver compliant version                  |
 | base-version        | `1.2.3`     | Base version                                    |
 | major               | `1`         | Major version                                   |
 | minor               | `2`         | Major version                                   |
