@@ -4,7 +4,12 @@
 # Inputs:
 #  sha: the commit to attach to this release
 #  version_number: version number for the release (ex: 1.2.3rc2)
-#   
+#  target_branch: The branch that we will release from
+#
+# Outputs:
+#   final_sha: The sha that will actually be released.  This can differ from the
+#              input sha if adding a version bump and/or changelog
+#   changelog_path: path to the changelof file (ex .changes/1.2.3-rc1.md)
 # **why?**
 # Reusable and consistent GitHub release process.
 #
@@ -14,7 +19,7 @@
 #  Note: This currently just passes data around without actually doing anything!
 #
 
-name: GitHub Release
+name: Version Bump and Changelog Generation
 
 on:
   workflow_call:
@@ -29,7 +34,6 @@ on:
         required: true
         type: string
     outputs:
-      # TODO: how do we get the final sha when it's already been kicked off?
       final_sha:
         description: The new commit that includes the changelog and version bump.
         value: ${{ jobs.get-release-sha.outputs.final_sha }}
@@ -38,7 +42,7 @@ on:
         value: ${{ jobs.check-changelog-exists.outputs.changelog_path }}
 
 permissions:
-  contents: write #TODO: may need more since it's merging in a branch
+  contents: write
 
 jobs:
   log-inputs:
@@ -60,7 +64,6 @@ jobs:
       is_prerelease: ${{ steps.semver.outputs.is-pre-release }}
 
     steps:
-
       - name: Check out the repository
         uses: actions/checkout@v3
         with:
@@ -82,17 +85,15 @@ jobs:
             echo '::set-output name=changelog_path::".changes/${{ steps.semver.outputs.version }}.md"'
           fi
 
-      - name: Set Changelog Exists
-        # TODO: if the changelog file exists is ti safe to assume we want to run this from the HEAD of the target branch?
-        id: check_changelog
-        uses: andstor/file-existence-action@v1
-        with:
-          # TODO: is this a good check?  first pass...
-          files: "${{ steps.set_path.outputs.changelog_path }}"
-
-      - name: Set Changelog Exisistence for Other Jobs
+      - name: Set Changelog Existence for Other Jobs
         id: set_existence
-        run: echo '::set-output name=exists::${{steps.check_changelog.outputs.files_exists}}'
+        run: |
+          if [[ -f ${{ steps.set_path.outputs.changelog_path }} ]]
+          then
+            echo '::set-output name=exists::true'
+          else
+            echo '::set-output name=exists::false'
+          fi
 
   check-current-version:
     runs-on: ubuntu-latest
@@ -100,7 +101,6 @@ jobs:
       up_to_date:  ${{ steps.set_status.outputs.up_to_date }}
 
     steps:
-
       - name: Check out the repository
         uses: actions/checkout@v3
         with:
@@ -123,7 +123,7 @@ jobs:
 
     steps:
       - name: Changelog Exists, Skip Release Prep
-        run: echo A changelog file already exists at ${{ needs.audit-changelog.outputs.exists }}, skipping
+        run: echo A changelog file already exists at ${{ needs.audit-changelog.outputs.exists }}, skipping generating changelog
 
   skip-version-bump:
     runs-on: ubuntu-latest
@@ -132,7 +132,7 @@ jobs:
 
     steps:
       - name: Version Already bumped
-        run: echo The version has already been bumped to ${{ inputs.version_number }}, skipping
+        run: echo The version has already been bumped to ${{ inputs.version_number }}, skipping version bump
 
   create-new-branch:
     outputs:
@@ -143,7 +143,7 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ inputs.sha }}
 
@@ -171,14 +171,14 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{needs.create-new-branch.outputs.BRANCH_NAME}}
 
       - name: Install changie
         run: |
           brew tap miniscruff/changie https://github.com/miniscruff/changie
-          brew install changie  #TODO: pin version?
+          brew install changie
 
       - name: Generate Pre Release Changelog
         if: needs.audit-changelog.outputs.is_prerelease == 1
@@ -194,7 +194,13 @@ jobs:
       
       - name: Check Changelog Created Successfully
         run: |
-          echo TODO check file generated
+          if [[ -f ${{ needs.audit-changelog.outputs.base_version }} ]]
+          then
+            echo Changelog file created successfully
+          else
+            echo Changelog failed to generate.  Exiting.
+            exit 1
+          fi
 
       - name: Commit changelog to branch
         uses: EndBug/add-and-commit@v7
@@ -233,7 +239,7 @@ jobs:
           pip install --upgrade pip
 
       - name: Bump version
-        # TODO: bumpversion is no longer supported
+        # note: bumpversion is no longer supported, it actually points to bump2version now
         run: |
           source env/bin/activate
           pip install -r dev-requirements.txt
@@ -296,13 +302,12 @@ jobs:
       - name: Check out target branch
         uses: actions/checkout@v2
       
-      # TODO: is there a better way to merge/commit? 
       - name: Merge changes with target branch
         uses: everlytic/branch-merge@1.1.2
         with:
           source_ref: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
           target_branch: ${{ inputs.target_branch }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}  # TODO: probably need to use a custom PAT to override .latest protection rules
+          github_token: ${{ secrets.GITHUB_TOKEN }}  # TODO: probably need to use a custom PAT to override ``.latest`` protection rules
           commit_message_template: '[Automated] Merged {source_ref} into target {target_branch} during release process'
 
   get-release-sha:
@@ -312,7 +317,6 @@ jobs:
     outputs:
       final_sha: ${{ steps.final_sha.outputs.final_sha }}
     runs-on: ubuntu-latest
-    # TODO: below never triggers because merge-for-release never triggers when version and changelog are already done
     needs: [merge-for-release, audit-changelog, check-current-version]
     # always run this job regardness of if the dependant jobs were skipped
     if: always()
