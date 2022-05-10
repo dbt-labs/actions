@@ -109,7 +109,8 @@ jobs:
       
       - name: Audit Changelog Exists
         run: |
-          if [ -f "${{ steps.generate_path.outputs.changelog_path }}" ]; then
+          if test -f ${{ steps.generate_path.outputs.changelog_path }}
+          then
             echo "${{ steps.generate_path.outputs.changelog_path }} exists."
           else
               echo "${{ steps.generate_path.outputs.changelog_path }} does not exist!"
