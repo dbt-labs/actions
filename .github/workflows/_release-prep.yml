@@ -90,9 +90,9 @@ jobs:
         run: |
           if [[ -f ${{ steps.set_path.outputs.changelog_path }} ]]
           then
-            echo '::set-output name=exists::true'
+            echo "::set-output name=exists::'true'"
           else
-            echo '::set-output name=exists::false'
+            echo "::set-output name=exists::'false'"
           fi
 
   check-current-version:
@@ -111,9 +111,9 @@ jobs:
         run: |
           if grep -Fxq "current_version = ${{ inputs.version_number }}" .bumpversion.cfg
           then
-            echo '::set-output name=up_to_date::true'
+            echo "::set-output name=up_to_date::'true'"
           else
-            echo '::set-output name=up_to_date::false'
+            echo "::set-output name=up_to_date::'false'"
           fi
 
   skip-generate-changelog:
@@ -327,7 +327,6 @@ jobs:
         with:
           ref: ${{ inputs.target_branch }}
       - name: Set sha for release
-        if: needs.audit-changelog.outputs.exists == 'false'
         id: final_sha
         run: |
           if [[${{ needs.audit-changelog.outputs.exists }} -eq 'false']] || [[${{ needs.check-current-version.outputs.up_to_date }} -eq 'false']]
