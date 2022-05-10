@@ -90,12 +90,12 @@ jobs:
         run: |
           if test -f ${{ steps.set_path.outputs.changelog_path }}
           then
-            echo "::set-output name=exists::'true'"
+            echo "::set-output name=exists::true"
           else
-            echo "::set-output name=exists::'false'"
+            echo "::set-output name=exists::false"
           fi
 
-      - name: Print Output
+      - name: Job Output
         run: |
           echo changelog_path ${{ steps.set_path.outputs.changelog_path }}
           echo exists ${{ steps.set_existence.outputs.exists }}
@@ -119,18 +119,18 @@ jobs:
         run: |
           if grep -Fxq "current_version = ${{ inputs.version_number }}" .bumpversion.cfg
           then
-            echo "::set-output name=up_to_date::'true'"
+            echo "::set-output name=up_to_date::true"
           else
-            echo "::set-output name=up_to_date::'false'"
+            echo "::set-output name=up_to_date::false"
           fi
 
-      - name: Print Output
+      - name: Job Output
         run: echo up_to_date ${{ steps.set_status.outputs.up_to_date }}
 
   skip-generate-changelog:
     runs-on: ubuntu-latest
     needs: [audit-changelog]
-    if: needs.audit-changelog.outputs.exists == 'true'
+    if: needs.audit-changelog.outputs.exists == true
 
     steps:
       - name: Changelog Exists, Skip Release Prep
@@ -139,7 +139,7 @@ jobs:
   skip-version-bump:
     runs-on: ubuntu-latest
     needs: [check-current-version]
-    if: needs.check-current-version.outputs.up_to_date == 'true'
+    if: needs.check-current-version.outputs.up_to_date == true
 
     steps:
       - name: Version Already bumped
@@ -150,7 +150,7 @@ jobs:
       branch_name: ${{steps.variables.outputs.BRANCH_NAME}}
     runs-on: ubuntu-latest
     needs: [audit-changelog, check-current-version]
-    if: needs.audit-changelog.outputs.exists == 'false' || needs.check-current-version.outputs.up-to-date == 'false'
+    if: needs.audit-changelog.outputs.exists == false || needs.check-current-version.outputs.up-to-date == false
 
     steps:
       - name: Check out the repository
@@ -175,13 +175,13 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ steps.variables.outputs.BRANCH_NAME }}
 
-      - name: Print Output
+      - name: Job Output
         run: echo BRANCH_NAME ${{ steps.variables.outputs.BRANCH_NAME }}
 
   generate-changelog:
     runs-on: ubuntu-latest
     needs: [audit-changelog, create-new-branch]
-    if: needs.audit-changelog.outputs.exists == 'false'
+    if: needs.audit-changelog.outputs.exists == false
 
     steps:
       - name: Check out the repository
@@ -234,7 +234,7 @@ jobs:
   bump-version:
     runs-on: ubuntu-latest
     needs: [check-current-version, create-new-branch]
-    if: needs.check-current-version.outputs.up_to_date == 'false'
+    if: needs.check-current-version.outputs.up_to_date == false
 
     steps:
       - name: Check out the repository
@@ -344,12 +344,12 @@ jobs:
       - name: Set sha for release
         id: final_sha
         run: |
-          if [[${{ needs.audit-changelog.outputs.exists }} -eq 'false']] || [[${{ needs.check-current-version.outputs.up_to_date }} -eq 'false']]
+          if [[${{ needs.audit-changelog.outputs.exists }} -eq false]] || [[${{ needs.check-current-version.outputs.up_to_date }} -eq false]]
           then
             echo "::set-output name=final_sha::$(git rev-parse HEAD)"
           else
             echo "::set-output name=final_sha::${{ inputs.sha }}"
           fi
 
-      - name: Print Output
+      - name: Job Output
         run: echo final_sha ${{ steps.final_sha.outputs.final_sha }}
