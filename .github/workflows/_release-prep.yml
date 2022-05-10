@@ -144,6 +144,8 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.sha }}
 
       - name: Set version value
         id: variables
