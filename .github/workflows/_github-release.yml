@@ -131,7 +131,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: ${{inputs.version_number}}
+          name: ${{ inputs.version_number }}
           path: '.'
 
       - name: Display structure of all downloaded files
@@ -148,7 +148,7 @@ jobs:
 
       - name: Create GitHub Release
         run: |
-          VERSION=v${{ version_number }}
+          VERSION=v${{ inputs.version_number }}
           RELEASE_NOTES=${{ inputs.changelog_path }}
           TITLE=${{ github.event.repository.name }} ${{ env.tag }}
           if (${{ steps.release_type.outputs.isPrerelease }}==true)
