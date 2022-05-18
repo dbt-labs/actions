@@ -73,7 +73,7 @@ jobs:
       - name: Check if release exists for tag
         id: release_exists
         run: |
-          output=$((gh release view ${{ env.tag }} --json targetCommitish) 2>&1)
+          output=$((gh release view ${{ env.tag }} --json targetCommitish) 2>&1) || true
           if [[ "$output" == "release not found" ]]
           then
             echo Release for tag ${{ env.tag }} does not exist
