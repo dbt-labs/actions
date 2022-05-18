@@ -64,6 +64,9 @@ jobs:
       tag: ${{ steps.set_tag.outputs.tag }}
 
     steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
       - name: Find Release by tag
         id: cli_tag
         run: |
@@ -71,7 +74,7 @@ jobs:
           commit=`echo $(jq -r '.targetCommitish' <<< "$release_details")`
           echo Commit: $commit
           if !$commit then
-            echo Release for tag ${{ env.tag }} does not exist
+            echo Release for tag ${{ env.tag }}does not exist
             echo "::set-output name=exists::false
           elif $commit != ${{ inputs.sha }} then
             echo Release for tag ${{ env.tag }} already exists for commit $commit!
@@ -139,24 +142,27 @@ jobs:
       - name: Display structure of all downloaded files
         run: ls -R
 
-      # Need to set an output variable because env variables can't be taken as input
-      # This is needed for the next step with releasing to GitHub
-      - name: Find release type
+      - name: Set release type
         id: release_type
-        env:
-          IS_PRERELEASE: ${{ contains(inputs.version_number, 'rc') ||  contains(inputs.version_number, 'b') }}
         run: |
-          echo ::set-output name=isPrerelease::$IS_PRERELEASE
+          if ${{ contains(inputs.version_number, 'rc') ||  contains(inputs.version_number, 'b') }}
+          then
+            echo This is a prerelease
+            echo ::set-output name=prerelease::--prerelease
+          else
+            echo This is not a prerelease
+          fi
+
+      - name: Check out the repository
+        uses: actions/checkout@v3
 
       - name: Create GitHub Release
         run: |
-          VERSION=v${{ inputs.version_number }}
-          RELEASE_NOTES=${{ inputs.changelog_path }}
-          TITLE=${{ github.event.repository.name }} ${{ env.tag }}
-          if (${{ steps.release_type.outputs.isPrerelease }}==true)
-          then
-            PRERELEASE=--prerelease
-          fi
-          gh release create ${{ env.tag }} -t $TITLE -F $RELEASE_NOTES --target ${{ inputs.sha }} PRERELEASE
+          gh release create $TAG -t $TITLE -F $RELEASE_NOTES --target $COMMIT $PRERELEASE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.tag }}
+          TITLE: ${{ github.event.repository.name }} ${{ env.tag }}
+          RELEASE_NOTES: ${{ inputs.changelog_path }}
+          COMMIT: ${{ inputs.sha }}
+          PRERELEASE: ${{ steps.release_type.outputs.prerelease}}
