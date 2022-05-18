@@ -155,4 +155,4 @@ jobs:
           then
             PRERELEASE=--prerelease
           fi
-          gh release create ${{ env.tag }} -t $TITLE -F $RELEASE_NOTES --target ${{ input.sha }} PRERELEASE
+          gh release create ${{ env.tag }} -t $TITLE -F $RELEASE_NOTES --target ${{ inputs.sha }} PRERELEASE
