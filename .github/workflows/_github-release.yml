@@ -67,31 +67,28 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
       
+      # When the GitHub CLI doesn't find a release for the given tag, it will exit 1 with a
+      # message of "release not found".  In our case, it's not an actyual error, just a 
+      # confirmation that the release does not already exists so we can go ahead and create it.
       - name: Check if release exists for tag
         id: release_exists
         run: |
-          exists=$((gh release view v2.2.4rc3 --json targetCommitish) 2>&1)
-          if [[ "$release_details" == "release not found" ]]
+          output=$((gh release view ${{ env.tag }} --json targetCommitish) 2>&1)
+          if [[ "$output" == "release not found" ]]
           then
             echo Release for tag ${{ env.tag }} does not exist
             echo "::set-output name=exists::false"
-          else
-            echo Release for tag ${{ env.tag }} already exists
-            echo "::set-output name=exists::true"
+            exit 0
           fi
-
-      # if the release already exists, make sure it's for the correct commit!
-      - name: Audit Release Commit for Tag
-        if: steps.release_exists.outputs.exists == 'true'
-        id: cli_tag
-        run: |
-          release_details=`gh release view ${{ env.tag }} --json targetCommitish`
-          commit=`echo $(jq -r '.targetCommitish' <<< "$release_details")`
-          echo Commit: $commit
+          commit=$(jq -r '.targetCommitish' <<< "$output")
           if $commit != ${{ inputs.sha }} then
             echo Release for tag ${{ env.tag }} already exists for commit $commit!
+            echo Cannot create a new release for commit ${{ inputs.sha }}.  Exiting.
             exit 1
           fi
+          echo Release for tag ${{ env.tag }} already exists
+          echo "::set-output name=exists::true"
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
