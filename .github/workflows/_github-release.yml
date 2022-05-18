@@ -163,6 +163,19 @@ jobs:
 
       - name: Check out the repository
         uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.sha }}
+      
+      - name: Create tag
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ env.tag }}',
+              sha: ${{ inputs.sha }}
+            })
 
       - name: Create GitHub Release
         run: |
