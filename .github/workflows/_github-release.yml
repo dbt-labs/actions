@@ -17,6 +17,9 @@
 #
 # This workflow expects the artifacts to already be built and living in the artifact store of the workflow.
 #
+# Validation Checks
+#
+#  1. TODO:
 
 name: GitHub Release
 
@@ -33,6 +36,9 @@ on:
         description: Path to the changelog file for release notes
         required: true
         type: string
+      testing:
+        required: true
+        type: boolean
 
 permissions:
   contents: write
