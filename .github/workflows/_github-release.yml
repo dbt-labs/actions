@@ -2,6 +2,7 @@
 # If no release already exists for this commit and version, create the tag and release it to GitHub.
 # If a release already exists for this commit, skip creating the release but finish with a success.
 # If a release exists for this commit under a different tag, fail.
+# If the commit is already associated with a different release, fail.
 #
 # Inputs:
 #  sha: the commit to attach to this release
@@ -137,8 +138,7 @@ jobs:
 
   github-release:
     runs-on: ubuntu-latest
-    needs: [check-release-exists]
-    if: needs.check-release-exists.outputs.exists == 'false'
+    needs: [audit-release-different-commit]
 
     steps:
 
@@ -168,7 +168,7 @@ jobs:
 
       - name: Create GitHub Release
         run: |
-          gh release create ${{ env.tag }} -t "$TITLE" -F $RELEASE_NOTES --target $COMMIT $PRERELEASE
+          gh release create ${{ env.tag }} -t "$TITLE" -F $RELEASE_NOTES --target $COMMIT ./dist/* $PRERELEASE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TITLE: ${{ github.event.repository.name }} ${{ env.tag }}
