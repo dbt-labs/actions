@@ -1,20 +1,28 @@
-name: "Build and Release"
+name: "Build and Release via Workflows"
 
 on:
   workflow_dispatch:
     inputs:
       sha:
-        description: 'The last commit sha in the release'
+        description: 'The commit sha to release'
         required: true
         type: string
       version_number:
         description: 'The release version number (ie. 1.0.0b1)'
         required: true
         type: string
-      is_prod:
-        # TODO: need an action to clean up test builds for testing purposes
-        description: 'Is this a production build/release'
-        default: false
+      build_script_path:
+        description: 'The path to the build script'
+        default: 'scripts/build-dist.sh'
+        required: true
+        type: string
+      target_branch:
+        description: 'Target branch to release from (ie. 1.1.latest)'
+        required: true
+        type: string
+      testing:
+        description: 'This is a test release'
+        default: true
         required: true
         type: boolean
 
@@ -22,30 +30,41 @@ permissions:
   contents: write
 
 jobs:
+  release_prep:
+    uses: dbt-labs/actions/.github/workflows/_release-prep.yml@er/pre-release
+    with:
+      sha: ${{ github.event.inputs.sha }}
+      version_number: ${{ github.event.inputs.version_number }}
+      target_branch: ${{ github.event.inputs.target_branch }}
 
   build:
-    uses: dbt-labs/actions/.github/workflows/_build.yml@er/release  # TODO: This should be a tag
+    needs: [release_prep]
+    uses: dbt-labs/actions/.github/workflows/_build.yml@er/build
     with:
-      sha: ${{ github.event.inputs.sha }}
+      # notice this is the sha from the last job so to include the version bump / changelog
+      sha: ${{ needs.release_prep.outputs.final_sha }}
       version_number: ${{ github.event.inputs.version_number }}
+      changelog_path: ${{ needs.release_prep.outputs.changelog_path }}
       # the following values should be the same for all runs in a repository so do not need to be input
       build_script_path: scripts/build-dist.sh
-      s3_bucket: core-team-artifacts
-      package_test_command: dbt --version
+      s3_bucket_name: core-team-artifacts
+      package_test_command: pip freeze
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.ARTIFACT_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.ARTIFACT_AWS_SECRET_ACCESS_KEY }}
 
   github_release:
-    needs: [build]
-    uses: dbt-labs/actions/.github/workflows/_github-release.yml@er/release  # TODO: This should be a tag
+    needs: [build, release_prep]
+    uses: dbt-labs/actions/.github/workflows/_github-release.yml@er/github-release
     with:
       sha: ${{ github.event.inputs.sha }}
       version_number: ${{ github.event.inputs.version_number }}
-      file_uploads: |
-        test-github-actions-${{github.event.inputs.version_number}}-py3-none-any.whl
-        test-github-actions-${{github.event.inputs.version_number}}.tar.gz
+      changelog_path: ${{ needs.release_prep.outputs.changelog_path }}
 
   # this is still WIP
   # pypi_release:
   #   needs: [github_release]
-  #   uses: dbt-labs/actions/.github/workflows/_pypi-release.yml@er/release
+  #   uses: dbt-labs/actions/.github/workflows/_pypi-release.yml@er/pypi
   #   with:
-  #     is_prod: ${{ github.event.inputs.is_prod }}
+  #     tag: ${{ needs.github_release.outputs.tag }}
+  #     testing: ${{ github.event.inputs.is_prod }}
