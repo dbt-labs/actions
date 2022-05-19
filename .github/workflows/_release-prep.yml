@@ -17,7 +17,12 @@
 # **when?**
 # Call when ready to kick off a build and release
 #
-# Validation Checks  TODO: add to teh top of all scripts
+# Validation Checks
+#
+#  1. Bump the version if it has not been bumped
+#  2. Generate the changelog (via changie) if there is no markdown file for this version
+#
+#
 
 name: Version Bump and Changelog Generation
 
@@ -33,6 +38,9 @@ on:
       target_branch:
         required: true
         type: string
+      testing:
+        required: true
+        type: boolean
     outputs:
       final_sha:
         description: The new commit that includes the changelog and version bump.
@@ -287,6 +295,7 @@ jobs:
   merge-for-release:
     runs-on: ubuntu-latest
     needs: [run-tests, create-new-branch]
+    if: inputs.testing == 'false'
 
     steps:
       - name: Log Values
@@ -296,20 +305,20 @@ jobs:
 
       - name: Check out target branch
         uses: actions/checkout@v3
+
+      - name: Merge changes with target branch
+        uses: everlytic/branch-merge@1.1.2
         with:
-          ref: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
-      
-      - name: Merge branch into target branch
-        run: |
-          git fetch origin
-          git checkout ${{ inputs.target_branch}}
-          git merge --squash ${{ needs.create-new-branch.outputs.BRANCH_NAME }} -m "[Automated] Merged {source_ref} into target {target_branch} during release process"
-          git push
-      
+          source_ref: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
+          target_branch: ${{ inputs.target_branch }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}  # TODO: probably need to use a custom PAT to override ``.latest`` protection rules
+          commit_message_template: '[Automated] Merged {source_ref} into target {target_branch} during release process'
+
   get-release-sha:
   # Get the sha that will be released.  If the changelog already exists on the input sha and the version has already been bumped,
   # then it is what we will release. Otherwise we generated a changelog and did the version bump in this workflow and there is a
   # new sha to use from the merge we just did.  Grab that here instead.
+  # If we are testing the release, we never merged into the target branch so that's what we need to get the sh of.
     outputs:
       final_sha: ${{ steps.final_sha.outputs.final_sha }}
     runs-on: ubuntu-latest
@@ -319,9 +328,20 @@ jobs:
 
     steps:
       - name: Check out target branch
+        if: inputs.testing == 'false'
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.target_branch }}
+        run: |
+          echo Checking out ${{ inputs.target_branch }}
+
+      - name: Check out target branch
+        if: inputs.testing == 'true'
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
+        run: |
+          echo Checking out ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
 
       - name: Set sha for release
         id: final_sha
