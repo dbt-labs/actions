@@ -216,6 +216,7 @@ jobs:
             exit 1
           fi
 
+      # TODO: can do this with just the command line instead of external action
       - name: Commit changelog to branch
         uses: EndBug/add-and-commit@v7
         with:
@@ -260,6 +261,7 @@ jobs:
           env/bin/bumpversion --allow-dirty --new-version ${{inputs.version_number}} major
           git status
 
+      # TODO: can do this with just the command line instead of external action
       - name: Commit version bump to branch
         uses: EndBug/add-and-commit@v7
         with:
@@ -332,12 +334,12 @@ jobs:
       final_sha: ${{ steps.final_sha.outputs.final_sha }}
     runs-on: ubuntu-latest
     needs: [merge-for-release, audit-changelog, check-current-version]
-    # always run this job regardness of if the dependant jobs were skipped
+    # always run this job, regardness of if the dependant jobs were skipped
     if: always()
 
     steps:
       - name: Check out target branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ inputs.target_branch }}
 
