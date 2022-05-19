@@ -40,7 +40,7 @@ on:
         type: string
       testing:
         required: true
-        type: boolean
+        type: string
     outputs:
       final_sha:
         description: The new commit that includes the changelog and version bump.
