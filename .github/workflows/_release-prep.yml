@@ -332,16 +332,15 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.target_branch }}
-        run: |
-          echo Checking out ${{ inputs.target_branch }}
 
       - name: Check out target branch
         if: inputs.testing == 'true'
         uses: actions/checkout@v3
         with:
           ref: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
-        run: |
-          echo Checking out ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
+
+      - name: Log branch
+        run: git status
 
       - name: Set sha for release
         id: final_sha
