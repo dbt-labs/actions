@@ -166,8 +166,7 @@ jobs:
       - name: Create branch
         run: |
           git checkout -b ${{steps.variables.outputs.BRANCH_NAME}}
-          git push origin ${{steps.variables.outputs.BRANCH_NAME}}
-          git branch --set-upstream-to=origin/${{steps.variables.outputs.BRANCH_NAME}} ${{steps.variables.outputs.BRANCH_NAME}}
+          git push -u origin ${{steps.variables.outputs.BRANCH_NAME}}
 
       - name: Job Output
         run: echo BRANCH_NAME ${{ steps.variables.outputs.BRANCH_NAME }}
@@ -214,7 +213,6 @@ jobs:
         run: |
           git config user.name 'Github Build Bot'
           git config user.email 'buildbot@fishtownanalytics.com'
-          git pull
           git add .
           git commit -m "Generated changelog for version ${{ inputs.version_number }}"
           git push
@@ -252,7 +250,6 @@ jobs:
         run: |
           git config user.name 'Github Build Bot'
           git config user.email 'buildbot@fishtownanalytics.com'
-          git pull
           git add .
           git commit -m "Bumping version to ${{ inputs.version_number }}"
           git push
@@ -302,7 +299,7 @@ jobs:
       
       - name: Merge branch into target branch
         run: |
-          git switch ${{ inputs.target_branch }}
+          git checkout ${{ inputs.target_branch}}
           git merge --squash ${{ needs.create-new-branch.outputs.BRANCH_NAME }} -m "[Automated] Merged {source_ref} into target {target_branch} during release process"
           git push
       
