@@ -54,7 +54,7 @@ on:
         type: string
       testing:  # TODO: implement
         required: true
-        type: boolean
+        type: string
     # pass through secrets so every repo can have their own and won't depend on a name
     secrets:
       AWS_ACCESS_KEY_ID:
