@@ -301,6 +301,7 @@ jobs:
       
       - name: Merge branch into target branch
         run: |
+          git fetch origin
           git checkout ${{ inputs.target_branch}}
           git merge --squash ${{ needs.create-new-branch.outputs.BRANCH_NAME }} -m "[Automated] Merged {source_ref} into target {target_branch} during release process"
           git push
