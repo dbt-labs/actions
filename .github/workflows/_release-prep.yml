@@ -213,6 +213,7 @@ jobs:
         run: |
           git config user.name 'Github Build Bot'
           git config user.email 'buildbot@fishtownanalytics.com'
+          git pull
           git add .
           git commit -m "Generated changelog for version ${{ inputs.version_number }}"
           git push
@@ -250,6 +251,7 @@ jobs:
         run: |
           git config user.name 'Github Build Bot'
           git config user.email 'buildbot@fishtownanalytics.com'
+          git pull
           git add .
           git commit -m "Bumping version to ${{ inputs.version_number }}"
           git push
