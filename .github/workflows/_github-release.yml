@@ -168,10 +168,9 @@ jobs:
 
       - name: Create GitHub Release
         run: |
-          gh release create $TAG -t $TITLE -F $RELEASE_NOTES --target $COMMIT $PRERELEASE
+          gh release create ${{ env.tag }} -t "$TITLE" -F $RELEASE_NOTES --target $COMMIT $PRERELEASE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ env.tag }}
           TITLE: ${{ github.event.repository.name }} ${{ env.tag }}
           RELEASE_NOTES: ${{ inputs.changelog_path }}
           COMMIT: ${{ inputs.sha }}
