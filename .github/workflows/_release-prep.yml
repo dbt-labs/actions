@@ -221,6 +221,7 @@ jobs:
           git config user.email 'buildbot@fishtownanalytics.com'
           git add .
           git commit -m "Generated changelog for version ${{ inputs.version_number }}"
+          git pull
           git push
 
   bump-version:
@@ -258,6 +259,7 @@ jobs:
           git config user.email 'buildbot@fishtownanalytics.com'
           git add .
           git commit -m "Bumping version to ${{ inputs.version_number }}"
+          git pull
           git push
       
   run-tests:
@@ -297,10 +299,14 @@ jobs:
         run: |
           echo inputs.target_branch ${{ inputs.target_branch }}
           echo needs.create-new-branch.outputs.BRANCH_NAME ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
+
+      - name: Check out target branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.target_branch }}
       
       - name: Merge branch into target branch
         run: |
-          git checkout ${{ inputs.target_branch }}
           git pull
           git merge ${{ needs.create-new-branch.outputs.BRANCH_NAME }} -m "[Automated] Merged {source_ref} into target {target_branch} during release process" --squash
       
