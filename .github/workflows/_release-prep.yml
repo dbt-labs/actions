@@ -298,12 +298,13 @@ jobs:
       - name: Check out target branch
         uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.target_branch }}
+          ref: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
       
       - name: Merge branch into target branch
         run: |
-          git pull
+          git switch ${{ inputs.target_branch }}
           git merge --squash ${{ needs.create-new-branch.outputs.BRANCH_NAME }} -m "[Automated] Merged {source_ref} into target {target_branch} during release process"
+          git push
       
   get-release-sha:
   # Get the sha that will be released.  If the changelog already exists on the input sha and the version has already been bumped,
