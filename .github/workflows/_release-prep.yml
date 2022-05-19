@@ -215,21 +215,13 @@ jobs:
             exit 1
           fi
 
-      # TODO: can do this with just the command line instead of external action
-      - name: Commit changelog to branch
-        uses: EndBug/add-and-commit@v7
-        with:
-          author_name: 'Github Build Bot'
-          author_email: 'buildbot@fishtownanalytics.com'
-          message: 'Generated changelog for version ${{ inputs.version_number }}'
-          branch: ${{needs.create-new-branch.outputs.BRANCH_NAME}}
-          push: origin origin/${{needs.create-new-branch.outputs.BRANCH_NAME}}
-      
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{needs.create-new-branch.outputs.BRANCH_NAME}}
+      - name: Commit & Push changes
+        run: |
+          git config user.name 'Github Build Bot'
+          git config user.email 'buildbot@fishtownanalytics.com'
+          git add .
+          git commit -m "Generated changelog for version ${{ inputs.version_number }}"
+          git push
 
   bump-version:
     runs-on: ubuntu-latest
@@ -260,22 +252,14 @@ jobs:
           env/bin/bumpversion --allow-dirty --new-version ${{inputs.version_number}} major
           git status
 
-      # TODO: can do this with just the command line instead of external action
-      - name: Commit version bump to branch
-        uses: EndBug/add-and-commit@v7
-        with:
-          author_name: 'Github Build Bot'
-          author_email: 'buildbot@fishtownanalytics.com'
-          message: 'Bumping version to ${{ inputs.version_number }}'
-          branch: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
-          push: origin origin/${{ needs.create-new-branch.outputs.BRANCH_NAME }}
+      - name: Commit & Push changes
+        run: |
+          git config user.name 'Github Build Bot'
+          git config user.email 'buildbot@fishtownanalytics.com'
+          git add .
+          git commit -m "Bumping version to ${{ inputs.version_number }}"
+          git push
       
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
-
   run-tests:
   # TODO: this used to specify just unit tests, if we don't specify TOXENV it will run all tests - seems preferable?
     runs-on: ubuntu-latest
@@ -314,17 +298,12 @@ jobs:
           echo inputs.target_branch ${{ inputs.target_branch }}
           echo needs.create-new-branch.outputs.BRANCH_NAME ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
       
-      - name: Check out target branch
-        uses: actions/checkout@v2
+      - name: Merge branch into target branch
+        run: |
+          git checkout ${{ inputs.target_branch }}
+          git pull
+          git merge ${{ needs.create-new-branch.outputs.BRANCH_NAME }} -m "[Automated] Merged {source_ref} into target {target_branch} during release process" --squash
       
-      - name: Merge changes with target branch
-        uses: everlytic/branch-merge@1.1.2
-        with:
-          source_ref: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
-          target_branch: ${{ inputs.target_branch }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}  # TODO: probably need to use a custom PAT to override ``.latest`` protection rules
-          commit_message_template: '[Automated] Merged {source_ref} into target {target_branch} during release process'
-
   get-release-sha:
   # Get the sha that will be released.  If the changelog already exists on the input sha and the version has already been bumped,
   # then it is what we will release. Otherwise we generated a changelog and did the version bump in this workflow and there is a
