@@ -33,14 +33,6 @@ on:
         description: Path to the changelog file for release notes
         required: true
         type: string
-      file_uploads:
-        description: Newline-delimited globs of paths to assets to upload for release
-        required: true
-        type: string
-    outputs:
-      tag:
-        description: The tag we release
-        value: ${{ jobs.check-release-exists.outputs.tag }}
 
 permissions:
   contents: write
