@@ -38,7 +38,7 @@ on:
         type: string
       testing:
         required: true
-        type: boolean
+        type: string
 
 permissions:
   contents: write
