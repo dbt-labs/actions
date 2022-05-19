@@ -17,6 +17,7 @@
 # **when?**
 # Call when ready to kick off a build and release
 #
+# Validation Checks  TODO: add to teh top of all scripts
 
 name: Version Bump and Changelog Generation
 
@@ -168,12 +169,6 @@ jobs:
           git push origin ${{steps.variables.outputs.BRANCH_NAME}}
           git branch --set-upstream-to=origin/${{steps.variables.outputs.BRANCH_NAME}} ${{steps.variables.outputs.BRANCH_NAME}}
 
-      - name: Push branch
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.variables.outputs.BRANCH_NAME }}
-
       - name: Job Output
         run: echo BRANCH_NAME ${{ steps.variables.outputs.BRANCH_NAME }}
 
@@ -308,7 +303,7 @@ jobs:
       - name: Merge branch into target branch
         run: |
           git pull
-          git merge ${{ needs.create-new-branch.outputs.BRANCH_NAME }} -m "[Automated] Merged {source_ref} into target {target_branch} during release process" --squash
+          git merge --squash ${{ needs.create-new-branch.outputs.BRANCH_NAME }} -m "[Automated] Merged {source_ref} into target {target_branch} during release process"
       
   get-release-sha:
   # Get the sha that will be released.  If the changelog already exists on the input sha and the version has already been bumped,
