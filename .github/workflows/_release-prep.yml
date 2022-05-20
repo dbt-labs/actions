@@ -1,15 +1,16 @@
 # **what?**
-# Perform the version bump, batch and merge the changelog and run tests.
+# Perform the version bump, generate the changelog and run tests.
 #
 # Inputs:
 #  sha: the commit to attach to this release
 #  version_number: version number for the release (ex: 1.2.3rc2)
 #  target_branch: The branch that we will release from
+#  testing: true or false for if this is a test of the release process
 #
 # Outputs:
 #   final_sha: The sha that will actually be released.  This can differ from the
 #              input sha if adding a version bump and/or changelog
-#   changelog_path: path to the changelof file (ex .changes/1.2.3-rc1.md)
+#   changelog_path: path to the changelog file (ex .changes/1.2.3-rc1.md)
 #
 # **why?**
 # Reusable and consistent GitHub release process.
@@ -21,7 +22,7 @@
 #
 #  1. Bump the version if it has not been bumped
 #  2. Generate the changelog (via changie) if there is no markdown file for this version
-#
+#  3. Only merge into the target branch when not testing, otherwise point to commit on new branch
 #
 
 name: Version Bump and Changelog Generation
