@@ -105,43 +105,12 @@ jobs:
             echo Release for tag ${{ steps.set_tag.outputs.tag }} already exists in draft form.  Need to Publish.
             echo "::set-output name=exists::false"
             echo "::set-output name=draft_exists::true"
+            exit 0
           fi
           echo Release for tag ${{ steps.set_tag.outputs.tag }} already exists.  Skip GitHub release.
           echo "::set-output name=exists::true"
           echo "::set-output name=draft_exists::false"
 
-          if [[ ${{ inputs.testing }} == "false" ]]
-          then
-            echo first
-          fi
-          if [[ ${{ inputs.testing }} -eq "false" ]]
-          then
-            echo second
-          fi
-          if [[ ${{ inputs.testing }} == false ]]
-          then
-            echo third
-          fi
-          if [[ ${{ inputs.testing }} -eq false ]]
-          then
-            echo forth
-          fi
-          if [[ ${{ inputs.testing }} == "true" ]]
-          then
-            echo fifth
-          fi
-          if [[ ${{ inputs.testing }} -eq "true" ]]
-          then
-            echo sixth
-          fi
-          if [[ ${{ inputs.testing }} == true ]]
-          then
-            echo seventh
-          fi
-          if [[ ${{ inputs.testing }} -eq true ]]
-          then
-            echo eighth
-          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
@@ -223,7 +192,7 @@ jobs:
       - name: Set as draft release
         id: draft
         run: |
-          if [[ ${{ inputs.testing }} == true ]]
+          if [[ ${{ inputs.testing }} -eq true ]]
           then
             echo This is a draft release
             echo ::set-output name=draft::--draft
