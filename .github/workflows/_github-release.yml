@@ -42,7 +42,7 @@ on:
     outputs:
       tag: 
         description: The path to the changelog for this version
-        value: ${{ jobs.check-release-exists.outputs.exists }} ${{ jobs.audit-changelog.outputs.changelog_path }}
+        value: ${{ jobs.check-release-exists.outputs.tag }}
 
 
 permissions:
