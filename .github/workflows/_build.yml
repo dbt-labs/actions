@@ -109,9 +109,10 @@ jobs:
           then
             echo ${{ inputs.changelog_path }} exists.
           else
-              echo ${{ inputs.changelog_path }} does not exist!
-              echo The changelog for this release must exists before running this workflow.
-              exit 1
+            git status
+            echo ${{ inputs.changelog_path }} does not exist!
+            echo The changelog for this release must exists before running this workflow.
+            exit 1
           fi
       
       - name: Check Current Version in code
@@ -121,6 +122,7 @@ jobs:
           then
             echo Version set to ${{ inputs.version_number }}
           else
+            git status
             echo Version not set to ${{ inputs.version_number }}.  versionbump must be complete before running this workflow.
             exit 1
           fi
