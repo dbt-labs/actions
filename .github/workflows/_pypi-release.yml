@@ -139,7 +139,7 @@ jobs:
   #       uses: dbt-labs/actions/py-package-info@v1
   #       with:
   #         package: ${{ github.event.repository.name }}
-  #         version: ${{ inputs.version_number }}
+  #         version: ${{ inputs.tag }}
   #         # test: ${{ inputs.testing }}  TODO: implement in action
       
   #     - name: Set output
