@@ -5,7 +5,6 @@
 #  sha: the commit to attach to this release
 #  version_number: version number for the release (ex: 1.2.3rc2)
 #  target_branch: The branch that we will release from
-#  testing: true or false for if this is a test of the release process
 #
 # Outputs:
 #   final_sha: The sha that will actually be released.  This can differ from the
@@ -22,7 +21,6 @@
 #
 #  1. Bump the version if it has not been bumped
 #  2. Generate the changelog (via changie) if there is no markdown file for this version
-#  3. Only merge into the target branch when not testing, otherwise point to commit on new branch
 #
 
 name: Version Bump and Changelog Generation
@@ -37,9 +35,6 @@ on:
         required: true
         type: string
       target_branch:
-        required: true
-        type: string
-      testing:
         required: true
         type: string
     outputs:
@@ -281,7 +276,6 @@ jobs:
   merge-for-release:
     runs-on: ubuntu-latest
     needs: [run-tests, create-new-branch]
-    if: inputs.testing == 'false'
 
     steps:
       - name: Log Values
@@ -304,7 +298,6 @@ jobs:
   # Get the sha that will be released.  If the changelog already exists on the input sha and the version has already been bumped,
   # then it is what we will release. Otherwise we generated a changelog and did the version bump in this workflow and there is a
   # new sha to use from the merge we just did.  Grab that here instead.
-  # If we are testing the release, we never merged into the target branch so that's what we need to get the sh of.
     outputs:
       final_sha: ${{ steps.final_sha.outputs.final_sha }}
     runs-on: ubuntu-latest
@@ -315,23 +308,15 @@ jobs:
     steps:
       - name: Log Inputs
         run: |
-          echo testing: ${{ inputs.testing }}
           echo target_branch: ${{ inputs.target_branch }}
           echo new branch: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
           echo changelog exists: ${{ needs.audit-changelog.outputs.exists }}
           echo version up to date: ${{ needs.check-current-version.outputs.up_to_date }}
 
       - name: Check out target branch
-        if: inputs.testing == 'false'
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.target_branch }}
-
-      - name: Check out testing branch
-        if: inputs.testing == 'true'
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.create-new-branch.outputs.BRANCH_NAME }}
 
       - name: Log branch
         run: git status
