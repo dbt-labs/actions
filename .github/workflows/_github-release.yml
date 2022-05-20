@@ -144,9 +144,14 @@ jobs:
           then
             echo eighth
           fi
-
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: Log Job Outputs
+        run: |
+          echo exists: ${{ steps.release_check.outputs.exists }}
+          echo draft_exists: ${{ steps.release_check.outputs.draft_exists }}
+          echo tag: ${{ steps.set_tag.outputs.tag }}
 
   skip-github-release:
     runs-on: ubuntu-latest
@@ -229,7 +234,7 @@ jobs:
           fi
       
       - name: Publish a release that was previously a draft
-        if: ${{ inputs.testing }} != "true" && ${{ needs.check-release-exists.outputs.draft_exists }} == "true"
+        if: ${{ inputs.testing }} == "false" && ${{ needs.check-release-exists.outputs.draft_exists }} == "true"
         run: |
           gh release edit $TAG --draft=false
         env:
