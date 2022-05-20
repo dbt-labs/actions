@@ -174,7 +174,6 @@ jobs:
       - name: Create GitHub Release
         run: |
           gh release create ${{ env.tag }} --title "$TITLE" --notes-file $RELEASE_NOTES --target $COMMIT $PRERELEASE $DRAFT
-          gh release upload ${{ env.tag }} ./dist/*
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -184,4 +183,9 @@ jobs:
           PRERELEASE: ${{ steps.release_type.outputs.prerelease}}
           DRAFT: ${{ steps.draft.outputs.draft}}
 
+      - name: Attach artifacts to release
+        run: |
+          gh release upload ${{ env.tag }} ./dist/*
 
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
