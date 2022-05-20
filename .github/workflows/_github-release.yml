@@ -78,6 +78,9 @@ jobs:
       # message of "release not found".  In our case, it's not an actual error, just a 
       # confirmation that the release does not already exists so we can go ahead and create it.
       # The `|| true` makes it so the step does not exit with a non-zero exit code
+      # Also check if the release already exists is draft state.  If it does, and we are not
+      # testing then we can publish that draft as is.  If it's in draft and we are testing, skip the
+      # release.
       - name: Check if release exists for tag
         id: release_check
         run: |
@@ -86,6 +89,7 @@ jobs:
           then
             echo Release for tag ${{ steps.set_tag.outputs.tag }} does not exist
             echo "::set-output name=exists::false"
+            echo "::set-output name=draft_exists::false"
             exit 0
           fi
           commit=$(jq -r '.targetCommitish' <<< "$output")
