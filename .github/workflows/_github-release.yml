@@ -1,8 +1,5 @@
 # **what?**
-# If no release already exists for this commit and version, create the tag and release it to GitHub.
-# If a release already exists for this commit, skip creating the release but finish with a success.
-# If a release exists for this commit under a different tag, fail.
-# If the commit is already associated with a different release, fail.
+# Create a new release on GitHub and include any artifacts in the `/dist` directory of the GitHUb artifacts store.
 #
 # Inputs:
 #  sha: the commit to attach to this release
@@ -13,15 +10,16 @@
 # Reusable and consistent GitHub release process.
 #
 # **when?**
-# Call after the build process.
+# Call after a successful build.  Build artifacts should be ready to release and live in a dist/ directory.
 #
 # This workflow expects the artifacts to already be built and living in the artifact store of the workflow.
 #
 # Validation Checks
 #
-#  1. Checks if there is already a release for this tag/commit and if there is, skips the rest.
-#  2. If this release exists for this tag but a different commit, FAIL.
-#  3. If this commit has a release associated with it for a different version, FAIL.
+# 1. If no release already exists for this commit and version, create the tag and release it to GitHub.
+# 2. If a release already exists for this commit, skip creating the release but finish with a success.
+# 3. If a release exists for this commit under a different tag, fail.
+# 4. If the commit is already associated with a different release, fail.
 
 name: GitHub Release
 
@@ -90,7 +88,6 @@ jobs:
           fi
           echo Release for tag ${{ env.tag }} already exists
           echo "::set-output name=exists::true"
-
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -109,7 +106,6 @@ jobs:
     if: needs.check-release-exists.outputs.exists == 'false'
 
     steps:
-
       - name: Check if release already exists for commit
         uses: cardinalby/git-get-release-action@v1
         id: check_release_commit
@@ -126,7 +122,6 @@ jobs:
           echo steps.check_release_commit.outputs.tag_name ${{ steps.check_release_commit.outputs.tag_name}}
           echo steps.check_release_commit.outputs.target_commitish ${{ steps.check_release_commit.outputs.target_commitish}}
           echo steps.check_release_commit.outputs.prerelease ${{ steps.check_release_commit.outputs.prerelease}}
-
 
       # Since we already know a release for this tag does not exist, if we find anything it's for the wrong tag, exit
       - name: Check if the tag matches the version number
@@ -165,11 +160,20 @@ jobs:
             echo This is not a prerelease
           fi
 
-      # TODO: should this have the option of saving to a draft release when testing?
+      - name: Set as draft release
+        id: draft
+        run: |
+          if [[ ${{ inputs.testing }} -eq "true" ]]
+          then
+            echo This is a draft release
+            echo ::set-output name=draft::--draft
+          else
+            echo This is not a draft release
+          fi
+
       - name: Create GitHub Release
         run: |
-          ls -al
-          gh release create ${{ env.tag }} --title "$TITLE" --notes-file $RELEASE_NOTES --target $COMMIT $PRERELEASE
+          gh release create ${{ env.tag }} --title "$TITLE" --notes-file $RELEASE_NOTES --target $COMMIT $PRERELEASE $DRAFT
           gh release upload ${{ env.tag }} ./dist/*
 
         env:
@@ -178,5 +182,6 @@ jobs:
           RELEASE_NOTES: ${{ inputs.changelog_path }}
           COMMIT: ${{ inputs.sha }}
           PRERELEASE: ${{ steps.release_type.outputs.prerelease}}
+          DRAFT: ${{ steps.draft.outputs.draft}}
 
 
