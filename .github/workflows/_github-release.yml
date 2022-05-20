@@ -173,7 +173,6 @@ jobs:
           gh release upload ${{ env.tag }} ./dist/*.gz 
           gh release upload ${{ env.tag }} ./dist/*.whl
 
-
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TITLE: ${{ github.event.repository.name }} ${{ env.tag }}
