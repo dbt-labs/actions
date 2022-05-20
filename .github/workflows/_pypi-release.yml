@@ -1,9 +1,9 @@
 # **what?**
-# After releasing to GitHub, release to Pypi
+# After releasing to GitHub, release to PyPI
 #
 # Inputs:
 #   tag: tag of release in the format v1.2.3rc1
-#   testing: true is releasing to test pypi, otherwise false
+#   testing: true is releasing to test PyPI, otherwise false
 # 
 # **why?**
 # Automate the release process
@@ -11,8 +11,11 @@
 # **when?**
 #  After successfully releasing to GitHub
 #
+# Assumptions
+#  1.  The name of the repository is the name of the package on PyPI
+#
 
-name: Pypi release
+name: PyPI release
 
 on:
   workflow_call:
@@ -43,7 +46,7 @@ jobs:
       - name: Print variables
         run: |
             echo Tag: ${{ inputs.tag }}
-            echo Release to test Pypi: ${{ inputs.testing }}
+            echo Release to test PyPI: ${{ inputs.testing }}
 
   check-pypi-exists:
     runs-on: ubuntu-latest
@@ -53,9 +56,26 @@ jobs:
     steps:
       - name: Placeholder
         run: echo Workflow is not built
+
+      - name: Check PyPI
+        id: pypi
+        continue-on-error: true
+        uses: dbt-labs/actions/py-package-info@v1
+        with:
+          package: ${{ github.event.repository.name }}
+          version: ${{ inputs.version_number }}
+      
+      - name: Set Outputs
+        id: set_status
+        run: |
+          # docs on conclusion vs outcome - https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context
+          [ "${{ steps.invalid-package.conclusion }}" != success ] && exit 1 # confirm `invalid-package` step ran to completion
+          [ "${{ steps.invalid-package.outcome }}" != failure ] && exit 1 # confirm `invalid-package` step failed
+          exit 0
+
       - name: Set output
         id: set_existence
-        run: echo '::set-output name=exists::false'
+        run: echo '::set-output name=exists::true'
 
   skip-pypi-release:
     runs-on: ubuntu-latest
@@ -63,13 +83,13 @@ jobs:
     if: needs.check-pypi-exists.outputs.exists == 'true'
 
     steps:
-      - name: Pypi Release Exists, Skip
+      - name: PyPI Release Exists, Skip
         run: echo A release already exists for this version ${{ inputs.tag }} on Pypi, skipping
 
   test-pypi-release:
+    runs-on: ubuntu-latest
     needs: [check-pypi-exists]
     if: needs.check-pypi-exists.outputs.exists == 'false' && ${{ inputs.testing }} == 'false'
-    runs-on: ubuntu-latest
   
     environment: PypiTest
     steps:
@@ -85,9 +105,9 @@ jobs:
           repository_url: https://test.pypi.org/legacy/
 
   prod-pypi-release:
+    runs-on: ubuntu-latest
     needs: [check-pypi-exists]
     if: needs.check-pypi-exists.outputs.exists == 'false'  && ${{ inputs.testing }} == 'true'
-    runs-on: ubuntu-latest
   
     environment: PypiProd
     steps:
@@ -101,3 +121,25 @@ jobs:
         uses: pypa/gh-action-pypi-publish@v1.5
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+  validate-pypi-package:
+    runs-on: ubuntu-latest
+    needs: [test-pypi-release, prod-pypi-release]
+    # always run this step because one of the needs are always skipped.
+    if: always()
+
+    steps:
+      - name: Check the package successfully released to PyPI
+        run: echo Need to implement this
+      
+      - name: Set output
+        id: set_existence
+        run: |
+          if [[ exists == true ]]
+          then
+            echo ${{ inputs.tag }} released to Pypi
+          else
+            echo ${{ inputs.tag }} FAILED to released to Pypi.  Manual intervention required.
+            exit 1
+          fi
+
