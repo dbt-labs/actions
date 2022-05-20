@@ -141,6 +141,10 @@ jobs:
     needs: [audit-release-different-commit]
 
     steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.sha }}
 
       - uses: actions/download-artifact@v3
         with:
@@ -161,14 +165,10 @@ jobs:
             echo This is not a prerelease
           fi
 
-      - name: Check out the repository
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.sha }}
-
       # TODO: should this have the option of saving to a draft release when testing?
       - name: Create GitHub Release
         run: |
+          ls -al
           gh release create ${{ env.tag }} --title "$TITLE" --notes-file $RELEASE_NOTES --target $COMMIT $PRERELEASE
           gh release upload ${{ env.tag }} ./dist/*
 
