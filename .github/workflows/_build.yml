@@ -23,8 +23,7 @@
 #  1. Make sure the sha has a changelog entry for this version and the version bump has been completed.
 #  2. Check if build already exists in AWS s3 bucket.  It will live in a bucket following the env.s3 naming convention below.
 #      If it does exist, upload it to the GitHub artifacts and skip the rest of the workflow.
-#  3. After building the artifacts, give them a minimum test to make sure they're not completely broken
-#  4. If tests pass, upload the artifacts to S3 in case we need to rerun
+#  3. Only upload artifacts and changelog to S3 if tests pass
 
 name: Build
 
@@ -51,9 +50,6 @@ on:
       package_test_command:
         required: true
         default: "dbt --version"
-        type: string
-      testing:  # TODO: implement
-        required: true
         type: string
     # pass through secrets so every repo can have their own and won't depend on a name
     secrets:
