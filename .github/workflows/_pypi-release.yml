@@ -70,8 +70,10 @@ jobs:
         run: |
           if [[ ${{ steps.pypi_info.outputs.version }} != ${{ inputs.tag }} ]]
           then
+            echo PyPI Package not found for ${{ inputs.tag }}
             echo '::set-output name=exists::false'
           else
+            echo PyPI Package found for ${{ inputs.tag }}.  Skip release.
             echo '::set-output name=exists::true'
           fi
       
