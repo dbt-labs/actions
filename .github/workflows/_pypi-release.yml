@@ -54,28 +54,26 @@ jobs:
       exists: ${{ steps.set_existence.outputs.exists }}
   
     steps:
-      - name: Placeholder
-        run: echo Workflow is not built
-
       - name: Check PyPI
-        id: pypi
-        continue-on-error: true
+        id: pypi_info
         uses: dbt-labs/actions/py-package-info@v1
         with:
           package: ${{ github.event.repository.name }}
           version: ${{ inputs.version_number }}
+          # test: ${{ inputs.testing }}  TODO: implement in action
       
       - name: Set Outputs
-        id: set_status
-        run: |
-          # docs on conclusion vs outcome - https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context
-          [ "${{ steps.invalid-package.conclusion }}" != success ] && exit 1 # confirm `invalid-package` step ran to completion
-          [ "${{ steps.invalid-package.outcome }}" != failure ] && exit 1 # confirm `invalid-package` step failed
-          exit 0
-
-      - name: Set output
+      # The above step will just use the latest version if the input version
+      # is not found.  So to validate the version we want to release exists
+      # we need to compare teh output version.
         id: set_existence
-        run: echo '::set-output name=exists::true'
+        run: |
+          if [[ ${{ steps.pypi_info.version }} != ${{ inputs.tag }} ]]
+          then
+            echo '::set-output name=exists::false'
+          else
+            echo '::set-output name=exists::true'
+          fi
 
   skip-pypi-release:
     runs-on: ubuntu-latest
@@ -129,13 +127,21 @@ jobs:
     if: always()
 
     steps:
-      - name: Check the package successfully released to PyPI
-        run: echo Need to implement this
+      - name: Check PyPI
+        id: pypi_info
+        uses: dbt-labs/actions/py-package-info@v1
+        with:
+          package: ${{ github.event.repository.name }}
+          version: ${{ inputs.version_number }}
+          # test: ${{ inputs.testing }}  TODO: implement in action
       
       - name: Set output
+      # The above step will just use the latest version if the input version
+      # is not found.  So to validate the version we want to release exists
+      # we need to compare teh output version.
         id: set_existence
         run: |
-          if [[ exists == true ]]
+          if [[ ${{ steps.pypi_info.version }} != ${{ inputs.tag }} ]]
           then
             echo ${{ inputs.tag }} released to Pypi
           else
