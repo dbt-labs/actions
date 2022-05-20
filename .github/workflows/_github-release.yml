@@ -100,7 +100,7 @@ jobs:
             exit 1
           fi
           isDraft=$(jq -r '.isDraft' <<< "$output")
-          if [[ $isDraft -eq true ]] && [[ ${{ inputs.testing }} -eq false ]]
+          if [[ $isDraft == true ]] && [[ ${{ inputs.testing }} == false ]]
           then
             echo Release for tag ${{ steps.set_tag.outputs.tag }} already exists in draft form.  Need to Publish.
             echo "::set-output name=exists::false"
@@ -192,7 +192,7 @@ jobs:
       - name: Set as draft release
         id: draft
         run: |
-          if [[ ${{ inputs.testing }} -eq true ]]
+          if [[ ${{ inputs.testing }} == true ]]
           then
             echo This is a draft release
             echo ::set-output name=draft::--draft
