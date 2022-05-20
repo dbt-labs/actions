@@ -68,7 +68,7 @@ jobs:
       # we need to compare the output version.
         id: set_existence
         run: |
-          if [[ ${{ steps.pypi_info.version }} != ${{ inputs.tag }} ]]
+          if [[ ${{ steps.pypi_info.outputs.version }} != ${{ inputs.tag }} ]]
           then
             echo '::set-output name=exists::false'
           else
