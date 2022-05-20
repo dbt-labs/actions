@@ -59,9 +59,10 @@ jobs:
     steps:
       - name: Print variables
         run: |
-            echo The last commit sha in the release: ${{ inputs.sha }}
-            echo The release version number: ${{ inputs.version_number }}
-            echo The branch to release from: ${{ inputs.target_branch }}
+            echo sha: ${{ inputs.sha }}
+            echo version_number: ${{ inputs.version_number }}
+            echo target_branch: ${{ inputs.target_branch }}
+            echo testing: ${{ inputs.testing }}
 
   audit-changelog:
     runs-on: ubuntu-latest
