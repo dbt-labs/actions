@@ -101,6 +101,7 @@ jobs:
             echo "::set-output name=exists::true"
             echo "::set-output name=draft_exists::false"
           elif [[ $isDraft -eq true ]] && [[ ${{ inputs.testing }} -eq 'false' ]]
+          then
             echo Release for tag ${{ steps.set_tag.outputs.tag }} already exists in draft form.  Need to Publish.
             echo "::set-output name=exists::false"
             echo "::set-output name=draft_exists::true"
