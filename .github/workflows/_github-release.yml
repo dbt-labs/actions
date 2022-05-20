@@ -105,7 +105,7 @@ jobs:
 
     steps:
       - name: Tag Exists, Skip GitHub Release Job
-        run: echo A tag already exists for ${{ jobs.check-release-exists.outputs.tag }} and commit, skipping release
+        run: echo A tag already exists for ${{ needs.check-release-exists.outputs.tag }} and commit, skipping release
 
   audit-release-different-commit:
     runs-on: ubuntu-latest
@@ -135,7 +135,7 @@ jobs:
         if: steps.check_release_commit.outputs.id != ''
         run: |
           echo Tag "${{ steps.check_release_commit.outputs.tag_name}}" already exists for this commit!
-          echo Cannot create a new tag for "${{ jobs.check-release-exists.outputs.tag }}" for the same commit.
+          echo Cannot create a new tag for "${{ needs.check-release-exists.outputs.tag }}" for the same commit.
           exit 1
 
   github-release:
@@ -184,8 +184,8 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ jobs.check-release-exists.outputs.tag }}
-          TITLE: ${{ github.event.repository.name }} ${{ jobs.check-release-exists.outputs.tag }}
+          TAG: ${{ needs.check-release-exists.outputs.tag }}
+          TITLE: ${{ github.event.repository.name }} ${{ needs.check-release-exists.outputs.tag }}
           RELEASE_NOTES: ${{ inputs.changelog_path }}
           COMMIT: ${{ inputs.sha }}
           PRERELEASE: ${{ steps.release_type.outputs.prerelease}}
