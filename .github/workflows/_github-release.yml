@@ -56,7 +56,8 @@ jobs:
         run: |
             echo The last commit sha in the release: ${{ inputs.sha }}
             echo The release version number: ${{ inputs.version_number }}
-            echo Expected Changlog path: "${{ inputs.changelog_path }}"
+            echo Expected Changlog path: ${{ inputs.changelog_path }}
+            echo testing: ${{ inputs.testing }}
 
   check-release-exists:
     runs-on: ubuntu-latest
