@@ -39,7 +39,7 @@ on:
       testing: 
         required: true
         type: string
-    utputs:
+    outputs:
       tag: 
         description: The path to the changelog for this version
         value: ${{ jobs.check-release-exists.outputs.exists }} ${{ jobs.audit-changelog.outputs.changelog_path }}
