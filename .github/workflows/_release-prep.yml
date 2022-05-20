@@ -353,7 +353,7 @@ jobs:
       - name: Set sha for release
         id: final_sha
         run: |
-          if [[ ${{ needs.audit-changelog.outputs.exists }} -eq false ]] || [[ ${{ needs.check-current-version.outputs.up_to_date }} -eq false ]]
+          if [[ ${{ needs.audit-changelog.outputs.exists }} == false ]] || [[ ${{ needs.check-current-version.outputs.up_to_date }} == false ]]
           then
             echo "::set-output name=final_sha::$(git rev-parse HEAD)"
           else
