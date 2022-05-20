@@ -2,11 +2,11 @@
 # After releasing to GitHub, release to Pypi
 #
 # Inputs:
-#   tag - tag of release in the format v1.2.3rc1
-#   testing - true is releasing to test pypi, otherwise false
+#   tag: tag of release in the format v1.2.3rc1
+#   testing: true is releasing to test pypi, otherwise false
 # 
 # **why?**
-# Automate teh release process
+# Automate the release process
 #
 # **when?**
 #  After successfully releasing to GitHub
@@ -66,12 +66,30 @@ jobs:
       - name: Pypi Release Exists, Skip
         run: echo A release already exists for this version ${{ inputs.tag }} on Pypi, skipping
 
-  pypi-release:
+  test-pypi-release:
     needs: [check-pypi-exists]
-    if: needs.check-pypi-exists.outputs.exists == 'false'
+    if: needs.check-pypi-exists.outputs.exists == 'false' && ${{ inputs.testing }} == 'false'
     runs-on: ubuntu-latest
   
-    environment: PypiProd  # TODO: what's this? Could make be input for testing purposes?
+    environment: PypiTest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: 'dist'
+
+      - name: Publish distribution to test PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+  prod-pypi-release:
+    needs: [check-pypi-exists]
+    if: needs.check-pypi-exists.outputs.exists == 'false'  && ${{ inputs.testing }} == 'true'
+    runs-on: ubuntu-latest
+  
+    environment: PypiProd
     steps:
       - uses: actions/download-artifact@v3
         with:
@@ -83,10 +101,3 @@ jobs:
         uses: pypa/gh-action-pypi-publish@v1.5
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Publish distribution to test PyPI
-        if: ${{ inputs.testing }} == 'false'
-        uses: pypa/gh-action-pypi-publish@v1.5
-        with:
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
