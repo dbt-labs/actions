@@ -36,15 +36,17 @@ on:
         description: Path to the changelog file for release notes
         required: true
         type: string
-      testing:
+      testing: 
         required: true
         type: string
+    utputs:
+      tag: 
+        description: The path to the changelog for this version
+        value: ${{ jobs.check-release-exists.outputs.exists }} ${{ jobs.audit-changelog.outputs.changelog_path }}
+
 
 permissions:
   contents: write
-
-env:
-  tag: v${{ inputs.version_number }}
 
 jobs:
   log-inputs:
@@ -63,6 +65,10 @@ jobs:
       tag: ${{ steps.set_tag.outputs.tag }}
 
     steps:
+      - name: Generate Tag in Expected format
+        id: set_tag
+        run: echo "::set-output name=tag::v${{ inputs.version_number }}"
+
       - name: Check out the repository
         uses: actions/checkout@v3
       
@@ -73,21 +79,21 @@ jobs:
       - name: Check if release exists for tag
         id: release_check
         run: |
-          output=$((gh release view ${{ env.tag }} --json targetCommitish) 2>&1) || true
+          output=$((gh release view ${{ steps.set_tag.outputs.tag }} --json targetCommitish) 2>&1) || true
           if [[ "$output" == "release not found" ]]
           then
-            echo Release for tag ${{ env.tag }} does not exist
+            echo Release for tag ${{ steps.set_tag.outputs.tag }} does not exist
             echo "::set-output name=exists::false"
             exit 0
           fi
           commit=$(jq -r '.targetCommitish' <<< "$output")
           if [[ $commit != ${{ inputs.sha }} ]]
           then
-            echo Release for tag ${{ env.tag }} already exists for commit $commit!
+            echo Release for tag ${{ steps.set_tag.outputs.tag }} already exists for commit $commit!
             echo Cannot create a new release for commit ${{ inputs.sha }}.  Exiting.
             exit 1
           fi
-          echo Release for tag ${{ env.tag }} already exists
+          echo Release for tag ${{ steps.set_tag.outputs.tag }} already exists
           echo "::set-output name=exists::true"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,7 +105,7 @@ jobs:
 
     steps:
       - name: Tag Exists, Skip GitHub Release Job
-        run: echo A tag already exists for ${{ env.tag }} and commit, skipping release
+        run: echo A tag already exists for ${{ jobs.check-release-exists.outputs.tag }} and commit, skipping release
 
   audit-release-different-commit:
     runs-on: ubuntu-latest
@@ -129,12 +135,12 @@ jobs:
         if: steps.check_release_commit.outputs.id != ''
         run: |
           echo Tag "${{ steps.check_release_commit.outputs.tag_name}}" already exists for this commit!
-          echo Cannot create a new tag for "${{ env.tag }}" for the same commit.
+          echo Cannot create a new tag for "${{ jobs.check-release-exists.outputs.tag }}" for the same commit.
           exit 1
 
   github-release:
     runs-on: ubuntu-latest
-    needs: [audit-release-different-commit]
+    needs: [check-release-exists, audit-release-different-commit]
 
     steps:
       - name: Check out the repository
@@ -174,11 +180,12 @@ jobs:
 
       - name: Create GitHub Release
         run: |
-          gh release create ${{ env.tag }} ./dist/* --title "$TITLE" --notes-file $RELEASE_NOTES --target $COMMIT $PRERELEASE $DRAFT
+          gh release create $TAG ./dist/* --title "$TITLE" --notes-file $RELEASE_NOTES --target $COMMIT $PRERELEASE $DRAFT
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TITLE: ${{ github.event.repository.name }} ${{ env.tag }}
+          TAG: ${{ jobs.check-release-exists.outputs.tag }}
+          TITLE: ${{ github.event.repository.name }} ${{ jobs.check-release-exists.outputs.tag }}
           RELEASE_NOTES: ${{ inputs.changelog_path }}
           COMMIT: ${{ inputs.sha }}
           PRERELEASE: ${{ steps.release_type.outputs.prerelease}}
