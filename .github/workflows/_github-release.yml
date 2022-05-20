@@ -62,6 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       exists: ${{ steps.release_check.outputs.exists }}
+      draft_exists: ${{ steps.release_check.outputs.draft_exists }}
       tag: ${{ steps.set_tag.outputs.tag }}
 
     steps:
@@ -79,7 +80,7 @@ jobs:
       - name: Check if release exists for tag
         id: release_check
         run: |
-          output=$((gh release view ${{ steps.set_tag.outputs.tag }} --json targetCommitish) 2>&1) || true
+          output=$((gh release view ${{ steps.set_tag.outputs.tag }} --json isDraft,targetCommitish) 2>&1) || true
           if [[ "$output" == "release not found" ]]
           then
             echo Release for tag ${{ steps.set_tag.outputs.tag }} does not exist
@@ -93,8 +94,22 @@ jobs:
             echo Cannot create a new release for commit ${{ inputs.sha }}.  Exiting.
             exit 1
           fi
-          echo Release for tag ${{ steps.set_tag.outputs.tag }} already exists
-          echo "::set-output name=exists::true"
+          isDraft=$(jq -r '.isDraft' <<< "$output")
+          if [[ $isDraft -eq true ]] && [[ ${{ inputs.testing }} -eq 'true' ]]
+          then
+            echo Draft release for tag ${{ steps.set_tag.outputs.tag }} already exists.  Skip GitHub release.
+            echo "::set-output name=exists::true"
+            echo "::set-output name=draft_exists::false"
+          elif [[ $isDraft -eq true ]] && [[ ${{ inputs.testing }} -eq 'false' ]]
+            echo Release for tag ${{ steps.set_tag.outputs.tag }} already exists in draft form.  Need to Publish.
+            echo "::set-output name=exists::false"
+            echo "::set-output name=draft_exists::true"
+          else
+            echo Release for tag ${{ steps.set_tag.outputs.tag }} already exists.  Skip GitHub release.
+            echo "::set-output name=exists::true"
+            echo "::set-output name=draft_exists::false"
+          fi
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -177,11 +192,19 @@ jobs:
           else
             echo This is not a draft release
           fi
+      
+      - name: Publish a release that was previously a draft
+        if: ${{ inputs.testing }} != 'true' && ${{ needs.check-release-exists.outputs.draft_exists }} == 'true'
+        run: |
+          gh release edit $TAG --draft=false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.check-release-exists.outputs.tag }}
 
-      - name: Create GitHub Release
+      - name: Create New GitHub Release
+        if: ${{ needs.check-release-exists.outputs.draft_exists }} == 'false'
         run: |
           gh release create $TAG ./dist/* --title "$TITLE" --notes-file $RELEASE_NOTES --target $COMMIT $PRERELEASE $DRAFT
-
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.check-release-exists.outputs.tag }}
