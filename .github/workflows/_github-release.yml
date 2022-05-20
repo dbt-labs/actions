@@ -19,7 +19,9 @@
 #
 # Validation Checks
 #
-#  1. TODO:
+#  1. Checks if there is already a release for this tag/commit and if there is, skips the rest.
+#  2. If this release exists for this tag but a different commit, FAIL.
+#  3. If this commit has a release associated with it for a different version, FAIL.
 
 name: GitHub Release
 
