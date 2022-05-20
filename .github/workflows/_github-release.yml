@@ -81,7 +81,8 @@ jobs:
             exit 0
           fi
           commit=$(jq -r '.targetCommitish' <<< "$output")
-          if $commit != ${{ inputs.sha }} then
+          if [[ $commit != ${{ inputs.sha }} ]]
+          then
             echo Release for tag ${{ env.tag }} already exists for commit $commit!
             echo Cannot create a new release for commit ${{ inputs.sha }}.  Exiting.
             exit 1
