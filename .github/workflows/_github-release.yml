@@ -166,12 +166,11 @@ jobs:
         with:
           ref: ${{ inputs.sha }}
 
-      # TODO: should this havve the option of saving to a draft release when testing?
+      # TODO: should this have the option of saving to a draft release when testing?
       - name: Create GitHub Release
         run: |
           gh release create ${{ env.tag }} --title "$TITLE" --notes-file $RELEASE_NOTES --target $COMMIT $PRERELEASE
-          gh release upload ${{ env.tag }} ./dist/*.gz 
-          gh release upload ${{ env.tag }} ./dist/*.whl
+          gh release upload ${{ env.tag }} ./dist/*
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
