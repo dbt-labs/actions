@@ -1,0 +1,109 @@
+name: "Release dbt"
+description: "Build and Release for dbt Labs"
+
+inputs:
+  sha:
+    description: 'The commit sha to release'
+    required: true
+    type: string
+  version_number:
+    description: 'The release version number (ie. 1.0.0b1)'
+    default: '2.2.4'  # TODO: remove when done testing!
+    required: true
+    type: string
+  build_script_path:
+    description: 'The path to the build script'
+    default: 'scripts/build-dist.sh'
+    required: true
+    type: string
+  s3_bucket_name:
+    description: 'The name of the s3 bucket'
+    default: core-team-artifacts
+    required: true
+    type: string
+  package_test_command:
+    description: 'The command to test artifacts against'
+    default: pip freeze  # dbt --version
+    required: true
+    type: string
+  target_branch:
+    description: 'Target branch to release from (ie. 1.1.latest)'
+    default: '2.2.latest'  # TODO: remove when done testing!
+    required: true
+    type: string
+  testing:
+    description: 'This is a test release'
+    default: 'true'
+    required: true
+    type: string
+  # secrets - composite actions don't have a `secrets` key but the secrets will still be
+  # scrubbed as GitHUb scrubs on secret value not secret key
+  github_token:
+    description:  The token to access the repository
+    required: true
+    type: string
+  github_pat:
+    description:  The token to commit changes directly to the target_branch
+    required: true
+    type: string
+  artifact_aws_access_key_id:
+    description: 
+    required: true
+    type: string
+  artifact_aws_secret_access_key:
+    description: 
+    required: true
+    type: string
+  # require both test and prod so enable testing
+  pypi_api_token:
+    description: PyPI API token
+    required: true
+    type: string
+  test_pypi_api_token:
+    description: PyPI test API token
+    required: true
+    type: string
+
+runs: 
+  using: composite
+
+  steps:
+    - name: release_prep
+      uses: dbt-labs/actions/.github/workflows/_release-prep.yml@er/pre-release
+      with:
+        sha: ${{ github.event.inputs.sha }}
+        version_number: ${{ github.event.inputs.version_number }}
+        target_branch: ${{ github.event.inputs.target_branch }}
+
+    - name: build
+      needs: [release_prep]
+      uses: dbt-labs/actions/.github/workflows/_build.yml@er/build
+      with:
+        # notice this is the sha from the last job to include the version bump / changelog
+        sha: ${{ needs.release_prep.outputs.final_sha }}
+        version_number: ${{ github.event.inputs.version_number }}
+        changelog_path: ${{ needs.release_prep.outputs.changelog_path }}
+        build_script_path: ${{ github.event.inputs.build_script_path }}
+        s3_bucket_name: ${{ github.event.inputs.s3_bucket_name }}
+        package_test_command: ${{ github.event.inputs.package_test_command }}
+      secrets:
+        AWS_ACCESS_KEY_ID: ${{ github.event.inputs.artifact_aws_access_key_id }}
+        AWS_SECRET_ACCESS_KEY: ${{ github.event.inputs.artifact_aws_secret_access_key }}
+
+    - name: github_release
+      needs: [build, release_prep]
+      uses: dbt-labs/actions/.github/workflows/_github-release.yml@er/github-release
+      with:
+        sha: ${{ github.event.inputs.sha }}
+        version_number: ${{ github.event.inputs.version_number }}
+        changelog_path: ${{ needs.release_prep.outputs.changelog_path }}
+        testing: ${{ github.event.inputs.testing }}
+
+    - name: pypi_release
+      needs: [github_release]
+      uses: dbt-labs/actions/.github/workflows/_pypi-release.yml@er/pypi
+      with:
+        tag: ${{ needs.github_release.outputs.tag }}
+        testing: ${{ github.event.inputs.testing }}
+        # pypi_api_token: ${{ github.event.inputs.pypi_api_token }}
+        # test_pypi_api_token: ${{ github.event.inputs.test_pypi_api_token }}
