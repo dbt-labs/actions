@@ -85,7 +85,6 @@ runs:
         build_script_path: ${{ github.event.inputs.build_script_path }}
         s3_bucket_name: ${{ github.event.inputs.s3_bucket_name }}
         package_test_command: ${{ github.event.inputs.package_test_command }}
-      secrets:
         AWS_ACCESS_KEY_ID: ${{ github.event.inputs.artifact_aws_access_key_id }}
         AWS_SECRET_ACCESS_KEY: ${{ github.event.inputs.artifact_aws_secret_access_key }}
 
