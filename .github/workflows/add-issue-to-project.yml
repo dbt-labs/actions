@@ -1,0 +1,24 @@
+name: add-issue-to-project
+
+# see https://github.com/actions/add-to-project
+
+on:
+  issues:
+    types:
+      - opened
+      - transferred
+
+jobs:
+  add-to-project:
+    name: Add issue to "Core management" project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v0.3.0
+        with:
+          # Add all issues to the "Core management" project (number 22).
+          # Consider filtering by labels, but for now filter with views
+          # in the project.
+          project-url: https://github.com/orgs/dbt-labs/projects/22
+          github-token: ${{ secrets.FISHTOWN_BOT_PAT }} # needs project access
+          #labeled: bug, needs-triage
+          #label-operator: OR
