@@ -38,12 +38,12 @@ on:
       skip_label:
         description: Label on the PR that indicates CHANGELOGs are not required.
         type: string
-        required: true      
+        required: true
 
 jobs:
   changelog_check:
     name: Check Changelog Exists
-    if: github.event.label.name == inputs.skip_label
+    if: "!contains(github.event.pull_request.labels.*.name, inputs.skip_label)"
     runs-on: ubuntu-latest
 
     steps:
@@ -55,7 +55,15 @@ jobs:
           echo "all variables defined as inputs"
           echo "Input Comment Text:        ${{ inputs.changelog_comment }}"
           echo "Input Label for Skipping:  ${{ inputs.skip_label }}"
-      
+
+      - name: Checkout Branch
+        uses: actions/checkout@v3
+        with:
+          # specifying the ref avoids checking out the repository in a detached state
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: '0'  # fetch all history instead of single branch
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Determine if changelog exists
         shell: bash
         id: changelog_check
