@@ -41,8 +41,8 @@ on:
         required: true
 
 jobs:
-  changelog_check:
-    name: Check Changelog Exists
+  changelog_existence:
+    name: Check if Changelog Exists
     if: "!contains(github.event.pull_request.labels.*.name, inputs.skip_label)"
     runs-on: ubuntu-latest
 
