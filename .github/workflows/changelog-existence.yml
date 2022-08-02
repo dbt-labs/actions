@@ -69,6 +69,7 @@ jobs:
         id: changelog_check
         run: |
           declare RESULT=$(git diff --name-only ${{ github.event.pull_request.head.sha }} ${{ github.event.pull_request.base.sha }})
+          echo $RESULT
           if echo $RESULT | grep '.changes/unreleased/**.yaml'; then
             echo "::set-output name=exists::true"
             echo "Changelog exists for this PR"
