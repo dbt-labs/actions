@@ -1,6 +1,6 @@
 # **what?**
 # Automates adding issues and PRs from Core repositories
-# to the "Core management" project in GitHub.
+# to the "Core triage" project in GitHub.
 #
 # Inputs:
 #   AUTHORIZATION_TOKEN: GitHub authorization token with sufficient scope
@@ -39,10 +39,10 @@ jobs:
           python-version: '3.10'
       - name: pip installs
         run: pip install -r requirements.txt
-        working-directory: scripts/core-project
+        working-directory: scripts/core-triage
       - name: run script
         run: python project.py
-        working-directory: scripts/core-project
+        working-directory: scripts/core-triage
         env:
           FISHTOWN_BOT_PAT: ${{ secrets.VARIABLE_CORE_TRIAGE_ONLY }}
  
