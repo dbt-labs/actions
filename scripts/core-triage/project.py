@@ -63,7 +63,7 @@ def process_request(url: str, headers: dict, json: dict = None) -> dict:
     else:
         r = requests.get(url, headers=headers)
 
-    print(r.status)
+    print(r.status_code)
     print(r.text)
 
     return r.json()
