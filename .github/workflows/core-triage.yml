@@ -14,18 +14,18 @@
 # Every few hours, on PR, or manually.
 
 
-name: core-project
+name: core-triage
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0/3 * * *"
+    - cron: "0 0/1 * * *"
   pull_request:
     branches:
       - main
     paths:
-      - .github/workflows/core-project.yml
-      - scripts/core-project/**
+      - .github/workflows/core-triage.yml
+      - scripts/core-triage/**
 
 jobs:
   add-items-to-project:
@@ -44,5 +44,5 @@ jobs:
         run: python project.py
         working-directory: scripts/core-project
         env:
-          FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
+          FISHTOWN_BOT_PAT: ${{ secrets.VARIABLE_CORE_TRIAGE_ONLY }}
  
