@@ -44,5 +44,5 @@ jobs:
         run: python project.py
         working-directory: scripts/core-triage
         env:
-          FISHTOWN_BOT_PAT: ${{ secrets.VARIABLE_CORE_TRIAGE_ONLY }}
+          GH_TOKEN: ${{ secrets.VARIABLE_CORE_TRIAGE_ONLY }}
  

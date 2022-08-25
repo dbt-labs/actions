@@ -41,7 +41,7 @@ ISSUE_LABELS = [
 # prs added by label individually
 PR_LABELS = ["ready_for_review"]
 # GitHub TOKEN environment variable name
-TOKEN_VAR = "FISHTOWN_BOT_PAT"
+TOKEN_VAR = "GH_TOKEN"
 # Number of items per query -- max is 100 TODO: paging?
 NUM_ITEMS = 100
 
@@ -62,6 +62,9 @@ def process_request(url: str, headers: dict, json: dict = None) -> dict:
         r = requests.post(url, headers=headers, json=json)
     else:
         r = requests.get(url, headers=headers)
+
+    print(r.status)
+    print(r.text)
 
     return r.json()
 
