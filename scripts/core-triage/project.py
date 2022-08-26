@@ -9,7 +9,7 @@ from graphql_queries import *
 
 # constants # TODO: move to a config file (or something) <= copilot suggested this last part
 ORG = "dbt-labs"
-PROJECT_NAME = "Core management"
+PROJECT_NAME = "Core triage"
 PROJECT_NUM = 22
 # list of Core teams
 CORE_TEAMS = ["core"]
@@ -20,9 +20,9 @@ REPOS = [
     "dbt-bigquery",
     "dbt-snowflake",
     "dbt-rpc",
-    "dbt-server",
+    #"dbt-server", # internal, causes failure
     "dbt-spark",
-    "dbt-starter-project",
+    #"dbt-starter-project", # not important (?)
     "dbt-utils",
     "homebrew-dbt",
 ]
