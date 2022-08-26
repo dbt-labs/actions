@@ -15,7 +15,7 @@ PROJECT_NUM = 22
 CORE_TEAM = "core"
 # hardcoded repos to include/exclude in addition to those owned by the team
 EXCLUDE_REPOS = ["core-team"]
-EXTRA_REPOS = ["dbt-starter-project", "jaffle-shop"]
+EXTRA_REPOS = ["dbt-starter-project", "jaffle_shop"]
 # issues added by label individually; lots of duplication here
 ISSUE_LABELS = [
     "triage",
