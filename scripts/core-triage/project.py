@@ -12,20 +12,10 @@ ORG = "dbt-labs"
 PROJECT_NAME = "Core triage"
 PROJECT_NUM = 22
 # list of Core teams
-CORE_TEAMS = ["core"]
-# read newline separated list of projects from file
-REPOS = [
-    "dbt-core",
-    "dbt-redshift",
-    "dbt-bigquery",
-    "dbt-snowflake",
-    "dbt-rpc",
-    #"dbt-server", # internal, causes failure
-    "dbt-spark",
-    #"dbt-starter-project", # not important (?)
-    "dbt-utils",
-    "homebrew-dbt",
-]
+CORE_TEAM = "core"
+# hardcoded repos to include/exclude in addition to those owned by the team
+EXCLUDE_REPOS = []
+EXTRA_REPOS = ["dbt-starter-project", "jaffle-shop"]
 # issues added by label individually; lots of duplication here
 ISSUE_LABELS = [
     "triage",
@@ -38,9 +28,9 @@ ISSUE_LABELS = [
     "Team:Execution",
     "Team:Adapters",
 ]
-# prs added by label individually
+# prs added by label individually TODO: unused -- PRs currently not added
 PR_LABELS = ["ready_for_review"]
-# GitHub TOKEN environment variable name
+# GitHub TOKEN environment variable name TODO: make this input? hardcoded to match GH action
 TOKEN_VAR = "GH_TOKEN"
 # Number of items per query -- max is 100 TODO: paging?
 NUM_ITEMS = 100
@@ -69,25 +59,35 @@ def process_request(url: str, headers: dict, json: dict = None) -> dict:
     return r.json()
 
 
-def get_core_members(teams: list[str]) -> list:
+def get_core_repos(team: str) -> list:
+    """
+    Get a list of Core repos.
+    ---
+    Inputs: team (str)
+    Outputs: core_repos (list of str)
+    """
+    # add the repos names owned by the team
+    team_repos_url = f"{gh_api_url}/orgs/{ORG}/teams/{team}/repos"
+    r = process_request(team_repos_url, headers=headers)
+    core_repos = [repo["name"] for repo in r if repo["name"] not in EXCLUDE_REPOS]
+    core_repos.extend(EXTRA_REPOS)
+
+    return sorted(list(set(core_repos)))
+
+
+def get_core_members(team: str) -> list:
     """
     Get a list of Core members' GitHub logins (usernames).
     ---
-    Inputs: teams (list of str)
+    Inputs: team (str)
     Outputs: core_members (list of str)
     """
-    # initialize empty list
-    core_members = []
+    # add the GH logins of team members
+    team_members_url = f"{gh_api_url}/orgs/{ORG}/teams/{team}/members"
+    r = process_request(team_members_url, headers=headers)
+    core_members = [login["login"] for login in r]
 
-    # for each core team, add its members
-    for team in teams:
-        team_member_url = f"{gh_api_url}/orgs/{ORG}/teams/{team}/members"
-        r = process_request(team_member_url, headers=headers)
-
-        team_members = [login["login"] for login in r]
-        core_members.extend(team_members)
-
-    return sorted(list(set(core_members)))
+    return sorted(core_members)
 
 
 def get_project_id(project_num: int) -> str:
@@ -132,7 +132,7 @@ def get_issues(repo: str, label: str, num_items: int) -> list[dict]:
 
 def add_items_to_project(project_id: str, items: list[dict]) -> None:
     """
-    Adds items to a project by project_id and a list of item edges.
+    Adds GitHub items (issues or PRs) to a project by project_id and a list of item edges.
     ---
     Inputs: project_id (str), items (list of dict)
     Outputs: None
@@ -151,9 +151,8 @@ def add_items_to_project(project_id: str, items: list[dict]) -> None:
 
 
 def main(
-    repos: list[str],
     project_num: int,
-    core_teams: list[str],
+    core_team: str,
     issue_labels: list[str],
     pr_labels: list[str],
     num_items: int,
@@ -169,10 +168,13 @@ def main(
     project_id = get_project_id(project_num)
     print(f"Project ID: {project_id}")
     # get core members
-    core_members = get_core_members(core_teams)
+    core_members = get_core_members(core_team)
     print(f"Core members: {core_members}\n...")
+    # get core repos
+    core_repos = get_core_repos(core_team)
+    print(f"Core repos: {core_repos}\n...")
     # for each repo
-    for repo in repos:
+    for repo in core_repos:
         print(f"Processing repository: {repo}\n...")
         # for each issue label
         for issue_label in issue_labels:
@@ -192,4 +194,4 @@ def main(
 
 # run script
 if __name__ == "__main__":
-    main(REPOS, PROJECT_NUM, CORE_TEAMS, ISSUE_LABELS, PR_LABELS, NUM_ITEMS)
+    main(PROJECT_NUM, CORE_TEAM, ISSUE_LABELS, PR_LABELS, NUM_ITEMS)
