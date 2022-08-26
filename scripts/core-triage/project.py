@@ -14,7 +14,7 @@ PROJECT_NUM = 22
 # list of Core teams
 CORE_TEAM = "core"
 # hardcoded repos to include/exclude in addition to those owned by the team
-EXCLUDE_REPOS = []
+EXCLUDE_REPOS = ["core-team"]
 EXTRA_REPOS = ["dbt-starter-project", "jaffle-shop"]
 # issues added by label individually; lots of duplication here
 ISSUE_LABELS = [
