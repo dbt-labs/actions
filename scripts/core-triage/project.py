@@ -148,7 +148,6 @@ def add_items_to_project(project_id: str, items: list[dict]) -> None:
                 ).replace("$item_id", f'"{item["node"]["id"]}"')
             },
         )
-        print(response)
 
 
 def main(
