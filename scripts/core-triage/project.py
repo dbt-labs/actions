@@ -11,9 +11,11 @@ from graphql_queries import *
 ORG = "dbt-labs"
 PROJECT_NAME = "Core triage"
 PROJECT_NUM = 22
-# list of Core teams
+# core team name
 CORE_TEAM = "core"
-# hardcoded repos to include/exclude in addition to those owned by the team
+# repos determined by querying the team
+# exclude some repos (generally internal) that will cause failure
+# include some extra repos not in the team
 EXCLUDE_REPOS = ["core-team", "schemas.getdbt.com"]
 EXTRA_REPOS = ["dbt-starter-project", "jaffle_shop"]
 # issues added by label individually; lots of duplication here
@@ -28,7 +30,7 @@ ISSUE_LABELS = [
     "Team:Execution",
     "Team:Adapters",
 ]
-# prs added by label individually TODO: unused -- PRs currently not added
+# prs added by label individually TODO: unused -- PRs currently not added (are they?)
 PR_LABELS = ["ready_for_review"]
 # GitHub TOKEN environment variable name TODO: make this input? hardcoded to match GH action
 TOKEN_VAR = "GH_TOKEN"
@@ -139,7 +141,7 @@ def add_items_to_project(project_id: str, items: list[dict]) -> None:
     """
     for item in items:
         print(item)
-        response = process_request(
+        process_request(
             gh_graphql_url,
             headers=headers,
             json={
@@ -148,7 +150,6 @@ def add_items_to_project(project_id: str, items: list[dict]) -> None:
                 ).replace("$item_id", f'"{item["node"]["id"]}"')
             },
         )
-
 
 def main(
     project_num: int,
@@ -161,31 +162,31 @@ def main(
     Main script function.
     All inputs have defaults.
     ---
-    Inputs: repos (list of str), project_num (int), core_teams (list of str), issue_labels (list of str), pr_labels (list of str), num_items (int)
+    Inputs: project_num (int), core_teams (str), issue_labels (list of str), pr_labels (list of str), num_items (int)
     Outputs: None
     """
     # get project id
     project_id = get_project_id(project_num)
-    print(f"Project ID: {project_id}")
+    print(f"Project ID: {project_id}...\n")
     # get core members
     core_members = get_core_members(core_team)
-    print(f"Core members: {core_members}\n...")
+    print(f"Core members: {core_members}...\n")
     # get core repos
     core_repos = get_core_repos(core_team)
-    print(f"Core repos: {core_repos}\n...")
+    print(f"Core repos: {core_repos}...\n")
     # for each repo
     for repo in core_repos:
-        print(f"Processing repository: {repo}\n...")
+        print(f"Processing repository: {repo}...\n")
         # for each issue label
         for issue_label in issue_labels:
-            print(f"Processing issue label: {issue_label}\n...")
+            print(f"Processing issue label: {issue_label}...\n")
             # get the list of issues for the repo and label
             issues = get_issues(repo, issue_label, num_items)
             # add issues to the project
             add_items_to_project(project_id, issues)
         # for each pr label
         for pr_label in pr_labels:
-            print(f"Processing PR label: {pr_label}\n...")
+            print(f"Processing PR label: {pr_label}...\n")
             # get the list of PRs for the repo and label
             prs = get_issues(repo, pr_label, num_items)
             # add PRs to the project

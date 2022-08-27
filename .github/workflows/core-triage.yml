@@ -3,15 +3,16 @@
 # to the "Core triage" project in GitHub.
 #
 # Inputs:
-#   AUTHORIZATION_TOKEN: GitHub authorization token with sufficient scope
+#   GH_TOKEN: GitHub authorization token with sufficient scope
+#      - needed (I think): org:read, org:write, project:read, project:write
 
 # **why?**
 # Unfortunately, GitHub projects don't support this easily.
 # We could add a workflow in each new project, or just run
-# this every few hours.
+# this on a schedule.
 
 # **when?**
-# Every few hours, on PR, or manually.
+# Every ~hour, on PR, or manually.
 
 
 name: core-triage
@@ -19,7 +20,7 @@ name: core-triage
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0/1 * * *"
+    - cron: "0 * * * *"
   pull_request:
     branches:
       - main
