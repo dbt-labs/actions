@@ -37,6 +37,11 @@ jobs:
         with:
           python-version: "3.8"
 
+      - name: Install spark dependencies
+        if: (( github.repository == 'dbt-labs/dbt-spark' ))
+        run: |
+          sudo apt-get install libsasl2-dev
+
       - name: Install python dependencies
         run: |
           python3 -m venv env
