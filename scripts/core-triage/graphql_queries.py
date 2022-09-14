@@ -45,13 +45,12 @@ issues_query = """
     }
 """
 
+# TODO: add back label filtering
 # graphql query to get list of prs for the github repo
 prs_query = """
     query {
         repository(owner:$org, name:$repo) {
-            pullRequests(last:$num_items states:OPEN filterBy: {
-                labels: [$label]
-            }) {
+            pullRequests(last:$num_items states:OPEN) {
                 edges {
                     node {
                         title
