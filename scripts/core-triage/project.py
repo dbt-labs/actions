@@ -23,6 +23,8 @@ ISSUE_LABELS = [
     "triage",
     "bug",
     "good_first_issue",
+    "awaiting_response",
+    "support_rotation",
     "help_wanted",
     "spike",
     "python_models",
@@ -131,6 +133,7 @@ def get_issues(repo: str, label: str, num_items: int) -> list[dict]:
     )["data"]["repository"]["issues"]["edges"]
     return issues
 
+
 def get_prs(repo: str, num_items: int) -> list[dict]:
     """
     Get a list of prs for the given repo and label.
@@ -151,7 +154,6 @@ def get_prs(repo: str, num_items: int) -> list[dict]:
     return prs
 
 
-
 def add_items_to_project(project_id: str, items: list[dict]) -> None:
     """
     Adds GitHub items (issues or PRs) to a project by project_id and a list of item edges.
@@ -170,6 +172,7 @@ def add_items_to_project(project_id: str, items: list[dict]) -> None:
                 ).replace("$item_id", f'"{item["node"]["id"]}"')
             },
         )
+
 
 def main(
     project_num: int,
