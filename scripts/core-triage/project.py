@@ -23,6 +23,8 @@ ISSUE_LABELS = [
     "triage",
     "bug",
     "good_first_issue",
+    "awaiting_response",
+    "support_rotation",
     "help_wanted",
     "spike",
     "python_models",
@@ -30,7 +32,7 @@ ISSUE_LABELS = [
     "Team:Execution",
     "Team:Adapters",
 ]
-# prs added by label individually TODO: unused -- PRs currently not added (are they?)
+# prs added by label individually TODO: unused, add label filtering
 PR_LABELS = ["ready_for_review"]
 # GitHub TOKEN environment variable name TODO: make this input? hardcoded to match GH action
 TOKEN_VAR = "GH_TOKEN"
@@ -132,6 +134,26 @@ def get_issues(repo: str, label: str, num_items: int) -> list[dict]:
     return issues
 
 
+def get_prs(repo: str, num_items: int) -> list[dict]:
+    """
+    Get a list of prs for the given repo and label.
+    ---
+    Inputs: repo (str), num_items (int)
+    Outputs: prs (list of dict)
+    """
+    # replace variables in query string and filter down to the issues' edges
+    prs = process_request(
+        gh_graphql_url,
+        headers=headers,
+        json={
+            "query": prs_query.replace("$org", f'"{ORG}"')
+            .replace("$repo", f'"{repo}"')
+            .replace("$num_items", f"{num_items}")
+        },
+    )["data"]["repository"]["pullRequests"]["edges"]
+    return prs
+
+
 def add_items_to_project(project_id: str, items: list[dict]) -> None:
     """
     Adds GitHub items (issues or PRs) to a project by project_id and a list of item edges.
@@ -150,6 +172,7 @@ def add_items_to_project(project_id: str, items: list[dict]) -> None:
                 ).replace("$item_id", f'"{item["node"]["id"]}"')
             },
         )
+
 
 def main(
     project_num: int,
@@ -184,13 +207,12 @@ def main(
             issues = get_issues(repo, issue_label, num_items)
             # add issues to the project
             add_items_to_project(project_id, issues)
-        # for each pr label
-        for pr_label in pr_labels:
-            print(f"Processing PR label: {pr_label}...\n")
-            # get the list of PRs for the repo and label
-            prs = get_issues(repo, pr_label, num_items)
-            # add PRs to the project
-            add_items_to_project(project_id, prs)
+
+        # TODO: add back label filtering
+        # get the list of PRs for the repo and label
+        prs = get_prs(repo, num_items)
+        # add PRs to the project
+        add_items_to_project(project_id, prs)
 
 
 # run script
