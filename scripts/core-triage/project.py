@@ -24,6 +24,8 @@ ISSUE_LABELS = [
     "bug",
     "good_first_issue",
     "awaiting_response",
+    "more_information_needed",
+    "Refinement",
     "support_rotation",
     "help_wanted",
     "spike",
