@@ -1,0 +1,25 @@
+name: Update Dev Requirements file
+
+on:
+  workflow_call:
+
+jobs:
+  update-dev-requirements:
+    name: Update dev-requirements file
+    
+    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+
+    steps:   
+      - name: Find matching branch
+        id: feature-branch
+        continue-on-error: true
+        run: |
+          exists='git ls-remote --heads https://github.com/dbt-labs/dbt-core.git $GITHUB_HEAD_REF | wc -l'
+          echo ::set-output name=exists::${exists}
+          
+      - name: Find and replace in file
+        if: '${{ steps.feature-branch.outputs.exists }}'
+        run: |
+          sed -i 's|git#egg|git@'"${GITHUB_HEAD_REF}"'#egg|g' dev-requirements.txt
+          cat dev-requirements.txt
