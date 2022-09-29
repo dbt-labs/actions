@@ -1,0 +1,181 @@
+# **what?**
+# Cuts the `*.latest` branch and cleans up all files in `.changes/unreleased` on main.
+#
+
+# **why?**
+# Clean up the main branch after a release branch is cut and automate cutting the release branch.
+
+# **when?**
+# This will run when called manually in a workflow. 
+
+# Ideally this would be triggered when a `*.latest` branch is cut but the `create: branch`` trigger cannot filter so it would need to run every time a branch were created which is overkill.
+
+# Example Usage including required permissions
+
+# permissions:
+#   contents: read
+#   pull-requests: write
+#
+# name: Cut Release Branch
+# jobs:
+#   changelog:
+#     uses: dbt-labs/actions/.github/workflows/cut-release-branch.yml@main
+#    with:
+#      release_branch_name: 1.2.latest
+#      sha: 0e60fc1  (or nothing!)
+#    secrets: inherit # this is only acceptable because we own the action we're calling
+#
+
+name: Check Changelog Entry Exists
+
+on:
+  workflow_call:
+    inputs:
+      release_branch_name:
+        description: Name of release branch (ex. `1.2.latest`)
+        type: string
+        required: true
+      sha:
+        description: The commit the release branch will be cut from, default to latest commit
+        type: string
+        required: false
+
+jobs:
+  prep:
+    name: Cut the Release branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "[DEBUG] - Print Inputs"
+        shell: bash
+        id: echo_inputs
+        run: |
+          echo "all variables defined as inputs"
+          echo "Release Branch Name:   ${{ inputs.release_branch_name }}"
+          echo "Release sha:           ${{ inputs.sha }}"
+
+      - name: Checkout Branch
+        uses: actions/checkout@v3
+        with:
+          # specifying the ref avoids checking out the repository in a detached state
+          token: ${{ inputs.GITHUB_TOKEN }}
+
+      - name: Determine what to release
+      # grab the specific sha in the off chance someone pushes a change in the middle of this aciton running
+      # TODO: will this work? Do we ever release anything but the head?
+        run: |
+          if [ -z "${{ inputs.sha }}" ]; then
+            echo "::set-output name=checkout_ref::"$(git rev-parse --short --verify main)"
+          else
+            echo "::set-output name=checkout_ref::${{ inputs.sha }}"
+          fi
+
+  cut_branch:    
+    name: Cut the Release branch
+    runs-on: ubuntu-latest
+    needs: [prep]
+
+    steps:
+      - name: "[DEBUG] - Print Inputs"
+        shell: bash
+        id: echo_inputs
+        run: |
+          echo "all variables used in this job"
+          echo "Ref to cut branch from:   ${{ needs.ref }}"
+          echo "Release Branch Name:      ${{ inputs.release_branch_name }}"
+
+      - name: Checkout Branch
+        uses: actions/checkout@v3
+        with:
+          # specifying the ref avoids checking out the repository in a detached state
+          ref: ${{ needs.ref }}
+          token: ${{ inputs.GITHUB_TOKEN }}
+      
+      - name: Create Release branch
+        run: |
+          git checkout -b ${{ inputs.release_branch_name }}
+          git push -u origin ${{ inputs.release_branch_name }}
+
+      - name: Print branch status
+        run: |
+          git status
+      
+      - name: Commit & Push changes
+        run: |
+          git config user.name 'Github Build Bot'
+          git config user.email 'buildbot@fishtownanalytics.com'
+          git push
+
+  changelog_cleanup:
+    name: Check if Changelog Exists
+    needs: [prep, cut_branch]
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "[DEBUG] - Print Inputs"
+        shell: bash
+        id: echo_inputs
+        run: |
+          echo "all variables used in this job"
+          echo "Ref to cut branch from:   ${{ needs.ref }}"
+          echo "Release Branch Name:      ${{ inputs.release_branch_name }}"
+
+      - name: Set branch value
+        id: variables
+        run: |
+          echo "::set-output name=BRANCH_NAME::changelog_cleanup/${{ inputs.release_branch_name }}__$GITHUB_RUN_ID"
+
+      - name: Checkout Branch
+        uses: actions/checkout@v3
+        with:
+          # specifying the ref avoids checking out the repository in a detached state
+          ref: ${{ needs.ref }}
+          token: ${{ inputs.GITHUB_TOKEN }}
+
+      - name: Check if any changelog files exists
+        # if there are no changelog entries, exit!
+        shell: bash
+        id: changelog_check
+        run: |
+          git fetch origin ${{ inputs.sha }}
+          if echo grep '.changes/unreleased/.*.yaml'; then
+            echo "::set-output name=exists::true"
+            echo "Changelogs exist for this PR, delete them now"
+          else
+            echo "::set-output name=exists::false"
+            echo "No changelog exists for this PR, exit action"
+            exit 1
+          fi
+
+      - name: Create PR branch
+        run: |
+          git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
+          git push -u origin ${{ steps.variables.outputs.BRANCH_NAME }}
+
+      - name: Delete unreleased Changelogs
+        run: |
+          rm .changes/unreleased/*.yaml
+
+      - name: Print branch status
+        run: |
+          git status
+      
+      - name: Commit & Push changes
+        run: |
+          git config user.name 'Github Build Bot'
+          git config user.email 'buildbot@fishtownanalytics.com'
+          git pull
+          git add .
+          git commit -m "Cleaning up changelogs after cutting release branch"
+          git push
+
+      - name: Create Pull Request
+        run: |
+          gh pr create --title "Cleanup Changelogs after Cutting Release Branch" \
+                       --body "Cleanup Changelogs after Cutting Release Branch ${{ inputs.release_branch_name }}" \
+                       --base main \
+                       --head ${{ steps.variables.outputs.BRANCH_NAME }} \
+                       --label "Skip Changelog"
+        env:
+          GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
