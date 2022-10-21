@@ -1,0 +1,69 @@
+# **what?**
+# An easy action that automated swapping out one label on an issue for another label
+
+# **why?**
+# At the time of writing, this is specifically to help with team triage issue tracking
+# but could be used for any label switching need
+
+# **when?**
+# When you need to automate switching our issue labels.
+
+# Example:
+# name: Update Triage Label
+
+# on: issue_comment
+
+# defaults:
+#   run:
+#     shell: bash
+
+# permissions:
+#   issues: write
+
+# jobs:
+#   triage_label:
+#     uses: dbt-labs/actions/.github/workflows/triage-labels.yml@main
+#     secrets: inherit
+
+
+name: Replace Issue Label
+
+on:
+  workflow_call:
+    inputs:
+      original_label:
+        description: The label to check for and replace with new_label
+        type: string
+        default: "awaiting_response"
+        required: true
+      new_label:
+        description: The label to replace original_label with
+        type: string
+        default: "triage"
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  issues: write
+
+jobs:      
+  triage_label:
+    if: contains(github.event.issue.labels.*.name, inputs.original_label)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "[DEBUG] - Print Inputs"
+        shell: bash
+        id: echo_inputs
+        run: |
+          echo "all variables defined as inputs"
+          echo "original_label:    ${{ inputs.original_label }}"
+          echo "new_label:         ${{ inputs.new_label }}"
+  
+      - name: switch labels
+        id: switch_labels
+        run: |
+          gh issue edit ${{ github.event.issue.number }} --add-label ${{ inputs.new_label }} --remove-label ${{ inputs.original_label }}
