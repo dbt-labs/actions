@@ -53,7 +53,7 @@ jobs:
         id: echo_inputs
         run: |
           echo "all variables defined as ouputs in previous jobs"
-          echo "Issue ID:            ${{ steps.extract.outputs.issueId }}"
+          echo "Issue ID:            ${{ needs.extract-id.outputs.issueId }}"
 
       - name: Jira login
         uses: atlassian/gajira-login@master
@@ -66,12 +66,12 @@ jobs:
         if: github.event.action == 'closed' || github.event.action == 'deleted'
         uses: atlassian/gajira-transition@master
         with:
-          issue: "${{ steps.extract.outputs.issueId }}"
+          issue: "${{ needs.extract-id.outputs.issueId }}"
           transition: "Done"
 
       - name: Transition issue in Jira to To Do
         if: github.event.action == 'reopened'
         uses: atlassian/gajira-transition@master
         with:
-          issue: "${{ steps.extract.outputs.issueId }}"
+          issue: "${{ needs.extract-id.outputs.issueId }}"
           transition: "Backlog"
