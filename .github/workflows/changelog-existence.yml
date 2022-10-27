@@ -84,10 +84,10 @@ jobs:
         id: comment_check
         run: |
           if [ '${{ steps.changelog_comment.outputs.comment-body }}' = '' ]; then
-            echo "::set-output name=exists::false"
+            echo "exists=false" >> $GITHUB_OUTPUT
             echo "Comment does not exist for this PR"
           else
-            echo "::set-output name=exists::true"
+            echo "exists::true" >> $GITHUB_OUTPUT
             echo "Comment already exists for this PR"
           fi
 
