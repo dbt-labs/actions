@@ -75,7 +75,7 @@ jobs:
         id: save-id
         run: |
           ID='${{ steps.create.outputs.issue }}'
-          echo ::set-output name=issueId::${ID}
+          echo "issueId=${ID}" >> $GITHUB_STATE
 
   find-labels:
     runs-on: ubuntu-latest
@@ -88,7 +88,7 @@ jobs:
         id: generate-labels
         run: |
           LABELS='${{ toJSON(github.event.issue.labels.*.name) }}'
-          echo ::set-output name=labels::${LABELS}
+          echo "labels=${LABELS}" >> $GITHUB_STATE
 
   add-labels:
     runs-on: ubuntu-latest
@@ -99,6 +99,14 @@ jobs:
       matrix:
         label: ${{ fromJSON(needs.find-labels.outputs.labels) }}
     steps:
+      - name: "[DEBUG] - Print Job Inputs"
+        shell: bash
+        id: echo_inputs
+        run: |
+          echo "all variables defined as ouputs in previous jobs"
+          echo "Running for label:   ${{ matrix.label }}""
+          echo "Issue ID:            ${{ needs.create-issue.outputs.issueId }}"
+
       - name: Setup Jira
         uses: atlassian/gajira-cli@v2.0.2
 
