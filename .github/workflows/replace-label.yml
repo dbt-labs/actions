@@ -40,6 +40,9 @@ on:
         type: string
         default: "triage"
         required: true
+    secrets:
+      GITHUB_TOKEN:
+        required: true
 
 defaults:
   run:
