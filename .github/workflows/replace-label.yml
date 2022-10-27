@@ -23,7 +23,6 @@
 # jobs:
 #   triage_label:
 #     uses: dbt-labs/actions/.github/workflows/triage-labels.yml@main
-#     secrets: inherit
 
 
 name: Replace Issue Label
@@ -65,5 +64,7 @@ jobs:
   
       - name: switch labels
         id: switch_labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue edit ${{ github.event.issue.number }} --add-label ${{ inputs.new_label }} --remove-label ${{ inputs.original_label }}
