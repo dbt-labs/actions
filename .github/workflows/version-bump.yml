@@ -17,9 +17,9 @@ on:
   workflow_call:
     inputs:
       version_number:
-       description: 'The version number to bump to (ex. 1.2.0, 1.3.0b1)'
-       type: string
-       required: true
+        description: "The version number to bump to (ex. 1.2.0, 1.3.0b1)"
+        type: string
+        required: true
 
 jobs:
   bump:
@@ -110,18 +110,18 @@ jobs:
       - name: Commit version bump to branch
         uses: EndBug/add-and-commit@v7
         with:
-          author_name: 'Github Build Bot'
-          author_email: 'buildbot@fishtownanalytics.com'
-          message: 'Bumping version to ${{ github.event.inputs.version_number }} and generate CHANGELOG'
-          branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
-          push: 'origin origin/${{ steps.variables.outputs.BRANCH_NAME }}'
+          author_name: "Github Build Bot"
+          author_email: "buildbot@fishtownanalytics.com"
+          message: "Bumping version to ${{ github.event.inputs.version_number }} and generate CHANGELOG"
+          branch: "${{ steps.variables.outputs.BRANCH_NAME }}"
+          push: "origin origin/${{ steps.variables.outputs.BRANCH_NAME }}"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
-          author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
+          author: "Github Build Bot <buildbot@fishtownanalytics.com>"
           base: ${{github.ref}}
-          title: 'Bumping version to ${{ github.event.inputs.version_number }} and generate changelog'
-          branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
+          title: "Bumping version to ${{ github.event.inputs.version_number }} and generate changelog"
+          branch: "${{ steps.variables.outputs.BRANCH_NAME }}"
           labels: |
             Skip Changelog

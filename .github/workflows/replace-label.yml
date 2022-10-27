@@ -25,7 +25,6 @@
 #     uses: dbt-labs/actions/.github/workflows/triage-labels.yml@main
 #     secrets: inherit
 
-
 name: Replace Issue Label
 
 on:
@@ -49,7 +48,7 @@ defaults:
 permissions:
   issues: write
 
-jobs:      
+jobs:
   triage_label:
     if: contains(github.event.issue.labels.*.name, inputs.original_label)
     runs-on: ubuntu-latest
@@ -62,7 +61,7 @@ jobs:
           echo "all variables defined as inputs"
           echo "original_label:    ${{ inputs.original_label }}"
           echo "new_label:         ${{ inputs.new_label }}"
-  
+
       - name: switch labels
         id: switch_labels
         run: |
