@@ -42,12 +42,19 @@ jobs:
           TITLE: "${{ github.event.issue.title }}"
         run: |
           issueId=$(echo -n $TITLE | awk '{print $1}' | awk -F'[][]' '{print $2}')
-          echo ::set-output name=issueId::$issueId
+          echo "issueId=${issueId}" >> $GITHUB_STATE
 
   transition-issue:
     runs-on: ubuntu-latest
     needs: extract-id
     steps:
+      - name: "[DEBUG] - Print Job Inputs"
+        shell: bash
+        id: echo_inputs
+        run: |
+          echo "all variables defined as ouputs in previous jobs"
+          echo "Issue ID:            ${{ steps.extract.outputs.issueId }}"
+
       - name: Jira login
         uses: atlassian/gajira-login@master
         env:
