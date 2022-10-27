@@ -1,6 +1,8 @@
 # GitHub Actions and Workflows for maintaining dbt
 
-A set of GitHub [Actions](https://docs.github.com/en/actions/creating-actions/about-custom-actions) and [Reusable Workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows) for automating common tasks related to developing, maintaining, and releasing dbt-core and database adapter plugins. See individual actions for more info and instructions on how to use.
+A set of GitHub [Actions](https://docs.github.com/en/actions/creating-actions/about-custom-actions) and [Reusable Workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows) for automating common tasks related to developing, maintaining, and releasing dbt-core, database adapter plugins, and other dbt-labs open source projects. 
+
+Actions and workflows should be self documented.  See individual actions for more info and instructions on how to use.
 
 ### Actions
 
@@ -12,6 +14,9 @@ A set of GitHub [Actions](https://docs.github.com/en/actions/creating-actions/ab
 - [Jira Issue Transition](.github/workflows/jira-transition.yml)
 - [Jira Label Mirroring](.github/workflows/jira-label.yml)
 - [Jira Issue Creation](.github/workflows/jira-creation.yml)
+- [Changelog Existence Check](.github/workflows/changelog-existence.yml)
+- [Core Triage Label Handling](.github/workflows/replace-label.yml)
+- [Version bump and Changelog Generation](.github/workflows/version-bump.yml)
 
 ## Releasing
 
