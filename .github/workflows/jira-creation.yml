@@ -86,9 +86,13 @@ jobs:
     steps:
       - name: Generate Labels
         id: generate-labels
+        # Because there may be multiple labels we need to account for LABELS being a
+        # multiline var and define the end of file
         run: |
           LABELS='${{ toJSON(github.event.issue.labels.*.name) }}'
-          echo "labels=${LABELS}" >> $GITHUB_OUTPUT
+          echo "labels<<EOF" >> $GITHUB_OUTPUT
+          echo "${LABELS}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
   add-labels:
     runs-on: ubuntu-latest
