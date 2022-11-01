@@ -43,7 +43,7 @@ jobs:
       issueId: ${{ steps.save-id.outputs.issueId }}
     steps:
       - name: Login
-        uses: atlassian/gajira-login@v2.0.2
+        uses: atlassian/gajira-login@v2.0.0
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
@@ -111,7 +111,7 @@ jobs:
         uses: atlassian/gajira-cli@v2.0.2
 
       - name: Login
-        uses: atlassian/gajira-login@v2.0.1
+        uses: atlassian/gajira-login@v2.0.0
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
