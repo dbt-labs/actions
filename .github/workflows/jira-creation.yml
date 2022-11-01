@@ -75,7 +75,7 @@ jobs:
         id: save-id
         run: |
           ID='${{ steps.create.outputs.issue }}'
-          echo "issueId=${ID}" >> $GITHUB_STATE
+          echo "issueId=${ID}" >> $GITHUB_OUTPUT
 
   find-labels:
     runs-on: ubuntu-latest
@@ -108,7 +108,7 @@ jobs:
         id: echo_inputs
         run: |
           echo "all variables defined as ouputs in previous jobs"
-          echo "Running for label:   ${{ matrix.label }}""
+          echo "Running for label:   ${{ matrix.label }}"
           echo "Issue ID:            ${{ needs.create-issue.outputs.issueId }}"
 
       - name: Setup Jira
