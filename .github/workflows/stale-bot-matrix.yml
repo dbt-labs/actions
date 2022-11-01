@@ -25,10 +25,11 @@ permissions:
   pull-requests: write
 
 env:
-  STALE_ISSUE_MSG: "This issue has been marked as Stale because it has been open for 180 days with no activity. If you would like the issue to remain open, please remove the stale label or comment on the issue, or it will be closed in 7 days."
-  STALE_PR_MSG: "This PR has been marked as Stale because it has been open with no activity as of late. If you would like the PR to remain open, please remove the stale label or comment on the PR, or it will be closed in 7 days."
+  STALE_ISSUE_MSG: "This issue has been marked as Stale because it has been open for 180 days with no activity. If you would like the issue to remain open, please comment on the issue or else it will be closed in 7 days."
+  STALE_PR_MSG: "This PR has been marked as Stale because it has been open with no activity as of late. If you would like the PR to remain open, please comment on the PR or else it will be closed in 7 days."
   CLOSE_ISSUE_MSG: "Although we are closing this issue as stale, it's not gone forever. Issues can be reopened if there is renewed community interest. Just add a comment to notify the maintainers."
   CLOSE_PR_MSG: "Although we are closing this PR as stale, it can still be reopened to continue development. Just add a comment to notify the maintainers."
+  CLOSE_ISSUE_REASON: "not_planned"
 
 jobs:
   stale-awaiting-response:
@@ -40,7 +41,7 @@ jobs:
           stale-pr-message: ${{ env.STALE_PR_MSG }}
           close-issue-message: ${{ env.CLOSE_ISSUE_MSG }}
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
-          close-issue-reason: 'not_planned'
+          close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 90
           any-of-labels: 'awaiting_response', 'more_information_needed'
 
@@ -53,7 +54,7 @@ jobs:
           stale-pr-message: ${{ env.STALE_PR_MSG }}
           close-issue-message: ${{ env.CLOSE_ISSUE_MSG }}
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
-          close-issue-reason: 'not_planned'
+          close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 360
           any-of-labels: 'good_first_issue', 'help_wanted'
 
@@ -66,7 +67,7 @@ jobs:
           stale-pr-message: ${{ env.STALE_PR_MSG }}
           close-issue-message: ${{ env.CLOSE_ISSUE_MSG }}
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
-          close-issue-reason: 'not_planned'
+          close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 720
           any-of-labels: 'tech_debt'
 
@@ -79,6 +80,6 @@ jobs:
           stale-pr-message: ${{ env.STALE_PR_MSG }}
           close-issue-message: ${{ env.CLOSE_ISSUE_MSG }}
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
-          close-issue-reason: 'not_planned'
+          close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 180
-          exempt-issue-labels: 'tech_debt', 'good_first_issue', 'help_wanted', 'awaiting_response', 'more_information_needed'
+          exempt-issue-labels: 'tech_debt', 'good_first_issue', 'help_wanted'
