@@ -43,7 +43,7 @@ jobs:
       issueId: ${{ steps.save-id.outputs.issueId }}
     steps:
       - name: Login
-        uses: atlassian/gajira-login@v2.0.0
+        uses: atlassian/gajira-login@v2.0.2
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
@@ -75,7 +75,7 @@ jobs:
         id: save-id
         run: |
           ID='${{ steps.create.outputs.issue }}'
-          echo "issueId=${ID}" >> $GITHUB_STATE
+          echo "issueId=${ID}" >> $GITHUB_OUTPUT
 
   find-labels:
     runs-on: ubuntu-latest
@@ -88,7 +88,7 @@ jobs:
         id: generate-labels
         run: |
           LABELS='${{ toJSON(github.event.issue.labels.*.name) }}'
-          echo "labels=${LABELS}" >> $GITHUB_STATE
+          echo "labels=${LABELS}" >> $GITHUB_OUTPUT
 
   add-labels:
     runs-on: ubuntu-latest
@@ -104,14 +104,14 @@ jobs:
         id: echo_inputs
         run: |
           echo "all variables defined as ouputs in previous jobs"
-          echo "Running for label:   ${{ matrix.label }}""
+          echo "Running for label:   ${{ matrix.label }}"
           echo "Issue ID:            ${{ needs.create-issue.outputs.issueId }}"
 
       - name: Setup Jira
         uses: atlassian/gajira-cli@v2.0.2
 
       - name: Login
-        uses: atlassian/gajira-login@v2.0.0
+        uses: atlassian/gajira-login@v2.0.1
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}

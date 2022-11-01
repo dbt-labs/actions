@@ -67,7 +67,7 @@ jobs:
         uses: atlassian/gajira-cli@v2.0.2
 
       - name: Login
-        uses: atlassian/gajira-login@v2.0.0
+        uses: atlassian/gajira-login@v2.0.1
 
       - name: Add label
         if: github.event.action == 'labeled'
