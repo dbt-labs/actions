@@ -86,9 +86,13 @@ jobs:
     steps:
       - name: Generate Labels
         id: generate-labels
+        # Because there may be multiple labels we need to account for LABELS being a
+        # multiline var and define the end of file
         run: |
           LABELS='${{ toJSON(github.event.issue.labels.*.name) }}'
-          echo "labels=${LABELS}" >> $GITHUB_OUTPUT
+          echo "labels<<EOF" >> $GITHUB_OUTPUT
+          echo "${LABELS}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
   add-labels:
     runs-on: ubuntu-latest
@@ -117,6 +121,10 @@ jobs:
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
+      - name: Add label
+        if: github.event.action == 'labeled'  # true even on open if labels are present
+        run: jira labels add ${{ needs.create-issue.outputs.issueId }} --labels ${{ needs.find-labels.outputs.labels }}
+      
       - name: Add label
         run: jira labels add ${{ needs.create-issue.outputs.issueId }} "${{ matrix.label }}"
         env:
