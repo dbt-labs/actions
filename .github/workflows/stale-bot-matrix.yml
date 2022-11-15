@@ -43,7 +43,7 @@ jobs:
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
           close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 90
-          any-of-labels: 'awaiting_response, more_information_needed'
+          any-of-labels: 'awaiting_response,more_information_needed'
 
   stale-first-issue:
     runs-on: ubuntu-latest
@@ -56,7 +56,7 @@ jobs:
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
           close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 360
-          any-of-labels: ['good_first_issue', 'help_wanted']
+          any-of-labels: 'good_first_issue,help_wanted'
 
   stale-tech-debt:
     runs-on: ubuntu-latest
@@ -82,4 +82,4 @@ jobs:
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
           close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 180
-          exempt-issue-labels: ['tech_debt', 'good_first_issue', 'help_wanted']
+          exempt-issue-labels: 'tech_debt,good_first_issue,help_wanted'
