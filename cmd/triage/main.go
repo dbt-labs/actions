@@ -38,7 +38,6 @@ var ISSUE_LABELS = []string{                                     // add issues w
 	"Team:Execution",
 	"Team:Adapters",
 }
-var PR_LABELS = []string{"ready_for_review"} // add prs with any one of these labels
 
 // types -- must be a subset of the corresponding GitHub GraphQL object
 type Issue struct {
