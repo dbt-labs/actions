@@ -26,7 +26,7 @@ on:
       - main
     paths:
       - .github/workflows/core-triage.yml
-      - scripts/core-triage/**
+      - cmd/triage/**
 
 jobs:
   add-items-to-project:
@@ -34,20 +34,20 @@ jobs:
     steps:
 
       - name: check out repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: setup python
-        uses: actions/setup-python@v2
+      - name: setup go
+        uses: actions/setup-go@v3
         with:
-          python-version: '3.10'
+          go-version: 1.19
 
-      - name: pip installs
-        run: pip install -r requirements.txt
-        working-directory: scripts/core-triage
+      - name: download go mods
+        run: go mod download
+        working-directory: cmd/triage
 
-      - name: run script
-        run: python project.py
-        working-directory: scripts/core-triage
+      - name: run go triage
+        run: go run .
+        working-directory: cmd/triage
         env:
           GH_TOKEN: ${{ secrets.VARIABLE_CORE_TRIAGE_ONLY }}
  
