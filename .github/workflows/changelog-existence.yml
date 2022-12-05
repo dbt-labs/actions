@@ -88,7 +88,7 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
             echo "Comment does not exist for this PR"
           else
-            echo "exists::true" >> $GITHUB_OUTPUT
+            echo "exists=true" >> $GITHUB_OUTPUT
             echo "Comment already exists for this PR"
           fi
 
