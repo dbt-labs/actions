@@ -3,7 +3,7 @@ from packaging.version import parse, Version
 
 # The pattern is: "{name}={value}" >> $GITHUB_OUTPUT
 def setOutput(name, value):
-  print(f"{name}={value} >> $GITHUB_OUTPUT");
+  print(f""""{name}"="{value}" >> $GITHUB_OUTPUT""");
 
 def main():
     input_version = os.environ["INPUT_VERSION"]
