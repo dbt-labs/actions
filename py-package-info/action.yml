@@ -7,6 +7,9 @@ inputs:
   version:
     description: "Version to get information for"
     required: false
+  check-test-index:
+    description: "Check package info in TestPyPI"
+    required: false
 outputs:
   name:
     description: "Package name"
