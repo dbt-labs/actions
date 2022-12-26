@@ -27,15 +27,17 @@ class PackageInfo:
 
 
 def setOutput(name, value):
-  os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""");
+    os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
 
 
-def lookup_package(name, version=None, check_test_index=None):
+def lookup_package(name, check_test_index, version=None):
     pkg_data = None
-    
-    package_index_url = "https://pypi.io/pypi/{}/json";
+
+    package_index_url = "https://pypi.io/pypi/{}/json"
     if check_test_index:
         package_index_url = "https://test.pypi.org/pypi/{}/json"
+
+    print(f"::debug::Checking the following package index {package_index_url}")
 
     with closing(urlopen(package_index_url.format(name))) as f:
         reader = codecs.getreader("utf-8")
@@ -89,9 +91,10 @@ def lookup_package(name, version=None, check_test_index=None):
 def main():
     package = os.environ["INPUT_PACKAGE"]
     version = os.environ["INPUT_VERSION"]
-    check_test_index = os.environ["INPUT_CHECK-TEST-INDEX"]
+    check_test_index = os.environ["INPUT_CHECK-TEST-INDEX"] == "true"
 
-    package_info = PackageInfo(**lookup_package(package, version=version, check_test_index=check_test_index))
+    package_info = PackageInfo(
+        **lookup_package(package, check_test_index, version=version))
 
     print("::group::Python Package Info Outputs")
     print(f"name={package_info.name}")
