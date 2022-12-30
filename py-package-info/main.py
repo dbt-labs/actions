@@ -26,7 +26,7 @@ class PackageInfo:
     checksum_type: Optional[str]
 
 
-def setOutput(name, value):
+def set_output(name, value):
     os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
 
 
@@ -108,15 +108,15 @@ def main():
     print(f"source-checksum-type={package_info.checksum_type}")
     print("::endgroup::")
 
-    setOutput("name", package_info.name)
-    setOutput("version", package_info.version)
-    setOutput("homepage", package_info.homepage)
-    setOutput("summary", package_info.summary)
-    setOutput("author", package_info.author)
-    setOutput("author-email", package_info.author_email)
-    setOutput("source-url", package_info.url)
-    setOutput("source-checksum", package_info.checksum)
-    setOutput("source-checksum-type", package_info.checksum_type)  # noqa
+    set_output("name", package_info.name)
+    set_output("version", package_info.version)
+    set_output("homepage", package_info.homepage)
+    set_output("summary", package_info.summary)
+    set_output("author", package_info.author)
+    set_output("author-email", package_info.author_email)
+    set_output("source-url", package_info.url)
+    set_output("source-checksum", package_info.checksum)
+    set_output("source-checksum-type", package_info.checksum_type)  # noqa
 
 
 if __name__ == "__main__":
