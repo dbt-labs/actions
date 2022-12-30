@@ -1,8 +1,9 @@
 import os
 from packaging.version import parse, Version
 
-# The pattern is: "{name}={value}" >> $GITHUB_OUTPUT
-def setOutput(name, value):
+
+def set_output(name, value):
+  # The pattern is: "{name}={value}" >> $GITHUB_OUTPUT
   os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""");
 
 def main():
@@ -35,15 +36,15 @@ def main():
     print(f"is-pre-release={is_pre_release_truthy}")
     print("::endgroup::")
 
-    setOutput("version", parsed_version.public);
-    setOutput("base-version", parsed_version.base_version);
-    setOutput("major", parsed_version.major);
-    setOutput("minor", parsed_version.minor);
-    setOutput("patch", parsed_version.micro);
-    setOutput("pre-release-type", pre_release_type);
-    setOutput("pre-release-version", pre_release_version);
-    setOutput("pre-release", pre_release);
-    setOutput("is-pre-release", is_pre_release_truthy);
+    set_output("version", parsed_version.public)
+    set_output("base-version", parsed_version.base_version)
+    set_output("major", parsed_version.major)
+    set_output("minor", parsed_version.minor)
+    set_output("patch", parsed_version.micro)
+    set_output("pre-release-type", pre_release_type)
+    set_output("pre-release-version", pre_release_version)
+    set_output("pre-release", pre_release)
+    set_output("is-pre-release", is_pre_release_truthy)
 
 if __name__ == "__main__":
     main()
