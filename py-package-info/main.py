@@ -26,9 +26,20 @@ class PackageInfo:
     checksum_type: Optional[str]
 
 
-def lookup_package(name, version=None):
+def set_output(name, value):
+    os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
+
+
+def lookup_package(name, check_test_index, version=None):
     pkg_data = None
-    with closing(urlopen("https://pypi.io/pypi/{}/json".format(name))) as f:
+
+    package_index_url = "https://pypi.io/pypi/{}/json"
+    if check_test_index:
+        package_index_url = "https://test.pypi.org/pypi/{}/json"
+
+    print(f"::debug::Checking the following package index {package_index_url}")
+
+    with closing(urlopen(package_index_url.format(name))) as f:
         reader = codecs.getreader("utf-8")
         pkg_data = json.load(reader(f))
     if pkg_data is None:
@@ -80,8 +91,10 @@ def lookup_package(name, version=None):
 def main():
     package = os.environ["INPUT_PACKAGE"]
     version = os.environ["INPUT_VERSION"]
+    check_test_index = os.environ["INPUT_CHECK-TEST-INDEX"] == "true"
 
-    package_info = PackageInfo(**lookup_package(package, version=version))
+    package_info = PackageInfo(
+        **lookup_package(package, check_test_index, version=version))
 
     print("::group::Python Package Info Outputs")
     print(f"name={package_info.name}")
@@ -95,15 +108,15 @@ def main():
     print(f"source-checksum-type={package_info.checksum_type}")
     print("::endgroup::")
 
-    print(f"::set-output name=name::{package_info.name}")
-    print(f"::set-output name=version::{package_info.version}")
-    print(f"::set-output name=homepage::{package_info.homepage}")
-    print(f"::set-output name=summary::{package_info.summary}")
-    print(f"::set-output name=author::{package_info.author}")
-    print(f"::set-output name=author-email::{package_info.author_email}")
-    print(f"::set-output name=source-url::{package_info.url}")
-    print(f"::set-output name=source-checksum::{package_info.checksum}")
-    print(f"::set-output name=source-checksum-type::{package_info.checksum_type}")  # noqa
+    set_output("name", package_info.name)
+    set_output("version", package_info.version)
+    set_output("homepage", package_info.homepage)
+    set_output("summary", package_info.summary)
+    set_output("author", package_info.author)
+    set_output("author-email", package_info.author_email)
+    set_output("source-url", package_info.url)
+    set_output("source-checksum", package_info.checksum)
+    set_output("source-checksum-type", package_info.checksum_type)  # noqa
 
 
 if __name__ == "__main__":
