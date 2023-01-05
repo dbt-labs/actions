@@ -2,6 +2,10 @@ import os
 from packaging.version import parse, Version
 
 
+def set_output(name, value):
+    os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
+
+
 def main():
     input_version = os.environ["INPUT_VERSION"]
     parsed_version = parse(input_version)
@@ -32,15 +36,15 @@ def main():
     print(f"is-pre-release={is_pre_release_truthy}")
     print("::endgroup::")
 
-    print(f"::set-output name=version::{parsed_version.public}")
-    print(f"::set-output name=base-version::{parsed_version.base_version}")
-    print(f"::set-output name=major::{parsed_version.major}")
-    print(f"::set-output name=minor::{parsed_version.minor}")
-    print(f"::set-output name=patch::{parsed_version.micro}")
-    print(f"::set-output name=pre-release-type::{pre_release_type}")
-    print(f"::set-output name=pre-release-version::{pre_release_version}")
-    print(f"::set-output name=pre-release::{pre_release}")
-    print(f"::set-output name=is-pre-release::{is_pre_release_truthy}")
+    set_output("version", parsed_version.public)
+    set_output("base-version", parsed_version.base_version)
+    set_output("major", parsed_version.major)
+    set_output("minor", parsed_version.minor)
+    set_output("patch", parsed_version.micro)
+    set_output("pre-release-type", pre_release_type)
+    set_output("pre-release-version", pre_release_version)
+    set_output("pre-release", pre_release)
+    set_output("is-pre-release", is_pre_release_truthy)
 
 
 if __name__ == "__main__":
