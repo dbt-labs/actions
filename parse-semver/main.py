@@ -3,8 +3,8 @@ from packaging.version import parse, Version
 
 
 def set_output(name, value):
-  # The pattern is: "{name}={value}" >> $GITHUB_OUTPUT
-  os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""");
+    os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
+
 
 def main():
     input_version = os.environ["INPUT_VERSION"]
@@ -45,6 +45,7 @@ def main():
     set_output("pre-release-version", pre_release_version)
     set_output("pre-release", pre_release)
     set_output("is-pre-release", is_pre_release_truthy)
+
 
 if __name__ == "__main__":
     main()
