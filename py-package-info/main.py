@@ -168,10 +168,10 @@ def main():
     package = os.environ["INPUT_PACKAGE"]
     version = os.environ["INPUT_VERSION"]
     check_test_index = os.environ["INPUT_CHECK-TEST-INDEX"] == "true"
-    retry_count = int(os.environ["INPUT_RETRY-COUNT"])
+    attempts_count = int(os.environ["INPUT_ATTEMPTS-COUNT"]) + 1
 
     package_info = PackageInfo(
-        **lookup_package(package, check_test_index, version=version, attempts_limit=retry_count))
+        **lookup_package(package, check_test_index, version=version, attempts_limit=attempts_count))
 
     print("::group::Python Package Info Outputs")
     print(f"name={package_info.name}")

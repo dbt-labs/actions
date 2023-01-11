@@ -11,7 +11,7 @@ inputs:
     description: "Check package info in TestPyPI"
     required: false
     default: "false"
-  retry-count:
+  attempts-count:
     description: "How many attempts before failure"
     required: false
     default: "3"
