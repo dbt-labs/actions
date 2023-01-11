@@ -140,7 +140,7 @@ def lookup_package(name, check_test_index, version=None, attempts_limit=3):
         except Exception as e:
             if attempt == attempts_limit - 1 and not isinstance(e, PackageVersionNotFoundInPyPIError):
                 raise RuntimeError(f"{e}")
-            elif attempt < attempts_limit - 1:
+            if attempt < attempts_limit - 1:
                 print(
                     f"Exception occurred: {type(e).__name__} - {e}. Retrying.")
                 back_off = get_exponential_backoff_in_seconds(attempt)
