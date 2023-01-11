@@ -168,7 +168,7 @@ def main():
     package = os.environ["INPUT_PACKAGE"]
     version = os.environ["INPUT_VERSION"]
     check_test_index = os.environ["INPUT_CHECK-TEST-INDEX"] == "true"
-    attempts_count = int(os.environ["INPUT_ATTEMPTS-COUNT"]) + 1
+    attempts_count = int(os.environ["INPUT_RETRIES"]) + 1
 
     package_info = PackageInfo(
         **lookup_package(package, check_test_index, version=version, attempts_limit=attempts_count))
