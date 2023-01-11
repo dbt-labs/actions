@@ -14,6 +14,16 @@ class PackageVersionNotFoundWarning(UserWarning):
     pass
 
 
+class PackageMetadataNotFoundInPyPIError(Exception):
+    """The package index didn't return metadata for the specified package"""
+    pass
+
+
+class PackageVersionNotFoundInPyPIError(Exception):
+    """The specified package version is not presented in the package index"""
+    pass
+
+
 @dataclass
 class PackageInfo:
     name: str
@@ -35,19 +45,19 @@ def get_exponential_backoff_in_seconds(attempt_number: int) -> int:
     """
     Returns exponential back-off - depending on number of attempt.
     Considers that `attempt_number` starts from 0.
-    Initial delay - 4 second.
+    Initial back-off - 4 second.
     """
-
     return pow(attempt_number + 2, 2)
 
 
 def fetch_package_data(name, package_index_url):
     metadata = None
-
     with closing(urlopen(package_index_url.format(name))) as f:
+        print(
+            f"::debug::Fetching metadata for {name} from {package_index_url.format(name)}")
         reader = codecs.getreader("utf-8")
         metadata = json.load(reader(f))
-
+        print(f"::debug::Done fetching metadata")
     return metadata
 
 
@@ -60,6 +70,42 @@ def get_package_info(package_metadata):
     info['author'] = package_metadata['info'].get('author', '')
     info['author_email'] = package_metadata['info'].get('author_email', '')
     return info
+
+
+def get_artifact_version(metadata, version):
+    artifact = None
+    for pypi_version in metadata['releases']:
+        if pkg_resources.safe_version(pypi_version) == version:
+            for version_artifact in metadata['releases'][pypi_version]:
+                if version_artifact['packagetype'] == 'sdist':
+                    artifact = version_artifact
+                    break
+    return artifact
+
+
+def get_latest_artifact_url(metadata):
+    artifact = None
+
+    for url in metadata['urls']:
+        if url['packagetype'] == 'sdist':
+            artifact = url
+            break
+
+    return artifact
+
+
+def get_artifact_checksum(artifact, package_info):
+    checksum = None
+    if 'digests' in artifact and 'sha256' in artifact['digests']:
+        print(f"::debug::Using provided checksum for {package_info['name']}")
+        checksum = artifact['digests']['sha256']
+    else:
+        print(
+            f"::debug::Fetching sdist to compute checksum for {package_info['name']}")
+        with closing(urlopen(artifact['url'])) as f:
+            checksum = sha256(f.read()).hexdigest()
+        print(f"::debug::Done fetching {package_info['name']}")
+    return checksum
 
 
 def lookup_package(name, check_test_index, version=None, attempts_limit=3):
@@ -76,56 +122,40 @@ def lookup_package(name, check_test_index, version=None, attempts_limit=3):
     for attempt in range(attempts_limit):
         print(
             f"::debug::Fetching package metadata - attempt {attempt + 1} / {attempts_limit}")
-
         try:
             package_metadata = fetch_package_data(name, package_index_url)
 
             if package_metadata is None:
-                raise RuntimeError(f"No package data for: {name}")
-
+                raise PackageMetadataNotFoundInPyPIError(
+                    f"Could not find package metadata for: {name}")
             package_info = get_package_info(package_metadata)
 
             if version:
-                for pypi_version in package_metadata['releases']:
-                    if pkg_resources.safe_version(pypi_version) == version:
-                        for version_artifact in package_metadata['releases'][pypi_version]:
-                            if version_artifact['packagetype'] == 'sdist':
-                                artifact = version_artifact
-                                package_info['version'] = version
-                                break
+                artifact = get_artifact_version(package_metadata, version)
                 if artifact is None:
-                    print("::warning::Could not find an exact version match for "
-                          f"{name} version {version}. Retrying.")
-                    raise RuntimeError("Could not find an exact version match for "
-                                       f"{name} version {version}. Retrying.")
-        except:
-            if attempt < attempts_limit:
-                sleep = get_exponential_backoff_in_seconds(attempt)
-                print(f"::debug::Sleep for {sleep} seconds")
-                time.sleep(sleep)
-                continue
-
+                    raise PackageVersionNotFoundInPyPIError("Could not find an exact version match for "
+                                                            f"{name} version {version}")
+                else:
+                    package_info['version'] = version
+        except Exception as e:
+            print(f"::warning::Exception occurred: {type(e).__name__} - {e}")
+            if attempt == attempts_limit - 1 and not isinstance(e, PackageVersionNotFoundInPyPIError):
+                raise RuntimeError(f"{e}")
+            back_off = get_exponential_backoff_in_seconds(attempt)
+            print(f"::debug::Sleep for {back_off} seconds before next attempt")
+            time.sleep(back_off)
+            continue
         break
 
-    print("::warning::Could not find an exact version match for "
-          f"{name} version {version}; using newest instead")
-
-    if artifact is None:  # no version given or exact match not found
-        for url in package_metadata['urls']:
-            if url['packagetype'] == 'sdist':
-                artifact = url
-                break
+    if artifact is None:
+        print("::warning::Could not find an exact version match for "
+              f"{name} version {version} after {attempts_limit} attempts. Using newest version instead.")
+        artifact = get_latest_artifact_url(package_metadata)
 
     if artifact:
         package_info['url'] = artifact['url']
-        if 'digests' in artifact and 'sha256' in artifact['digests']:
-            print(f"::debug::Using provided checksum for {name}")
-            package_info['checksum'] = artifact['digests']['sha256']
-        else:
-            print(f"::debug::Fetching sdist to compute checksum for {name}")
-            with closing(urlopen(artifact['url'])) as f:
-                package_info['checksum'] = sha256(f.read()).hexdigest()
-            print(f"::debug::Done fetching {name}")
+        package_info['checksum'] = get_artifact_checksum(
+            artifact, package_info)
     else:  # no sdist found
         package_info['url'] = ''
         package_info['checksum'] = ''
