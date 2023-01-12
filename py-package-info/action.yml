@@ -11,6 +11,10 @@ inputs:
     description: "Check package info in TestPyPI"
     required: false
     default: "false"
+  retries:
+    description: "How many retries before failure"
+    required: false
+    default: "3"
 outputs:
   name:
     description: "Package name"

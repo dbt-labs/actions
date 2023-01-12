@@ -2,6 +2,7 @@ import codecs
 import json
 import os
 import pkg_resources
+import time
 from contextlib import closing
 from dataclasses import dataclass
 from typing import Optional
@@ -10,6 +11,16 @@ from hashlib import sha256
 
 
 class PackageVersionNotFoundWarning(UserWarning):
+    pass
+
+
+class PackageMetadataNotFoundInPyPIError(Exception):
+    """The package index didn't return metadata for the specified package"""
+    pass
+
+
+class PackageVersionNotFoundInPyPIError(Exception):
+    """The specified package version is not presented in the package index"""
     pass
 
 
@@ -30,8 +41,77 @@ def set_output(name, value):
     os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
 
 
-def lookup_package(name, check_test_index, version=None):
-    pkg_data = None
+def get_exponential_backoff_in_seconds(attempt_number: int) -> int:
+    """
+    Returns exponential back-off - depending on number of attempt.
+    Considers that `attempt_number` starts from 0.
+    Initial back-off - 4 second.
+    """
+    return pow(attempt_number + 2, 2)
+
+
+def fetch_package_data(name, package_index_url):
+    metadata = None
+    with closing(urlopen(package_index_url.format(name))) as f:
+        print(
+            f"::debug::Fetching metadata for {name} from {package_index_url.format(name)}")
+        reader = codecs.getreader("utf-8")
+        metadata = json.load(reader(f))
+        print(f"::debug::Done fetching metadata")
+    return metadata
+
+
+def get_package_info(package_metadata):
+    info = {}
+    info['name'] = package_metadata['info']['name']
+    info['version'] = package_metadata['info'].get('version', '')
+    info['homepage'] = package_metadata['info'].get('home_page', '')
+    info['summary'] = package_metadata['info'].get('summary', '')
+    info['author'] = package_metadata['info'].get('author', '')
+    info['author_email'] = package_metadata['info'].get('author_email', '')
+    return info
+
+
+def get_artifact_version(metadata, version):
+    artifact = None
+    for pypi_version in metadata['releases']:
+        if pkg_resources.safe_version(pypi_version) == version:
+            for version_artifact in metadata['releases'][pypi_version]:
+                if version_artifact['packagetype'] == 'sdist':
+                    artifact = version_artifact
+                    break
+    return artifact
+
+
+def get_latest_artifact_url(metadata):
+    artifact = None
+
+    for url in metadata['urls']:
+        if url['packagetype'] == 'sdist':
+            artifact = url
+            break
+
+    return artifact
+
+
+def get_artifact_checksum(artifact, package_info):
+    checksum = None
+    if 'digests' in artifact and 'sha256' in artifact['digests']:
+        print(f"::debug::Using provided checksum for {package_info['name']}")
+        checksum = artifact['digests']['sha256']
+    else:
+        print(
+            f"::debug::Fetching sdist to compute checksum for {package_info['name']}")
+        with closing(urlopen(artifact['url'])) as f:
+            checksum = sha256(f.read()).hexdigest()
+        print(f"::debug::Done fetching {package_info['name']}")
+    return checksum
+
+
+def lookup_package(name, check_test_index, version=None, attempts_limit=3):
+    package_metadata = None
+    package_info = {}
+    artifact = None
 
     package_index_url = "https://pypi.io/pypi/{}/json"
     if check_test_index:
@@ -39,62 +119,62 @@ def lookup_package(name, check_test_index, version=None):
 
     print(f"::debug::Checking the following package index {package_index_url}")
 
-    with closing(urlopen(package_index_url.format(name))) as f:
-        reader = codecs.getreader("utf-8")
-        pkg_data = json.load(reader(f))
-    if pkg_data is None:
-        raise RuntimeError(f"no package data for: {name}")
-    d = {}
-    d['name'] = pkg_data['info']['name']
-    d['version'] = pkg_data['info'].get('version', '')
-    d['homepage'] = pkg_data['info'].get('home_page', '')
-    d['summary'] = pkg_data['info'].get('summary', '')
-    d['author'] = pkg_data['info'].get('author', '')
-    d['author_email'] = pkg_data['info'].get('author_email', '')
-    artifact = None
-    if version:
-        for pypi_version in pkg_data['releases']:
-            if pkg_resources.safe_version(pypi_version) == version:
-                for version_artifact in pkg_data['releases'][pypi_version]:
-                    if version_artifact['packagetype'] == 'sdist':
-                        artifact = version_artifact
-                        d['version'] = version
-                        break
-        if artifact is None:
-            print("::warning::Could not find an exact version match for "
-                  f"{name} version {version}; using newest instead")
+    for attempt in range(attempts_limit):
+        print(
+            f"::debug::Fetching package metadata - attempt {attempt + 1} / {attempts_limit}")
+        try:
+            package_metadata = fetch_package_data(name, package_index_url)
 
-    if artifact is None:  # no version given or exact match not found
-        for url in pkg_data['urls']:
-            if url['packagetype'] == 'sdist':
-                artifact = url
-                break
+            if package_metadata is None:
+                raise PackageMetadataNotFoundInPyPIError(
+                    f"Could not find package metadata for: {name}")
+            package_info = get_package_info(package_metadata)
+
+            if version:
+                artifact = get_artifact_version(package_metadata, version)
+                if artifact is None:
+                    raise PackageVersionNotFoundInPyPIError("Could not find an exact version match for "
+                                                            f"{name} version {version}")
+                else:
+                    package_info['version'] = version
+        except Exception as e:
+            if attempt == attempts_limit - 1 and not isinstance(e, PackageVersionNotFoundInPyPIError):
+                raise RuntimeError(f"{e}")
+            if attempt < attempts_limit - 1:
+                print(
+                    f"Exception occurred: {type(e).__name__} - {e}. Retrying.")
+                back_off = get_exponential_backoff_in_seconds(attempt)
+                print(
+                    f"::debug::Sleep for {back_off} seconds before next attempt")
+                time.sleep(back_off)
+                continue
+        break
+
+    if artifact is None:
+        print("::warning::Could not find an exact version match for "
+              f"{name} version {version} after {attempts_limit} attempts. Using newest version instead.")
+        artifact = get_latest_artifact_url(package_metadata)
 
     if artifact:
-        d['url'] = artifact['url']
-        if 'digests' in artifact and 'sha256' in artifact['digests']:
-            print(f"::debug::Using provided checksum for {name}")
-            d['checksum'] = artifact['digests']['sha256']
-        else:
-            print(f"::debug::Fetching sdist to compute checksum for {name}")
-            with closing(urlopen(artifact['url'])) as f:
-                d['checksum'] = sha256(f.read()).hexdigest()
-            print(f"::debug::Done fetching {name}")
+        package_info['url'] = artifact['url']
+        package_info['checksum'] = get_artifact_checksum(
+            artifact, package_info)
     else:  # no sdist found
-        d['url'] = ''
-        d['checksum'] = ''
+        package_info['url'] = ''
+        package_info['checksum'] = ''
         print("::warning::No sdist found for {name}")
-    d['checksum_type'] = 'sha256'
-    return d
+    package_info['checksum_type'] = 'sha256'
+    return package_info
 
 
 def main():
     package = os.environ["INPUT_PACKAGE"]
     version = os.environ["INPUT_VERSION"]
     check_test_index = os.environ["INPUT_CHECK-TEST-INDEX"] == "true"
+    attempts_count = int(os.environ["INPUT_RETRIES"]) + 1
 
     package_info = PackageInfo(
-        **lookup_package(package, check_test_index, version=version))
+        **lookup_package(package, check_test_index, version=version, attempts_limit=attempts_count))
 
     print("::group::Python Package Info Outputs")
     print(f"name={package_info.name}")
