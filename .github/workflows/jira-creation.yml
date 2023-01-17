@@ -75,7 +75,7 @@ jobs:
         id: save-id
         run: |
           ID='${{ steps.create.outputs.issue }}'
-          echo "issueId=${ID}" >> $GITHUB_STATE
+          echo "issueId=${ID}" >> $GITHUB_OUTPUT
 
   find-labels:
     runs-on: ubuntu-latest
@@ -86,9 +86,13 @@ jobs:
     steps:
       - name: Generate Labels
         id: generate-labels
+        # Because there may be multiple labels we need to account for LABELS being a
+        # multiline var and define the end of file
         run: |
           LABELS='${{ toJSON(github.event.issue.labels.*.name) }}'
-          echo "labels=${LABELS}" >> $GITHUB_STATE
+          echo "labels<<EOF" >> $GITHUB_OUTPUT
+          echo "${LABELS}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
   add-labels:
     runs-on: ubuntu-latest
@@ -104,7 +108,7 @@ jobs:
         id: echo_inputs
         run: |
           echo "all variables defined as ouputs in previous jobs"
-          echo "Running for label:   ${{ matrix.label }}""
+          echo "Running for label:   ${{ matrix.label }}"
           echo "Issue ID:            ${{ needs.create-issue.outputs.issueId }}"
 
       - name: Setup Jira

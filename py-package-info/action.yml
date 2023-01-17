@@ -7,6 +7,14 @@ inputs:
   version:
     description: "Version to get information for"
     required: false
+  check-test-index:
+    description: "Check package info in TestPyPI"
+    required: false
+    default: "false"
+  retries:
+    description: "How many retries before failure"
+    required: false
+    default: "3"
 outputs:
   name:
     description: "Package name"

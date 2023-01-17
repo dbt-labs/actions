@@ -17,7 +17,7 @@ CORE_TEAM = "core"
 # exclude some repos (generally internal) that will cause failure
 # include some extra repos not in the team
 EXCLUDE_REPOS = ["core-team", "schemas.getdbt.com"]
-EXTRA_REPOS = ["dbt-starter-project", "jaffle_shop"]
+EXTRA_REPOS = ["dbt-starter-project", "jaffle_shop", "dbt-server"]
 # issues added by label individually; lots of duplication here
 ISSUE_LABELS = [
     "triage",

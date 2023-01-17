@@ -1,0 +1,85 @@
+# **what?**
+# For issues that have been open for awhile without activity, label
+# them as stale with a warning that they will be closed out. If
+# anyone comments to keep the issue open, it will automatically
+# remove the stale label and keep it open.
+
+# Stale label rules:
+# awaiting_response, more_information_needed -> 90 days
+# good_first_issue, help_wanted -> 360 days (a year)
+# tech_debt -> 720 (2 years)
+# all else defaults -> 180 days (6 months)
+
+# **why?**
+# To keep the repo in a clean state from issues that aren't relevant anymore
+
+# **when?**
+# Triggered by the repos but usually on a schedule to run once a day
+
+name: "Close stale issues and PRs"
+on:
+  workflow_call:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+env:
+  STALE_ISSUE_MSG: "This issue has been marked as Stale because it has been open for 180 days with no activity. If you would like the issue to remain open, please comment on the issue or else it will be closed in 7 days."
+  STALE_PR_MSG: "This PR has been marked as Stale because it has been open with no activity as of late. If you would like the PR to remain open, please comment on the PR or else it will be closed in 7 days."
+  CLOSE_ISSUE_MSG: "Although we are closing this issue as stale, it's not gone forever. Issues can be reopened if there is renewed community interest. Just add a comment to notify the maintainers."
+  CLOSE_PR_MSG: "Although we are closing this PR as stale, it can still be reopened to continue development. Just add a comment to notify the maintainers."
+  CLOSE_ISSUE_REASON: "not_planned"
+
+jobs:
+  stale-awaiting-response:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v6
+        with:
+          stale-issue-message: ${{ env.STALE_ISSUE_MSG }}
+          stale-pr-message: ${{ env.STALE_PR_MSG }}
+          close-issue-message: ${{ env.CLOSE_ISSUE_MSG }}
+          close-pr-message: ${{ env.CLOSE_PR_MSG }}
+          close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
+          days-before-stale: 90
+          any-of-labels: 'awaiting_response,more_information_needed'
+
+  stale-first-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v6
+        with:
+          stale-issue-message: ${{ env.STALE_ISSUE_MSG }}
+          stale-pr-message: ${{ env.STALE_PR_MSG }}
+          close-issue-message: ${{ env.CLOSE_ISSUE_MSG }}
+          close-pr-message: ${{ env.CLOSE_PR_MSG }}
+          close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
+          days-before-stale: 360
+          any-of-labels: 'good_first_issue,help_wanted'
+
+  stale-tech-debt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v6
+        with:
+          stale-issue-message: ${{ env.STALE_ISSUE_MSG }}
+          stale-pr-message: ${{ env.STALE_PR_MSG }}
+          close-issue-message: ${{ env.CLOSE_ISSUE_MSG }}
+          close-pr-message: ${{ env.CLOSE_PR_MSG }}
+          close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
+          days-before-stale: 720
+          any-of-labels: 'tech_debt'
+
+  stale-default:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v6
+        with:
+          stale-issue-message: ${{ env.STALE_ISSUE_MSG }}
+          stale-pr-message: ${{ env.STALE_PR_MSG }}
+          close-issue-message: ${{ env.CLOSE_ISSUE_MSG }}
+          close-pr-message: ${{ env.CLOSE_PR_MSG }}
+          close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
+          days-before-stale: 180
+          exempt-issue-labels: 'tech_debt,good_first_issue,help_wanted'
