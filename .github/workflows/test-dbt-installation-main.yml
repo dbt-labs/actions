@@ -1,0 +1,91 @@
+# **what?**
+
+# **why?**
+
+# **when?**
+# This workflow will run on a schedule every night and also can be
+# manually invoked.
+
+name: dbt Installation Tests
+
+on:
+  workflow_dispatch:
+
+  # run this once per night to ensure no regressions
+  # schedule:
+  #   - cron: "0 9,13,18 * * *" # 9:00, 13:00, 18:00 UTC
+
+jobs:
+  dbt-installation-homebrew:
+    if: ${{ always() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          ["dbt-postgres", "dbt-redshift", "dbt-snowflake", "dbt-bigquery"]
+
+    uses: .github/workflows/test-dbt-installation-homebrew.yml
+    with:
+      package_name: ${{ matrix.package }}
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
+
+  dbt-installation-pip:
+    if: ${{ always() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          [
+            "dbt-postgres",
+            "dbt-redshift",
+            "dbt-snowflake",
+            "dbt-bigquery",
+            "dbt-spark",
+          ]
+
+    uses: .github/workflows/test-dbt-installation-pip.yml
+    with:
+      package_name: ${{ matrix.package }}
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
+
+  dbt-installation-docker:
+    if: ${{ always() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          [
+            "dbt-postgres",
+            "dbt-redshift",
+            "dbt-snowflake",
+            "dbt-bigquery",
+            "dbt-spark",
+          ]
+
+    uses: .github/workflows/test-dbt-installation-docker.yml
+    with:
+      package_name: ${{ matrix.package }}
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
+
+  dbt-installation-source:
+    if: ${{ always() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          [
+            "dbt-postgres",
+            "dbt-redshift",
+            "dbt-snowflake",
+            "dbt-bigquery",
+            "dbt-spark",
+          ]
+
+    uses: .github/workflows/test-dbt-installation-source.yml
+    with:
+      package_name: ${{ matrix.package }}
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}

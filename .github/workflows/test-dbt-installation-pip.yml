@@ -1,0 +1,51 @@
+# **what?**
+
+# **why?**
+
+# **when?**
+# This reusable workflow can be called or started manually
+# by specifying the package name
+
+name: dbt Installation - pip Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Package name to test (i.e. dbt-postgres)"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      package_name:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        description: Slack app webhook url
+        required: true
+
+# no permissions are needed for this workflow
+permissions: {}
+
+jobs:
+  pip-integration-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Output Package Name - ${{ inputs.package_name }}"
+        run: |
+          echo ${{ inputs.package_name }}
+
+  slack-notification:
+    name: "Post Scheduled Run Failures"
+    needs: pip-integration-test
+    if: ${{ failure() && github.event_name == 'schedule' }}
+
+    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
+    with:
+      status: "failure"
+      notification_title: "pip nightly integration test failed for - ${{ inputs.package_name }}"
+
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
