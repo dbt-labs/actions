@@ -36,7 +36,13 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          ["dbt-postgres", "dbt-redshift", "dbt-snowflake", "dbt-bigquery"]
+          [
+            "dbt-postgres",
+            "dbt-redshift",
+            "dbt-snowflake",
+            "dbt-bigquery",
+            "dbt-spark",
+          ]
 
     uses: .github/workflows/test-dbt-installation-pip.yml
     with:
@@ -50,7 +56,13 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          ["dbt-postgres", "dbt-redshift", "dbt-snowflake", "dbt-bigquery"]
+          [
+            "dbt-postgres",
+            "dbt-redshift",
+            "dbt-snowflake",
+            "dbt-bigquery",
+            "dbt-spark",
+          ]
 
     uses: .github/workflows/test-dbt-installation-docker.yml
     with:
@@ -64,7 +76,13 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          ["dbt-postgres", "dbt-redshift", "dbt-snowflake", "dbt-bigquery"]
+          [
+            "dbt-postgres",
+            "dbt-redshift",
+            "dbt-snowflake",
+            "dbt-bigquery",
+            "dbt-spark",
+          ]
 
     uses: .github/workflows/test-dbt-installation-source.yml
     with:
