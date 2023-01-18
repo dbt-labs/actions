@@ -1,0 +1,44 @@
+# **what?**
+
+# **why?**
+
+# **when?**
+# This reusable workflow will be called via caller workflow on a schedule every night
+
+name: Dbt Installation - Docker Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      package_name:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        description: Slack app webhook url
+        required: true
+
+# no permissions are needed for this workflow
+permissions: {}
+
+jobs:
+  docker-integration-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Output Package Name - ${{ inputs.package_name }}"
+        run: |
+          echo ${{ inputs.package_name }}
+
+  slack-notification:
+    name: "Post Scheduled Run Failures"
+    needs: docker-integration-test
+    if: ${{ failure() }}
+
+    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
+    with:
+      status: "failure"
+      notification_title: "Docker nightly integration test failed for - ${{ inputs.package_name }}"
+
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
