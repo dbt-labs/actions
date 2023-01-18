@@ -1,0 +1,75 @@
+# **what?**
+# This workflow installs the latest version of dbt adapter from homebrew.
+# It then runs 'dbt --version' to verify the installation was successful.
+# If it fails for the scheduled runs, it will post to our team alerts channel.
+
+# **why?**
+# This is a simple way to test all adapter installations at a single
+# time. It allows us to test them on a schedule as well to check for
+# any breaking dependency changes that might happen and alert us on it.
+
+# **when?**
+# This reusable workflow will be called via caller workflow on a schedule every night
+
+name: Dbt Installation - Homebrew Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      package_name:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        description: Slack app webhook url
+        required: true
+
+# no permissions are needed for this workflow
+permissions: {}
+
+jobs:
+  homebrew-integration-test:
+    runs-on: macos-11
+
+    steps:
+      - name: "Prepare Brew"
+        # brew upgrade generates some symlink update warnings that cause failures without the || true.
+        # They're just that the symlink wasn't updated which is okay to ignore.
+        # This does cause other errors to be ignored but for this case that's safe since the brew install
+        # step would likely fail at that point.
+        run: |
+          brew update
+          brew upgrade || true
+
+      - name: "[DEBUG] Show List Of Installed Homebrew Packages"
+        run: |
+          brew list
+
+      - name: "Tap dbt-labs/dbt Repository To Homebrew Formulae"
+        run: |
+          brew tap dbt-labs/dbt
+
+      - name: "[DEBUG] Show List Of All Currently Tapped Repositories"
+        run: |
+          brew tap
+
+      - name: "Brew Install ${{ inputs.package_name }}"
+        run: |
+          brew install --verbose ${{ inputs.package_name }}
+
+      - name: "Verify ${{ inputs.package_name }} Version"
+        run: |
+          dbt --version
+
+  slack-notification:
+    name: "Post Scheduled Run Failures"
+    needs: homebrew-integration-test
+    if: ${{ failure() }}
+
+    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
+    with:
+      status: "failure"
+      notification_title: "Homebrew nightly integration test failed for - ${{ inputs.package_name }}"
+
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
