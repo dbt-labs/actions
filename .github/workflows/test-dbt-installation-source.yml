@@ -3,7 +3,7 @@
 # **why?**
 
 # **when?**
-# This reusable workflow can be called or started manually 
+# This reusable workflow can be called or started manually
 # by specifying the package name
 
 name: dbt Installation - Source Integration Tests
@@ -25,8 +25,8 @@ on:
         description: Slack app webhook url
         required: true
 
-# no permissions are needed for this workflow
-permissions: {}
+permissions:
+  contents: read # required for slack-post-notification workflow
 
 jobs:
   source-integration-test:

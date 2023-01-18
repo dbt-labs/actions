@@ -8,6 +8,9 @@
 
 name: dbt Installation Tests
 
+permissions:
+  contents: read # required for slack-post-notification workflow
+
 on:
   workflow_dispatch:
 
@@ -24,7 +27,7 @@ jobs:
         package:
           ["dbt-postgres", "dbt-redshift", "dbt-snowflake", "dbt-bigquery"]
 
-    uses: .github/workflows/test-dbt-installation-homebrew.yml
+    uses: ./.github/workflows/test-dbt-installation-homebrew.yml
     with:
       package_name: ${{ matrix.package }}
     secrets:
@@ -44,7 +47,7 @@ jobs:
             "dbt-spark",
           ]
 
-    uses: .github/workflows/test-dbt-installation-pip.yml
+    uses: ./.github/workflows/test-dbt-installation-pip.yml
     with:
       package_name: ${{ matrix.package }}
     secrets:
@@ -64,7 +67,7 @@ jobs:
             "dbt-spark",
           ]
 
-    uses: .github/workflows/test-dbt-installation-docker.yml
+    uses: ./.github/workflows/test-dbt-installation-docker.yml
     with:
       package_name: ${{ matrix.package }}
     secrets:
@@ -84,7 +87,7 @@ jobs:
             "dbt-spark",
           ]
 
-    uses: .github/workflows/test-dbt-installation-source.yml
+    uses: ./.github/workflows/test-dbt-installation-source.yml
     with:
       package_name: ${{ matrix.package }}
     secrets:
