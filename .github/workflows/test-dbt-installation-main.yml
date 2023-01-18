@@ -6,7 +6,7 @@
 # This workflow will run on a schedule every night and also can be
 # manually invoked.
 
-name: Dbt Installation Tests
+name: dbt Installation Tests
 
 on:
   workflow_dispatch:

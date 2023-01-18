@@ -6,7 +6,7 @@
 # This reusable workflow can be called or started manually 
 # by specifying the package name
 
-name: Dbt Installation - Source Integration Tests
+name: dbt Installation - Source Integration Tests
 
 on:
   workflow_dispatch:
