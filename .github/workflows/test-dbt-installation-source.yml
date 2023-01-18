@@ -3,11 +3,18 @@
 # **why?**
 
 # **when?**
-# This reusable workflow will be called via caller workflow on a schedule every night
+# This reusable workflow can be called or started manually 
+# by specifying the package name
 
 name: Dbt Installation - Source Integration Tests
 
 on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Package name to test (i.e. dbt-postgres)"
+        required: true
+        type: string
   workflow_call:
     inputs:
       package_name:
