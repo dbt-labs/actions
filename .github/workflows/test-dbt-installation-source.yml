@@ -40,7 +40,7 @@ jobs:
   slack-notification:
     name: "Post Scheduled Run Failures"
     needs: source-integration-test
-    if: ${{ failure() }}
+    if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
