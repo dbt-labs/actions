@@ -31,8 +31,8 @@ on:
         description: Slack app webhook url
         required: true
 
-# no permissions are needed for this workflow
-permissions: {}
+permissions:
+  contents: read # required for slack-post-notification workflow
 
 jobs:
   homebrew-integration-test:

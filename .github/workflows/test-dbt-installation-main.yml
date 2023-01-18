@@ -8,6 +8,9 @@
 
 name: dbt Installation Tests
 
+permissions:
+  contents: read # required for slack-post-notification workflow
+
 on:
   workflow_dispatch:
 
