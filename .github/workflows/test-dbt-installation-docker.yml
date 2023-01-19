@@ -48,6 +48,10 @@ jobs:
           ref=${{ env.GITHUB_PACKAGES_LINK }}/dbt-labs/${{ inputs.package_name }}:${{ matrix.tag }}
           echo "ref=$ref" >> $GITHUB_OUTPUT
 
+      - name: "[DEBUG] Show Docker Version"
+        run: |
+          docker version
+
       - name: "Pull Image - ${{ steps.image-info.outputs.ref }}"
         run: |
           docker pull ${{ steps.image-info.outputs.ref }}
@@ -56,7 +60,7 @@ jobs:
         run: |
           docker image ls --all
 
-      - name: "Run Image In Container - ${{ steps.image-info.outputs.ref }}"
+      - name: "Verify ${{ inputs.package_name }} Version"
         uses: addnab/docker-run-action@v3
         with:
           registry: ${{ env.GITHUB_PACKAGES_LINK }}
