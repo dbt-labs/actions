@@ -53,7 +53,7 @@ jobs:
         with:
           registry: ${{ env.GITHUB_PACKAGES_LINK }}
           image: "${{ env.GITHUB_PACKAGES_LINK }}/${{ steps.image-info.outputs.ref }}"
-          run: --version
+          run: dbt --version
 
   slack-notification:
     name: "Post Scheduled Run Failures"
