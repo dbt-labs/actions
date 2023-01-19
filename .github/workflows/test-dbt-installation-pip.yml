@@ -28,14 +28,36 @@ on:
 permissions:
   contents: read # required for slack-post-notification workflow
 
+env:
+  PYTHON_TARGET_VERSION: 3.8
+
 jobs:
   pip-integration-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Output Package Name - ${{ inputs.package_name }}"
+      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_TARGET_VERSION }}
+
+      - name: "Install Package - ${{ inputs.package_name }}"
         run: |
-          echo ${{ inputs.package_name }}
+          python -m pip install --user --upgrade pip
+          python -m pip install pip ${{ inputs.package_name }}
+          python -m pip --version
+
+      - name: "[DEBUG] Show Installed Packages"
+        run: |
+          python -m pip list
+
+      - name: "[DEBUG] Show Package Info - ${{ inputs.package_name }}"
+        run: |
+          python -m pip show ${{ inputs.package_name }}
+
+      - name: "Verify ${{ inputs.package_name }} Version"
+        run: |
+          dbt --version
 
   slack-notification:
     name: "Post Scheduled Run Failures"
