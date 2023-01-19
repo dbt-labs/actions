@@ -41,14 +41,18 @@ jobs:
         id: image-info
         run: |
           # Link example: ghcr.io/dbt-labs/dbt-bigquery:1.3.latest
-          ref=${{ inputs.package_name }}:${{ env.IMAGE_TAG }}
+          ref=dbt-labs/${{ inputs.package_name }}:${{ env.IMAGE_TAG }}
           echo "ref=$ref" >> $GITHUB_OUTPUT
+
+      - name: "Pull Image - ${{ steps.image-info.outputs.ref }}"
+        run: |
+          docker pull ${{ env.GITHUB_PACKAGES_LINK }}/${{ steps.image-info.outputs.ref }}
 
       - name: "Run Image In Container - ${{ steps.image-info.outputs.ref }}"
         uses: addnab/docker-run-action@v3
         with:
-          registry: "${{ env.GITHUB_PACKAGES_LINK }}/dbt-labs"
-          image: ${{ steps.image-info.outputs.ref }}
+          registry: ${{ env.GITHUB_PACKAGES_LINK }}
+          image: "${{ env.GITHUB_PACKAGES_LINK }}/${{ steps.image-info.outputs.ref }}"
           run: --version
 
   slack-notification:
