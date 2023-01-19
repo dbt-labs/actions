@@ -1,6 +1,13 @@
 # **what?**
+# This workflow pulls docker images with dbt adapters on board from GitHub Packages.
+# Workflow pulls images with "1.*.latest" tags only.
+# It then runs 'dbt --version' to verify the installation was successful.
+# If it fails for the scheduled runs, it will post to our team alerts channel.
 
 # **why?**
+# This is a simple way to test all adapter installations at a single
+# time. It allows us to test them on a schedule as well to check for
+# any breaking dependency changes that might happen and alert us on it.
 
 # **when?**
 # This reusable workflow can be called or started manually
