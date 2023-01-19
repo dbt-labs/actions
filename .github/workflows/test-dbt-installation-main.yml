@@ -13,6 +13,18 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      test-installation-method:
+        description: "Choice installation method to test"
+        required: true
+        type: choice
+        default: "all"
+        options:
+          - "all"
+          - "homebrew"
+          - "pip"
+          - "docker"
+          - "source"
 
   # run this once per night to ensure no regressions
   # schedule:
@@ -20,7 +32,10 @@ on:
 
 jobs:
   dbt-installation-homebrew:
-    if: ${{ always() }}
+    if: >-
+      inputs.test-installation-method == "all"
+      || inputs.test-installation-method == "homebrew"
+
     strategy:
       fail-fast: false
       matrix:
@@ -34,7 +49,9 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
 
   dbt-installation-pip:
-    if: ${{ always() }}
+    if: >-
+      inputs.test-installation-method == "all"
+      || inputs.test-installation-method == "pip"
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +71,9 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
 
   dbt-installation-docker:
-    if: ${{ always() }}
+    if: >-
+      inputs.test-installation-method == "all"
+      || inputs.test-installation-method == "docker"
     strategy:
       fail-fast: false
       matrix:
@@ -74,7 +93,9 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
 
   dbt-installation-source:
-    if: ${{ always() }}
+    if: >-
+      inputs.test-installation-method == "all"
+      || inputs.test-installation-method == "source"
     strategy:
       fail-fast: false
       matrix:
