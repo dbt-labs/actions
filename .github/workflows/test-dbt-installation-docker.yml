@@ -28,14 +28,21 @@ on:
 permissions:
   contents: read # required for slack-post-notification workflow
 
+env:
+  GITHUB_PACKAGES_LINK: "ghcr.io"
+  IMAGE_TAG: "1.3.latest"
+
 jobs:
   docker-integration-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Output Package Name - ${{ inputs.package_name }}"
-        run: |
-          echo ${{ inputs.package_name }}
+      - name: "Run Image In Container - ${{ env.GITHUB_PACKAGES_LINK }}/dbt-labs/${{ inputs.package_name }}:${{ env.IMAGE_TAG }}"
+        uses: addnab/docker-run-action@v3
+        with:
+          registry: ${{ env.GITHUB_PACKAGES_LINK }}
+          image: ${{ inputs.package_name }}:${{ env.IMAGE_TAG }}
+          run: --version
 
   slack-notification:
     name: "Post Scheduled Run Failures"
