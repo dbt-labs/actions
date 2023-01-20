@@ -52,6 +52,10 @@ jobs:
           persist-credentials: false
           ref: ${{ matrix.branch }}
 
+      - name: "[DEBUG] Show Latest Commit"
+        run: |
+          git log --name-status HEAD^..HEAD
+
       - name: "[DEBUG] Show Work Folder Content"
         run: |
           ls -lh
