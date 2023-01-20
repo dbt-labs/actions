@@ -37,10 +37,10 @@ jobs:
         with:
           python-version: "3.8"
 
-      - name: Install spark dependencies
-        if: (( github.repository == 'dbt-labs/dbt-spark' ))
-        run: |
-          sudo apt-get install libsasl2-dev
+      # - name: Install spark dependencies
+      #   if: (( github.repository == 'dbt-labs/dbt-spark' ))
+      #   run: |
+      #     sudo apt-get install libsasl2-dev
 
       - name: Install python dependencies
         run: |
@@ -58,30 +58,39 @@ jobs:
           brew tap miniscruff/changie https://github.com/miniscruff/changie
           brew install changie
 
-      - name: Audit Version and Parse Into Parts
-        id: semver
-        uses: dbt-labs/actions/parse-semver@v1
-        with:
-          version: ${{ github.event.inputs.version_number }}
+      # - name: Audit Version and Parse Into Parts
+      #   id: semver
+      #   uses: dbt-labs/actions/parse-semver@v1
+      #   with:
+      #     version: ${{ github.event.inputs.version_number }}
 
-      - name: Set branch value
-        id: variables
+      # - name: Set branch value
+      #   id: variables
+      #   run: |
+      #     echo "::set-output name=BRANCH_NAME::prep-release/${{ github.event.inputs.version_number }}_$GITHUB_RUN_ID"
+
+      # - name: Create PR branch
+      #   run: |
+      #     git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
+      #     git push origin ${{ steps.variables.outputs.BRANCH_NAME }}
+      #     git branch --set-upstream-to=origin/${{ steps.variables.outputs.BRANCH_NAME }} ${{ steps.variables.outputs.BRANCH_NAME }}
+
+      # - name: Bump version
+      #   run: |
+      #     source env/bin/activate
+      #     pip install -r dev-requirements.txt
+      #     env/bin/bumpversion --allow-dirty --new-version ${{ github.event.inputs.version_number }} major
+      #     git status
+
+      - name: Set Core Team Membership for Changie Contributors exclusion
         run: |
-          echo "::set-output name=BRANCH_NAME::prep-release/${{ github.event.inputs.version_number }}_$GITHUB_RUN_ID"
-
-      - name: Create PR branch
-        run: |
-          git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
-          git push origin ${{ steps.variables.outputs.BRANCH_NAME }}
-          git branch --set-upstream-to=origin/${{ steps.variables.outputs.BRANCH_NAME }} ${{ steps.variables.outputs.BRANCH_NAME }}
-
-      - name: Bump version
-        run: |
-          source env/bin/activate
-          pip install -r dev-requirements.txt
-          env/bin/bumpversion --allow-dirty --new-version ${{ github.event.inputs.version_number }} major
-          git status
-
+          gh api -H "Accept: application/vnd.github+json" /orgs/dbt-labs/teams/CORE/members >> output.json
+          team_list=( $(jq -r '.[].login' output.json) )
+          echo $team_list
+          echo 'CORE_TEAM=$team_list' >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.VARIABLE_CORE_TRIAGE_ONLY }}
+      
       - name: Run changie
         run: |
           if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
@@ -94,34 +103,34 @@ jobs:
           git status
 
       # this step will fail on whitespace errors but also correct them
-      - name: Remove trailing whitespace
-        continue-on-error: true
-        run: |
-          pre-commit run trailing-whitespace --files .bumpversion.cfg CHANGELOG.md .changes/*
-          git status
+      # - name: Remove trailing whitespace
+      #   continue-on-error: true
+      #   run: |
+      #     pre-commit run trailing-whitespace --files .bumpversion.cfg CHANGELOG.md .changes/*
+      #     git status
 
-      # this step will fail on newline errors but also correct them
-      - name: Removing extra newlines
-        continue-on-error: true
-        run: |
-          pre-commit run end-of-file-fixer --files .bumpversion.cfg CHANGELOG.md .changes/*
-          git status
+      # # this step will fail on newline errors but also correct them
+      # - name: Removing extra newlines
+      #   continue-on-error: true
+      #   run: |
+      #     pre-commit run end-of-file-fixer --files .bumpversion.cfg CHANGELOG.md .changes/*
+      #     git status
 
-      - name: Commit version bump to branch
-        uses: EndBug/add-and-commit@v7
-        with:
-          author_name: 'Github Build Bot'
-          author_email: 'buildbot@fishtownanalytics.com'
-          message: 'Bumping version to ${{ github.event.inputs.version_number }} and generate CHANGELOG'
-          branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
-          push: 'origin origin/${{ steps.variables.outputs.BRANCH_NAME }}'
+      # - name: Commit version bump to branch
+      #   uses: EndBug/add-and-commit@v7
+      #   with:
+      #     author_name: 'Github Build Bot'
+      #     author_email: 'buildbot@fishtownanalytics.com'
+      #     message: 'Bumping version to ${{ github.event.inputs.version_number }} and generate CHANGELOG'
+      #     branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
+      #     push: 'origin origin/${{ steps.variables.outputs.BRANCH_NAME }}'
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
-          base: ${{github.ref}}
-          title: 'Bumping version to ${{ github.event.inputs.version_number }} and generate changelog'
-          branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
-          labels: |
-            Skip Changelog
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@v3
+      #   with:
+      #     author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
+      #     base: ${{github.ref}}
+      #     title: 'Bumping version to ${{ github.event.inputs.version_number }} and generate changelog'
+      #     branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
+      #     labels: |
+      #       Skip Changelog
