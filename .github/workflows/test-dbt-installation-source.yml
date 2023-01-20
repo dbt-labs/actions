@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       package_name:
-        description: "Package name to test (i.e. dbt-postgres)"
+        description: "Package name to test (i.e. dbt-core)"
         required: true
         type: string
   workflow_call:
@@ -73,7 +73,12 @@ jobs:
 
       - name: "Install Packages From PyPI For ${{ inputs.package_name }}"
         run: |
-          python -m pip install .
+          if [[ ${{ inputs.package_name }} == "dbt-core" ]]
+          then
+            python -m pip install -r requirements.txt
+          else
+            python -m pip install .
+          fi
 
       - name: "Verify ${{ inputs.package_name }} Version"
         run: |
