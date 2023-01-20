@@ -34,18 +34,20 @@ on:
 permissions:
   contents: read # required for slack-post-notification workflow
 
-env:
-  PYTHON_TARGET_VERSION: 3.8
-
 jobs:
   pip-integration-test:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
     steps:
-      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
+      - name: "Set up Python - ${{ matrix.python-version }}"
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_TARGET_VERSION }}
+          python-version: ${{ matrix.python-version }}
 
       - name: "Update Python Packages"
         run: |
