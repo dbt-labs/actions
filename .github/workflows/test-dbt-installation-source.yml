@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         branch: ["1.1.latest", "1.2.latest", "1.3.latest"]
-        python-version: [3.7, 3.8, 3.9, 3.10]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
       - name: "Resolve Repository"
