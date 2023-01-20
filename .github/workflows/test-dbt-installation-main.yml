@@ -13,6 +13,18 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      test-installation-method:
+        description: "Choice installation method to test"
+        required: true
+        type: choice
+        default: "all"
+        options:
+          - "all"
+          - "homebrew"
+          - "pip"
+          - "docker"
+          - "source"
 
   # run this once per night to ensure no regressions
   # schedule:
