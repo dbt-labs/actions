@@ -50,12 +50,27 @@ jobs:
         with:
           retries: 3
           script: |
-            const response = await github.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
-              package_type: 'container',
-              package_name: '${{ inputs.package_name }}',
-              org: 'dbt-labs',
-            })
-            return response;
+            try {
+                const response = await github.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
+                    package_type: 'container',
+                    package_name: '${{ inputs.package_name }}',
+                    org: 'dbt-labs',
+                })
+                let tags = [];
+                if (response.data) {
+                    const package_data = response.data;
+                    for (const [key, value] of Object.entries(package_data)) {
+                        if (value.metadata.container.tags) {
+                            tags = tags.concat(value.metadata.container.tags)
+                        }
+                    }
+                    tags = tags.filter(t => t.endsWith('latest'))
+                }
+                return tags
+            } catch (error) {
+                core.setFailed(error.message);
+              }
+            }
 
       - name: "Output"
         run: echo ${{ steps.tags.outputs.result }}
