@@ -10,12 +10,13 @@ name: dbt Installation Tests
 
 permissions:
   contents: read # required for slack-post-notification workflow
+  packages: read # required to fetch tags for a container
 
 on:
   workflow_dispatch:
     inputs:
       test-installation-method:
-        description: "Choice installation method to test"
+        description: "Choose installation method(s) to test"
         required: true
         type: choice
         default: "all"

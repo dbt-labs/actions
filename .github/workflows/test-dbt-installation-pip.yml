@@ -1,6 +1,12 @@
 # **what?**
+# This workflow installs the latest version of dbt adapter from PyPI.
+# It then runs 'dbt --version' to verify the installation was successful.
+# If it fails for the scheduled runs, it will post to our team alerts channel.
 
 # **why?**
+# This is a simple way to test all adapter installations at a single
+# time. It allows us to test them on a schedule as well to check for
+# any breaking dependency changes that might happen and alert us on it.
 
 # **when?**
 # This reusable workflow can be called or started manually
@@ -29,17 +35,47 @@ permissions:
   contents: read # required for slack-post-notification workflow
 
 jobs:
-  pip-integration-test:
+  pip-installation-test:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
     steps:
-      - name: "Output Package Name - ${{ inputs.package_name }}"
+      - name: "Set up Python - ${{ matrix.python-version }}"
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: "Update Python Packages"
         run: |
-          echo ${{ inputs.package_name }}
+          python -m pip install --user --upgrade pip
+
+      - name: "[DEBUG] Show Package Installer Python Version"
+        run: |
+          python -m pip --version
+
+      - name: "Install Package - ${{ inputs.package_name }}"
+        run: |
+          python -m pip install pip ${{ inputs.package_name }}
+
+      - name: "[DEBUG] Show Installed Packages"
+        run: |
+          python -m pip list
+
+      - name: "[DEBUG] Show Package Info - ${{ inputs.package_name }}"
+        run: |
+          python -m pip show ${{ inputs.package_name }}
+
+      - name: "Verify ${{ inputs.package_name }} Version"
+        run: |
+          dbt --version
 
   slack-notification:
     name: "Post Scheduled Run Failures"
-    needs: pip-integration-test
+    needs: pip-installation-test
     if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
