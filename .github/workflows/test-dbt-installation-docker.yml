@@ -40,11 +40,14 @@ env:
   GITHUB_PACKAGES_LINK: "ghcr.io"
 
 jobs:
-  fetch-tags:
+  fetch-container-tags:
     runs-on: ubuntu-latest
 
+    outputs:
+      tags: ${{ steps.tags.outputs.result }}
+
     steps:
-      - name: "Fetch ${{ inputs.package_name }} Tags From {{ env.GITHUB_PACKAGES_LINK }}"
+      - name: "Fetch ${{ inputs.package_name }} Tags From ${{ env.GITHUB_PACKAGES_LINK }}"
         uses: actions/github-script@v6
         id: tags
         with:
@@ -74,40 +77,41 @@ jobs:
       - name: "Output"
         run: echo ${{ steps.tags.outputs.result }}
 
-  # docker-integration-test:
-  #   runs-on: ubuntu-latest
+  docker-integration-test:
+    runs-on: ubuntu-latest
+    needs: fetch-container-tags
 
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       tag: ["1.1.latest", "1.2.latest", "1.3.latest"]
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJSON(needs.fetch-container-tags.outputs.tags) }}
 
-  #   steps:
-  #     - name: "Resolve Image Ref"
-  #       id: image-info
-  #       run: |
-  #         # Link example: ghcr.io/dbt-labs/dbt-bigquery:1.3.latest
-  #         ref=${{ env.GITHUB_PACKAGES_LINK }}/dbt-labs/${{ inputs.package_name }}:${{ matrix.tag }}
-  #         echo "ref=$ref" >> $GITHUB_OUTPUT
+    steps:
+      - name: "Resolve Image Ref"
+        id: image-info
+        run: |
+          # Link example: ghcr.io/dbt-labs/dbt-bigquery:1.3.latest
+          ref=${{ env.GITHUB_PACKAGES_LINK }}/dbt-labs/${{ inputs.package_name }}:${{ matrix.tag }}
+          echo "ref=$ref" >> $GITHUB_OUTPUT
 
-  #     - name: "[DEBUG] Show Docker Version"
-  #       run: |
-  #         docker version
+      - name: "[DEBUG] Show Docker Version"
+        run: |
+          docker version
 
-  #     - name: "Pull Image - ${{ steps.image-info.outputs.ref }}"
-  #       run: |
-  #         docker pull ${{ steps.image-info.outputs.ref }}
+      - name: "Pull Image - ${{ steps.image-info.outputs.ref }}"
+        run: |
+          docker pull ${{ steps.image-info.outputs.ref }}
 
-  #     - name: "[DEBUG] Show Available Images"
-  #       run: |
-  #         docker image ls --all
+      - name: "[DEBUG] Show Available Images"
+        run: |
+          docker image ls --all
 
-  #     - name: "Verify ${{ inputs.package_name }} Version"
-  #       uses: addnab/docker-run-action@v3
-  #       with:
-  #         registry: ${{ env.GITHUB_PACKAGES_LINK }}
-  #         image: ${{ steps.image-info.outputs.ref }}
-  #         run: dbt --version
+      - name: "Verify ${{ inputs.package_name }} Version"
+        uses: addnab/docker-run-action@v3
+        with:
+          registry: ${{ env.GITHUB_PACKAGES_LINK }}
+          image: ${{ steps.image-info.outputs.ref }}
+          run: dbt --version
 
   # slack-notification:
   #   name: "Post Scheduled Run Failures"
