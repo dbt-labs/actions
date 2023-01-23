@@ -1,6 +1,13 @@
 # **what?**
+# This workflow pulls docker images with dbt adapters on board from GitHub Packages.
+# Workflow pulls images with "1.*.latest" tags only.
+# It then runs 'dbt --version' to verify the installation was successful.
+# If it fails for the scheduled runs, it will post to our team alerts channel.
 
 # **why?**
+# This is a simple way to test all adapter installations at a single
+# time. It allows us to test them on a schedule as well to check for
+# any breaking dependency changes that might happen and alert us on it.
 
 # **when?**
 # This reusable workflow can be called or started manually
@@ -27,19 +34,94 @@ on:
 
 permissions:
   contents: read # required for slack-post-notification workflow
+  packages: read # required to fetch tags for a container
+
+env:
+  GITHUB_PACKAGES_LINK: "ghcr.io"
+  NOTIFICATION_PREFIX: "[Docker Installation Tests]"
 
 jobs:
-  docker-integration-test:
+  fetch-container-tags:
     runs-on: ubuntu-latest
 
+    outputs:
+      latest-tags: ${{ steps.get-latest-tags.outputs.result }}
+
     steps:
-      - name: "Output Package Name - ${{ inputs.package_name }}"
+      - name: "Fetch ${{ inputs.package_name }} Tags From ${{ env.GITHUB_PACKAGES_LINK }}"
+        # Description: Fetch tags for specific container and filter out `latest` tags
+        # GH API doc: https://docs.github.com/en/rest/packages?apiVersion=2022-11-28#list-package-versions-for-a-package-owned-by-an-organization
+        uses: actions/github-script@v6
+        id: get-latest-tags
+        with:
+          retries: 3
+          script: |
+            try {
+                const response = await github.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
+                    package_type: 'container',
+                    package_name: '${{ inputs.package_name }}',
+                    org: 'dbt-labs',
+                })
+                let tags = [];
+                if (response.data) {
+                    const package_data = response.data;
+                    for (const [key, value] of Object.entries(package_data)) {
+                        if (value.metadata.container.tags) {
+                            tags = tags.concat(value.metadata.container.tags)
+                        }
+                    }
+                    tags = tags.filter(t => t.endsWith('latest'))
+                }
+                return tags
+            } catch (error) {
+                core.setFailed(error.message);
+            }
+
+      - name: "[ANNOTATION] ${{ inputs.package_name }} - tags to test"
         run: |
-          echo ${{ inputs.package_name }}
+          title="${{ inputs.package_name }} - tags to test"
+          message="The workflow will run tests for the following tags of the ${{ inputs.package_name }} image: ${{ steps.get-latest-tags.outputs.result }}"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+  docker-installation-test:
+    runs-on: ubuntu-latest
+    needs: fetch-container-tags
+
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJSON(needs.fetch-container-tags.outputs.latest-tags) }}
+
+    steps:
+      - name: "Resolve Image Ref"
+        id: image-info
+        run: |
+          # Link example: ghcr.io/dbt-labs/dbt-bigquery:1.3.latest
+          ref=${{ env.GITHUB_PACKAGES_LINK }}/dbt-labs/${{ inputs.package_name }}:${{ matrix.tag }}
+          echo "ref=$ref" >> $GITHUB_OUTPUT
+
+      - name: "[DEBUG] Show Docker Version"
+        run: |
+          docker version
+
+      - name: "Pull Image - ${{ steps.image-info.outputs.ref }}"
+        run: |
+          docker pull ${{ steps.image-info.outputs.ref }}
+
+      - name: "[DEBUG] Show Available Images"
+        run: |
+          docker image ls --all
+
+      - name: "Verify ${{ inputs.package_name }} Version"
+        uses: addnab/docker-run-action@v3
+        with:
+          registry: ${{ env.GITHUB_PACKAGES_LINK }}
+          image: ${{ steps.image-info.outputs.ref }}
+          run: dbt --version
 
   slack-notification:
     name: "Post Scheduled Run Failures"
-    needs: docker-integration-test
+    needs: docker-installation-test
     if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
