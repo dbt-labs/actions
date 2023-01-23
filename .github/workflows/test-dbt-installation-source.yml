@@ -45,7 +45,9 @@ jobs:
       latest-branches: ${{ steps.get-latest-branches.outputs.result }}
 
     steps:
-      - name: "Fetch ${{ inputs.package_name }} Branches"
+      # Description: Fetch protected branches metadata for specific repo and filter out `latest` branches
+      # GH API doc: https://docs.github.com/en/rest/branches/branches?apiVersion=2022-11-28#list-branches
+      - name: "Fetch ${{ inputs.package_name }} Protected Branches Metadata"
         uses: actions/github-script@v6
         id: get-latest-branches
         with:
