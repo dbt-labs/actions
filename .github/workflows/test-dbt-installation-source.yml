@@ -35,7 +35,7 @@ permissions:
   contents: read # required for slack-post-notification workflow
 
 jobs:
-  source-integration-test:
+  source-installation-test:
     runs-on: ubuntu-latest
 
     strategy:
@@ -90,7 +90,7 @@ jobs:
 
   slack-notification:
     name: "Post Scheduled Run Failures"
-    needs: source-integration-test
+    needs: source-installation-test
     if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
