@@ -34,6 +34,9 @@ on:
 permissions:
   contents: read # required for slack-post-notification workflow
 
+env:
+  NOTIFICATION_PREFIX: "[Source Installation Tests]"
+
 jobs:
   fetch-latest-branches:
     runs-on: ubuntu-latest
@@ -71,7 +74,7 @@ jobs:
       - name: "[ANNOTATION] ${{ inputs.package_name }} - branches to test"
         run: |
           title="${{ inputs.package_name }} - branches to test"
-          message="The workflow will run tests for the following branches of the ${{ inputs.package_name }} repo: ${{ steps.get-latest-tags.outputs.result }}"
+          message="The workflow will run tests for the following branches of the ${{ inputs.package_name }} repo: ${{ steps.get-latest-branches.outputs.result }}"
           echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
 
   source-installation-test:
