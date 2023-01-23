@@ -38,18 +38,21 @@ permissions:
 
 env:
   GITHUB_PACKAGES_LINK: "ghcr.io"
+  NOTIFICATION_PREFIX: "[Docker Installation Tests]"
 
 jobs:
   fetch-container-tags:
     runs-on: ubuntu-latest
 
     outputs:
-      tags: ${{ steps.tags.outputs.result }}
+      latest-tags: ${{ steps.get-latest-tags.outputs.result }}
 
     steps:
       - name: "Fetch ${{ inputs.package_name }} Tags From ${{ env.GITHUB_PACKAGES_LINK }}"
+        # Description: Fetch tags for specific container and filter out `latest` tags
+        # GH API doc: https://docs.github.com/en/rest/packages?apiVersion=2022-11-28#list-package-versions-for-a-package-owned-by-an-organization
         uses: actions/github-script@v6
-        id: tags
+        id: get-latest-tags
         with:
           retries: 3
           script: |
@@ -75,16 +78,22 @@ jobs:
             }
 
       - name: "Output"
-        run: echo ${{ steps.tags.outputs.result }}
+        run: echo ${{ steps.get-latest-tags.outputs.result }}
 
-  docker-integration-test:
+      - name: "[ANNOTATION] Tags to test"
+        run: |
+          title="Tags to test"
+          message="The workflow will run tests for the following tags of the ${{ inputs.package_name }} image: ${{ steps.get-latest-tags.outputs.result }}"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+  docker-installation-test:
     runs-on: ubuntu-latest
     needs: fetch-container-tags
 
     strategy:
       fail-fast: false
       matrix:
-        tag: ${{ fromJSON(needs.fetch-container-tags.outputs.tags) }}
+        tag: ${{ fromJSON(needs.fetch-container-tags.outputs.latest-tags) }}
 
     steps:
       - name: "Resolve Image Ref"
@@ -113,15 +122,15 @@ jobs:
           image: ${{ steps.image-info.outputs.ref }}
           run: dbt --version
 
-  # slack-notification:
-  #   name: "Post Scheduled Run Failures"
-  #   needs: docker-integration-test
-  #   if: ${{ failure() && github.event_name == 'schedule' }}
+  slack-notification:
+    name: "Post Scheduled Run Failures"
+    needs: docker-installation-test
+    if: ${{ failure() && github.event_name == 'schedule' }}
 
-  #   uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
-  #   with:
-  #     status: "failure"
-  #     notification_title: "Docker nightly integration test failed for - ${{ inputs.package_name }}"
+    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
+    with:
+      status: "failure"
+      notification_title: "Docker nightly integration test failed for - ${{ inputs.package_name }}"
 
-  #   secrets:
-  #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -10,6 +10,7 @@ name: dbt Installation Tests
 
 permissions:
   contents: read # required for slack-post-notification workflow
+  packages: read # required to fetch tags for a container
 
 on:
   workflow_dispatch:
