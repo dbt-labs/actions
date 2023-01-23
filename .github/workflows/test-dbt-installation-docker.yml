@@ -48,10 +48,9 @@ jobs:
         uses: actions/github-script@v6
         id: tags
         with:
-          result-encoding: string
           retries: 3
           script: |
-            const response = await github.rest.packages.getAllPackageVersionsForAPackageOwnedByAnOrg({
+            const response = await github.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
               package_type: 'container',
               package_name: '${{ inputs.package_name }}',
               org: 'dbt-labs',
