@@ -77,9 +77,6 @@ jobs:
                 core.setFailed(error.message);
             }
 
-      - name: "Output"
-        run: echo ${{ steps.get-latest-tags.outputs.result }}
-
       - name: "[ANNOTATION] Tags to test"
         run: |
           title="Tags to test"
