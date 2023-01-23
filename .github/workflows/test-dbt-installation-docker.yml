@@ -69,7 +69,6 @@ jobs:
                 return tags
             } catch (error) {
                 core.setFailed(error.message);
-              }
             }
 
       - name: "Output"
