@@ -79,7 +79,7 @@ jobs:
 
       - name: "[ANNOTATION] ${{ inputs.package_name }} - tags to test"
         run: |
-          title="Tags to test"
+          title="${{ inputs.package_name }} - tags to test"
           message="The workflow will run tests for the following tags of the ${{ inputs.package_name }} image: ${{ steps.get-latest-tags.outputs.result }}"
           echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
 
