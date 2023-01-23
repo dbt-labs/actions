@@ -47,7 +47,7 @@ jobs:
         id: get-latest-branches
         with:
           retries: 3
-          scripts: |
+          script: |
             try {
                 const response = await github.rest.repos.listBranches({
                     repo: '${{ inputs.package_name }}',
@@ -76,6 +76,7 @@ jobs:
 
   source-installation-test:
     runs-on: ubuntu-latest
+    needs: fetch-latest-branches
 
     strategy:
       fail-fast: false
