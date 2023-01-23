@@ -1,6 +1,12 @@
 # **what?**
+# This workflow installs the latest version of dbt adapter from sources.
+# It then runs 'dbt --version' to verify the installation was successful.
+# If it fails for the scheduled runs, it will post to our team alerts channel.
 
 # **why?**
+# This is a simple way to test all adapter installations at a single
+# time. It allows us to test them on a schedule as well to check for
+# any breaking dependency changes that might happen and alert us on it.
 
 # **when?**
 # This reusable workflow can be called or started manually
@@ -12,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       package_name:
-        description: "Package name to test (i.e. dbt-postgres)"
+        description: "Package name to test (i.e. dbt-core)"
         required: true
         type: string
   workflow_call:
@@ -28,18 +34,108 @@ on:
 permissions:
   contents: read # required for slack-post-notification workflow
 
+env:
+  NOTIFICATION_PREFIX: "[Source Installation Tests]"
+
 jobs:
-  source-integration-test:
+  fetch-latest-branches:
     runs-on: ubuntu-latest
 
+    outputs:
+      latest-branches: ${{ steps.get-latest-branches.outputs.result }}
+
     steps:
-      - name: "Output Package Name - ${{ inputs.package_name }}"
+      # Description: Fetch protected branches metadata for specific repo and filter out `latest` branches
+      # GH API doc: https://docs.github.com/en/rest/branches/branches?apiVersion=2022-11-28#list-branches
+      - name: "Fetch ${{ inputs.package_name }} Protected Branches Metadata"
+        uses: actions/github-script@v6
+        id: get-latest-branches
+        with:
+          retries: 3
+          script: |
+            try {
+                const response = await github.rest.repos.listBranches({
+                    repo: '${{ inputs.package_name }}',
+                    owner: 'dbt-labs',
+                    protected: true,
+                })
+                let branches = []
+                if (response.data) {
+                    const branches_data = response.data
+                    for (const [key, value] of Object.entries(branches_data)) {
+                        branches = branches.concat(value.name)
+                    }
+                    const re_latest_branch = new RegExp('^1.*.latest')
+                    branches = branches.filter(b => re_latest_branch.test(b))
+                }
+                return branches
+            } catch (error) {
+                core.setFailed(error.message)
+            }
+
+      - name: "[ANNOTATION] ${{ inputs.package_name }} - branches to test"
         run: |
-          echo ${{ inputs.package_name }}
+          title="${{ inputs.package_name }} - branches to test"
+          message="The workflow will run tests for the following branches of the ${{ inputs.package_name }} repo: ${{ steps.get-latest-branches.outputs.result }}"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+  source-installation-test:
+    runs-on: ubuntu-latest
+    needs: fetch-latest-branches
+
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    steps:
+      - name: "Resolve Repository"
+        id: repo-info
+        run: |
+          name="dbt-labs/${{ inputs.package_name }}"
+          echo "name=$name" >> $GITHUB_OUTPUT
+
+      - name: "Checkout ${{ steps.repo-info.outputs.name }} Branch ${{ matrix.branch }}"
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ steps.repo-info.outputs.name }}
+          persist-credentials: false
+          ref: ${{ matrix.branch }}
+
+      - name: "[DEBUG] Show Work Folder Content"
+        run: |
+          ls -lh
+
+      - name: "Set up Python - ${{ matrix.python-version }}"
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: "Update Python Packages"
+        run: |
+          python -m pip install --user --upgrade pip
+
+      - name: "[DEBUG] Show Package Installer Python Version"
+        run: |
+          python -m pip --version
+
+      - name: "Install Packages From PyPI For ${{ inputs.package_name }}"
+        run: |
+          if [[ ${{ inputs.package_name }} == "dbt-core" ]]
+          then
+            python -m pip install -r requirements.txt
+          else
+            python -m pip install .
+          fi
+
+      - name: "Verify ${{ inputs.package_name }} Version"
+        run: |
+          dbt --version
 
   slack-notification:
     name: "Post Scheduled Run Failures"
-    needs: source-integration-test
+    needs: source-installation-test
     if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main

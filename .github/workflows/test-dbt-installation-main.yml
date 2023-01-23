@@ -102,7 +102,7 @@ jobs:
       matrix:
         package:
           [
-            "dbt-postgres",
+            "dbt-core",
             "dbt-redshift",
             "dbt-snowflake",
             "dbt-bigquery",
