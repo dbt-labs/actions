@@ -34,11 +34,34 @@ on:
 permissions:
   contents: read # required for slack-post-notification workflow
 
+env:
+  ARTIFACT_BASENAME: "homebrew-installation-test"
+  ARTIFACT_RETENTION_DAYS: 1
+
 jobs:
-  homebrew-integration-test:
-    runs-on: macos-11
+  generate-artifact-name:
+    runs-on: ubuntu-latest
+
+    outputs:
+      artifact-name: ${{ steps.artifact-name.outputs.name }}
 
     steps:
+      - name: "Generate Artifact Name"
+        id: artifact-name
+        run: |
+          date=$(date +'%m%d%Y')
+          name="${{ env.ARTIFACT_BASENAME }}-$date"
+          echo "name=$name" >> $GITHUB_OUTPUT
+
+  homebrew-integration-test:
+    runs-on: macos-11
+    needs: generate-artifact-name
+
+    steps:
+      - name: "Fail Job"
+        run: |
+          exit 1
+
       - name: "Prepare Brew"
         # brew upgrade generates some symlink update warnings that cause failures without the || true.
         # They're just that the symlink wasn't updated which is okay to ignore.
@@ -68,15 +91,46 @@ jobs:
         run: |
           dbt --version
 
+      - name: "Dump Job Status"
+        if: ${{ always() }}
+        id: job-status
+        run: |
+          file="test-${{ inputs.package_name }}.json"
+          # Create file
+          touch $file 
+          # Write job status to file
+          echo $JOB_STATUS >> $file
+          # Set path to file for subsequent steps          
+          echo "path=$file" >> $GITHUB_OUTPUT
+        env:
+          JOB_STATUS: ${{ toJson(job.status) }}
+
+      - name: "Upload Job Status"
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+          path: ${{ steps.job-status.outputs.path }}
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  get-jobs-status:
+    name: "Check Job Statuses"
+    needs: [generate-artifact-name, homebrew-integration-test]
+    if: ${{ failure() }}
+
+    uses: ./.github/workflows/test-dbt-installation-verify-test-jobs-statuses.yml
+    with:
+      artifact_name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+
   slack-notification:
     name: "Post Scheduled Run Failures"
-    needs: homebrew-integration-test
-    if: ${{ failure() && github.event_name == 'schedule' }}
+    needs: get-jobs-status
+    if: ${{ failure() }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
       status: "failure"
-      notification_title: "Homebrew nightly integration test failed for - ${{ inputs.package_name }}"
+      notification_title: "Homebrew nightly integration test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-status.outputs.job_statistics }}"
 
     secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
