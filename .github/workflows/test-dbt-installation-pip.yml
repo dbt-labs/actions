@@ -63,6 +63,10 @@ jobs:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
+      - name: "Fail Job"
+        run: |
+          exit 1
+
       - name: "Set up Python - ${{ matrix.python-version }}"
         uses: actions/setup-python@v4
         with:
@@ -92,10 +96,6 @@ jobs:
         run: |
           dbt --version
 
-      - name: "Fail Job"
-        run: |
-          exit 1
-
       - name: "Dump Job Status"
         if: ${{ always() }}
         id: job-status
@@ -111,6 +111,7 @@ jobs:
           JOB_STATUS: ${{ toJson(job.status) }}
 
       - name: "Upload Job Status"
+        if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
