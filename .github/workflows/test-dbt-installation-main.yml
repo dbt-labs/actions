@@ -1,6 +1,8 @@
 # **what?**
+# Launch all dbt installations tests from one workflow
 
 # **why?**
+# Simplify the process of launching and tracking of installations tests
 
 # **when?**
 # This workflow will run on a schedule every night and also can be
@@ -34,8 +36,9 @@ on:
 jobs:
   dbt-installation-homebrew:
     if: >-
-      inputs.test-installation-method == 'all'
-      || inputs.test-installation-method == 'homebrew'
+      github.event_name == 'schedule'
+      || (inputs.test-installation-method == 'all'
+      || inputs.test-installation-method == 'homebrew')
 
     strategy:
       fail-fast: false
@@ -51,8 +54,9 @@ jobs:
 
   dbt-installation-pip:
     if: >-
-      inputs.test-installation-method == 'all'
-      || inputs.test-installation-method == 'pip'
+      github.event_name == 'schedule'
+      || (inputs.test-installation-method == 'all'
+      || inputs.test-installation-method == 'pip')
     strategy:
       fail-fast: false
       matrix:
@@ -73,8 +77,9 @@ jobs:
 
   dbt-installation-docker:
     if: >-
-      inputs.test-installation-method == 'all'
-      || inputs.test-installation-method == 'docker'
+      github.event_name == 'schedule'
+      || (inputs.test-installation-method == 'all'
+      || inputs.test-installation-method == 'docker')
     strategy:
       fail-fast: false
       matrix:
@@ -95,8 +100,9 @@ jobs:
 
   dbt-installation-source:
     if: >-
-      inputs.test-installation-method == 'all'
-      || inputs.test-installation-method == 'source'
+      github.event_name == 'schedule'
+      || (inputs.test-installation-method == 'all'
+      || inputs.test-installation-method == 'source')
     strategy:
       fail-fast: false
       matrix:
