@@ -51,7 +51,7 @@ jobs:
         run: |
           date=$(date +'%m%d%Y')
           name="${{ env.ARTIFACT_BASENAME }}-date"
-          echo "name=$name"" >> $GITHUB_OUTPUT
+          echo "name=$name" >> $GITHUB_OUTPUT
 
   pip-installation-test:
     runs-on: ubuntu-latest
@@ -135,7 +135,6 @@ jobs:
   slack-notification:
     name: "Post Scheduled Run Failures"
     needs: check-jobs-status
-    if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
