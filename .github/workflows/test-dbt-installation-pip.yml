@@ -177,12 +177,12 @@ jobs:
                 }
             });
 
-            const jobs_statistics = `Jobs status: ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}; ${JOB_STATUSES_ENUM.failure} - ${jobs_statuses.failure.length}; ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}; undefined: - ${jobs_statuses.undefined.length};`  
-            const slack_message = "pip nightly installation test failed for - ${{ inputs.package_name }}.";
+            const jobs_statistics = `Test jobs statuses - ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}, ${JOB_STATUSES_ENUM.failure} - ${jobs_statuses.failure.length}, ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}, undefined status: - ${jobs_statuses.undefined.length}.`;  
+            const message = "pip nightly installation test failed for - ${{ inputs.package_name }}.";
+            const slack_message = `${message} ${jobs_statistics}`;
+            core.debug(slack_message);
 
-            core.debug(slack_message+jobs_statistics);
-
-            return slack_message+jobs_statistics;
+            return slack_message;
 
   slack-notification:
     name: "Post Scheduled Run Failures"
