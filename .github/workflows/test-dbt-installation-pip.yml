@@ -34,9 +34,28 @@ on:
 permissions:
   contents: read # required for slack-post-notification workflow
 
+env:
+  ARTIFACT_BASENAME: "pip-installation-test"
+  ARTIFACT_RETENTION_DAYS: 1
+
 jobs:
+  generate-artifact-name:
+    runs-on: ubuntu-latest
+
+    outputs:
+      artifact-name: ${{ steps.artifact-name.outputs.name }}
+
+    steps:
+      - name: "Generate Artifact Name"
+        id: artifact-name
+        run: |
+          date=$(date +'%m%d%Y')
+          name="${{ env.ARTIFACT_BASENAME }}-date"
+          echo "name=$name"" >> $GITHUB_OUTPUT
+
   pip-installation-test:
     runs-on: ubuntu-latest
+    needs: generate-artifact-name
 
     strategy:
       fail-fast: false
@@ -74,53 +93,54 @@ jobs:
           dbt --version
 
       - name: "Dump Job Status"
+        if: ${{ always() }}
         id: job-status
         run: |
-          folder="pip-installation" 
-          file="test-job-${{ strategy.job-index }}-python-version-v${{ matrix.python-version }}.json"
-          mkdir -p $folder
-          touch $folder/$file
-          echo $JOB_CONTEXT >> $folder/$file
-          echo "path=$folder/$file" >> $GITHUB_OUTPUT
-
+          file="tets-${{ strategy.job-index }}-python-v${{ matrix.python-version }}.json"
+          # Create file
+          touch $file 
+          # Write job status to file
+          echo $JOB_CONTEXT >> $file
+          # Set path to file for subsequent steps          
+          echo "path=$file" >> $GITHUB_OUTPUT
         env:
-          JOB_CONTEXT: ${{ toJson(job.status) }}
+          JOB_STATUS: ${{ toJson(job.status) }}
 
       - name: "Upload Job Status"
         uses: actions/upload-artifact@v3
         with:
-          name: dbt-installation-logs
+          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
           path: ${{ steps.job-status.outputs.path }}
-          retention-days: 1
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  dump-context:
-    name: Dump Jobs Context
+  check-jobs-status:
+    name: "Check Job Statuses"
     runs-on: ubuntu-latest
-    needs: pip-installation-test
+    needs: [generate-artifact-name, pip-installation-test]
+    if: ${{ failure()}}
+
+    outputs:
+      slack_message: "pip nightly installation test failed for - ${{ inputs.package_name }}"
 
     steps:
-      - name: Dump matrix context
-        env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
-        run: echo "$MATRIX_CONTEXT"
-      - name: Dump job context
-        env:
-          JOB_CONTEXT: ${{ toJson(job) }}
-        run: echo "$JOB_CONTEXT"
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
+      - name: "Download Artifact ${{ needs.generate-artifact-name.outputs.artifact-name }}"
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.version_number }}
+          path: .
+
+      - name: "[DEBUG] Display Structure Of All Downloaded Files"
+        run: ls -R
 
   slack-notification:
     name: "Post Scheduled Run Failures"
-    needs: pip-installation-test
+    needs: check-jobs-status
     if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
       status: "failure"
-      notification_title: "pip nightly installation test failed for - ${{ inputs.package_name }}"
+      notification_title: "needs.check-jobs-status.outputs.slack_message"
 
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
