@@ -50,7 +50,7 @@ jobs:
         id: artifact-name
         run: |
           date=$(date +'%m%d%Y')
-          name="${{ env.ARTIFACT_BASENAME }}-date"
+          name="${{ env.ARTIFACT_BASENAME }}-$date"
           echo "name=$name" >> $GITHUB_OUTPUT
 
   pip-installation-test:
@@ -120,7 +120,7 @@ jobs:
     # if: ${{ failure()}}
 
     outputs:
-      slack_message: "pip nightly installation test failed for - ${{ inputs.package_name }}"
+      slack_message: ${{ steps.get-slack-message.outputs.result }}
 
     steps:
       - name: "Download Artifact ${{ needs.generate-artifact-name.outputs.artifact-name }}"
@@ -132,6 +132,57 @@ jobs:
       - name: "[DEBUG] Display Structure Of All Downloaded Files"
         run: ls -R
 
+      - name: "Generate Slack Message"
+        uses: actions/github-script@v6
+        id: get-slack-message
+        with:
+          result-encoding: string
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const path_to_files = './${{ needs.generate-artifact-name.outputs.artifact-name }}'
+
+            const JOB_STATUSES_ENUM = {
+                success: "success",
+                failure: "failure",
+                cancelled: "cancelled"
+            };
+
+            const jobs_statuses = {
+                failed: [],
+                success: [],
+                cancelled: [],
+                undefined: []
+            };
+
+            const files_list = fs.readdirSync(path_to_files);
+
+            files_list.map(file => {
+                const buffer = fs.readFileSync(file);
+                const jobs_status = buffer.toString().trim().replace(/['"]+/g, '');
+
+                switch (jobs_status) {
+                    case JOB_STATUSES_ENUM.success:
+                        jobs_statuses.success.push(file);
+                        break;
+                    case JOB_STATUSES_ENUM.failed:
+                        jobs_statuses.failed.push(file);
+                        break;
+                    case JOB_STATUSES_ENUM.cancelled:
+                        jobs_statuses.cancelled.push(file);
+                        break;
+                    default:
+                        jobs_statuses.undefined.push(file);
+                }
+            });
+
+            const jobs_statistics = `Jobs status: ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}; ${JOB_STATUSES_ENUM.failed} - ${jobs_statuses.failed.length}; ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}; undefined: - ${jobs_statuses.undefined.length};`  
+            const slack_message = "pip nightly installation test failed for - ${{ inputs.package_name }}.";
+
+            core.debug(slack_message+jobs_statistics);
+
+            return slack_message+jobs_statistics;
+
   slack-notification:
     name: "Post Scheduled Run Failures"
     needs: check-jobs-status
@@ -142,4 +193,4 @@ jobs:
       notification_title: "needs.check-jobs-status.outputs.slack_message"
 
     secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
