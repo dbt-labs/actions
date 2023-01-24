@@ -73,6 +73,16 @@ jobs:
         run: |
           dbt --version
 
+      - name: "Dump Job Status"
+        run: |
+          toJson(job) > pip-installation/test-job-${{ strategy.job-index }}-${{ matrix.python-version }}.json
+
+      - name: "Upload Job Status"
+        uses: actions/upload-artifact@v3
+        with:
+          name: dbt-installation-logs
+          path: pip-installation/test-job-${{ strategy.job-index }}.txt
+
   dump-context:
     name: Dump Jobs Context
     runs-on: ubuntu-latest
@@ -91,7 +101,7 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-  
+
   slack-notification:
     name: "Post Scheduled Run Failures"
     needs: pip-installation-test
@@ -100,7 +110,7 @@ jobs:
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
       status: "failure"
-      notification_title: "pip nightly integration test failed for - ${{ inputs.package_name }}"
+      notification_title: "pip nightly installation test failed for - ${{ inputs.package_name }}"
 
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
