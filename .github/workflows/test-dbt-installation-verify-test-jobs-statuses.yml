@@ -9,7 +9,7 @@ name: dbt Installation - Verify Test Jobs Statuses
 on:
   workflow_call:
     inputs:
-      artifact-name:
+      artifact_name:
         required: true
         type: string
     outputs:
@@ -19,16 +19,14 @@ on:
 
 jobs:
   check-jobs-status:
-    name: "Check Job StatuAses"
+    name: "Check Job Statuses"
     runs-on: ubuntu-latest
-    needs: [generate-artifact-name, pip-installation-test]
-    if: ${{ failure() }}
 
     outputs:
       slack_message: ${{ steps.get-slack-message.outputs.result }}
 
     steps:
-      - name: "Download Artifact ${{ inputs.artifact-name }}"
+      - name: "Download Artifact ${{ inputs.artifact_name }}"
         uses: actions/download-artifact@v3
         with:
           name: ${{ inputs.version_number }}
@@ -45,7 +43,7 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            const artifact_folder = './${{ inputs.artifact-name }}'
+            const artifact_folder = './${{ inputs.artifact_name }}'
 
             const JOB_STATUSES_ENUM = {
                 success: "success",
