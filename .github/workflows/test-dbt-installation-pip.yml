@@ -120,74 +120,12 @@ jobs:
 
   check-jobs-status:
     name: "Check Job Statuses"
-    runs-on: ubuntu-latest
     needs: [generate-artifact-name, pip-installation-test]
     if: ${{ failure() }}
 
-    outputs:
-      slack_message: ${{ steps.get-slack-message.outputs.result }}
-
-    steps:
-      - name: "Download Artifact ${{ needs.generate-artifact-name.outputs.artifact-name }}"
-        uses: actions/download-artifact@v3
-        with:
-          name: ${{ inputs.version_number }}
-          path: .
-
-      - name: "[DEBUG] Display Structure Of All Downloaded Files"
-        run: ls -R
-
-      - name: "Generate Slack Message"
-        uses: actions/github-script@v6
-        id: get-slack-message
-        with:
-          result-encoding: string
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            const artifact_folder = './${{ needs.generate-artifact-name.outputs.artifact-name }}'
-
-            const JOB_STATUSES_ENUM = {
-                success: "success",
-                failure: "failure",
-                cancelled: "cancelled"
-            };
-
-            const jobs_statuses = {
-                failure: [],
-                success: [],
-                cancelled: [],
-                undefined: []
-            };
-
-            const files_list = fs.readdirSync(artifact_folder);
-            core.debug(files_list);
-
-            files_list.map(file => {
-                const buffer = fs.readFileSync(`${artifact_folder}/${file}`);
-                const jobs_status = buffer.toString().trim().replace(/['"]+/g, '');
-
-                switch (jobs_status) {
-                    case JOB_STATUSES_ENUM.success:
-                        jobs_statuses.success.push(file);
-                        break;
-                    case JOB_STATUSES_ENUM.failure:
-                        jobs_statuses.failure.push(file);
-                        break;
-                    case JOB_STATUSES_ENUM.cancelled:
-                        jobs_statuses.cancelled.push(file);
-                        break;
-                    default:
-                        jobs_statuses.undefined.push(file);
-                }
-            });
-
-            const jobs_statistics = `Test jobs statuses: ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}, ${JOB_STATUSES_ENUM.failure} - ${jobs_statuses.failure.length}, ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}, undefined - ${jobs_statuses.undefined.length}.`;  
-            const message = "pip nightly installation test failed for - ${{ inputs.package_name }}.";
-            const slack_message = `${message} ${jobs_statistics}`;
-            core.debug(slack_message);
-
-            return slack_message;
+    uses: ./.github/workflows/test-dbt-installation-verify-test-jobs-statuses.yml
+    with:
+      artifact_name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
 
   slack-notification:
     name: "Post Scheduled Run Failures"
