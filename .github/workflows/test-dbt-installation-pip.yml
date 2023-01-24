@@ -90,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: dbt-installation-logs
-          path: steps.job-status.outputs.path
+          path: ${{ steps.job-status.outputs.path }}
 
   dump-context:
     name: Dump Jobs Context
