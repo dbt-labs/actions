@@ -74,12 +74,15 @@ jobs:
           dbt --version
 
       - name: "Dump Job Status"
+        id: job-status
         run: |
           folder="pip-installation" 
           file="test-job-${{ strategy.job-index }}-python-version-v${{ matrix.python-version }}.json"
           mkdir -p $folder
           touch $folder/$file
           echo $JOB_CONTEXT >> $folder/$file
+          echo "path=$folder/$file" >> $GITHUB_OUTPUT
+
         env:
           JOB_CONTEXT: ${{ toJson(job) }}
 
@@ -87,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: dbt-installation-logs
-          path: pip-installation/test-job-${{ strategy.job-index }}.txt
+          path: steps.job-status.outputs.path
 
   dump-context:
     name: Dump Jobs Context
