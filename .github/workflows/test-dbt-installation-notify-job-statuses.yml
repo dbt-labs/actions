@@ -4,7 +4,7 @@
 
 # **when?**
 
-name: dbt Installation - Verify Test Jobs Statuses
+name: dbt Installation - Notify Job Statuses In Slack 
 
 on:
   workflow_call:

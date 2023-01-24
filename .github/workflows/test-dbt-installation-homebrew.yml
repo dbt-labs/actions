@@ -114,7 +114,7 @@ jobs:
     needs: [generate-artifact-name, homebrew-installation-test]
     if: ${{ failure() && github.event_name == 'schedule' }}
 
-    uses: ./.github/workflows/test-dbt-installation-verify-test-jobs-statuses.yml
+    uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
     with:
       artifact_name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
 
