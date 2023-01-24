@@ -191,7 +191,7 @@ jobs:
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
       status: "failure"
-      notification_title: "needs.check-jobs-status.outputs.slack_message"
+      notification_title: ${{ needs.check-jobs-status.outputs.slack_message }}
 
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
