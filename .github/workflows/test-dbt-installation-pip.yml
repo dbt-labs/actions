@@ -149,7 +149,7 @@ jobs:
             };
 
             const jobs_statuses = {
-                failed: [],
+                failure: [],
                 success: [],
                 cancelled: [],
                 undefined: []
@@ -166,8 +166,8 @@ jobs:
                     case JOB_STATUSES_ENUM.success:
                         jobs_statuses.success.push(file);
                         break;
-                    case JOB_STATUSES_ENUM.failed:
-                        jobs_statuses.failed.push(file);
+                    case JOB_STATUSES_ENUM.failure:
+                        jobs_statuses.failure.push(file);
                         break;
                     case JOB_STATUSES_ENUM.cancelled:
                         jobs_statuses.cancelled.push(file);
@@ -177,7 +177,7 @@ jobs:
                 }
             });
 
-            const jobs_statistics = `Jobs status: ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}; ${JOB_STATUSES_ENUM.failed} - ${jobs_statuses.failed.length}; ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}; undefined: - ${jobs_statuses.undefined.length};`  
+            const jobs_statistics = `Jobs status: ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}; ${JOB_STATUSES_ENUM.failure} - ${jobs_statuses.failure.length}; ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}; undefined: - ${jobs_statuses.undefined.length};`  
             const slack_message = "pip nightly installation test failed for - ${{ inputs.package_name }}.";
 
             core.debug(slack_message+jobs_statistics);
