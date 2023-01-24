@@ -177,7 +177,7 @@ jobs:
 
   get-jobs-status:
     name: "Check Job Statuses"
-    needs: [generate-artifact-name, pip-installation-test]
+    needs: [generate-artifact-name, source-installation-test]
     if: ${{ failure() }}
 
     uses: ./.github/workflows/test-dbt-installation-verify-test-jobs-statuses.yml
