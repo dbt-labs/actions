@@ -75,7 +75,9 @@ jobs:
 
       - name: "Dump Job Status"
         run: |
-          toJson(job) > pip-installation/test-job-${{ strategy.job-index }}-${{ matrix.python-version }}.json
+          $JOB_CONTEXT > pip-installation/test-job-${{ strategy.job-index }}-${{ matrix.python-version }}.json
+        env:
+          JOB_CONTEXT: ${{ toJson(job) }}
 
       - name: "Upload Job Status"
         uses: actions/upload-artifact@v3
