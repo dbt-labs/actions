@@ -84,13 +84,14 @@ jobs:
           echo "path=$folder/$file" >> $GITHUB_OUTPUT
 
         env:
-          JOB_CONTEXT: ${{ toJson(job) }}
+          JOB_CONTEXT: ${{ toJson(job.status) }}
 
       - name: "Upload Job Status"
         uses: actions/upload-artifact@v3
         with:
           name: dbt-installation-logs
           path: ${{ steps.job-status.outputs.path }}
+          retention-days: 1
 
   dump-context:
     name: Dump Jobs Context
