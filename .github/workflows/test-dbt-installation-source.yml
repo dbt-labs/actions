@@ -171,24 +171,15 @@ jobs:
           path: ${{ steps.job-status.outputs.path }}
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  get-jobs-status:
-    name: "Check Job Statuses"
+  send-slack-notification:
     needs: [generate-artifact-name, source-installation-test]
     if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
     with:
       artifact_name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
-
-  slack-notification:
-    name: "Post Scheduled Run Failures"
-    needs: get-jobs-status
-    if: ${{ failure() && github.event_name == 'schedule' }}
-
-    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
-    with:
-      status: "failure"
-      notification_title: "Source nightly integration test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-status.outputs.job_statistics }}"
+      installation_method: "Source"
+      package_name: ${{ inputs.package_name }}
 
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

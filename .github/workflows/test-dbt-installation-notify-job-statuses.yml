@@ -4,7 +4,7 @@
 
 # **when?**
 
-name: dbt Installation - Notify Job Statuses In Slack 
+name: dbt Installation - Notify Job Statuses In Slack
 
 on:
   workflow_call:
@@ -12,18 +12,24 @@ on:
       artifact_name:
         required: true
         type: string
-    outputs:
-      job_statistics:
-        description: "Overall statistics regarding jobs statuses"
-        value: ${{ jobs.check-jobs-status.outputs.job_statistics }}
+      installation_method:
+        required: true
+        type: string
+      package_name:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+      description: Slack app webhook url
+      required: true
 
 jobs:
-  check-jobs-status:
+  get-jobs-statuses:
     name: "Check Job Statuses"
     runs-on: ubuntu-latest
 
     outputs:
-      job_statistics: ${{ steps.get-job_statistics.outputs.result }}
+      jobs-statuses: ${{ steps.get-job_statistics.outputs.result }}
 
     steps:
       - name: "Download Artifact ${{ inputs.artifact_name }}"
@@ -84,3 +90,15 @@ jobs:
             core.debug(job_statistics);
 
             return job_statistics;
+
+  slack-notification:
+    name: "Post Scheduled Run Failures"
+    needs: get-jobs-statuses
+
+    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
+    with:
+      status: "failure"
+      notification_title: "${{ inputs.installation_method }} nightly installation test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-statuses.outputs.jobs-statuses }}"
+
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
