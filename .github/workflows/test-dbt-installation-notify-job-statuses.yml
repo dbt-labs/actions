@@ -20,8 +20,8 @@ on:
         type: string
     secrets:
       SLACK_WEBHOOK_URL:
-      description: Slack app webhook url
-      required: true
+        description: Slack app webhook url
+        required: true
 
 jobs:
   get-jobs-statuses:
