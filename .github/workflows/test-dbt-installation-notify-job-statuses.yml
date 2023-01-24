@@ -1,8 +1,17 @@
 # **what?**
+# Check dumps of installation test jobs to aggregate statistics
+# and send the Slack notification.
 
 # **why?**
+# A consistent way to notify about failed dbt installation test
+# and provide additional context for the notification.
 
 # **when?**
+# When dbt installation test failed.
+# This reusable workflow can be launched on call by specifying:
+#  artifact_name       - that contains jobs dump
+#  package_name        - dbt adapter/repo/container that was tested
+#  installation_method - installation method that failed
 
 name: dbt Installation - Notify Job Statuses In Slack
 
