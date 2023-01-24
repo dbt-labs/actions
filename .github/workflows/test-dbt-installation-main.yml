@@ -28,8 +28,8 @@ on:
           - "source"
 
   # run this once per night to ensure no regressions
-  # schedule:
-  #   - cron: "0 9,13,18 * * *" # 9:00, 13:00, 18:00 UTC
+  schedule:
+    - cron: "0 9 * * *" # 9:00 UTC
 
 jobs:
   dbt-installation-homebrew:

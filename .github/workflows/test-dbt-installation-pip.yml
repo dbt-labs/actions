@@ -63,10 +63,6 @@ jobs:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
-      - name: "Fail Job"
-        run: |
-          exit 1
-
       - name: "Set up Python - ${{ matrix.python-version }}"
         uses: actions/setup-python@v4
         with:
@@ -121,7 +117,7 @@ jobs:
   get-jobs-status:
     name: "Check Job Statuses"
     needs: [generate-artifact-name, pip-installation-test]
-    if: ${{ failure() }}
+    if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: ./.github/workflows/test-dbt-installation-verify-test-jobs-statuses.yml
     with:
@@ -130,7 +126,7 @@ jobs:
   slack-notification:
     name: "Post Scheduled Run Failures"
     needs: get-jobs-status
-    if: ${{ failure() }}
+    if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
@@ -138,4 +134,4 @@ jobs:
       notification_title: "pip nightly installation test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-status.outputs.job_statistics }}"
 
     secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

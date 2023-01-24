@@ -58,10 +58,6 @@ jobs:
     needs: generate-artifact-name
 
     steps:
-      - name: "Fail Job"
-        run: |
-          exit 1
-
       - name: "Prepare Brew"
         # brew upgrade generates some symlink update warnings that cause failures without the || true.
         # They're just that the symlink wasn't updated which is okay to ignore.
@@ -116,7 +112,7 @@ jobs:
   get-jobs-status:
     name: "Check Job Statuses"
     needs: [generate-artifact-name, homebrew-installation-test]
-    if: ${{ failure() }}
+    if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: ./.github/workflows/test-dbt-installation-verify-test-jobs-statuses.yml
     with:
@@ -125,7 +121,7 @@ jobs:
   slack-notification:
     name: "Post Scheduled Run Failures"
     needs: get-jobs-status
-    if: ${{ failure() }}
+    if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
@@ -133,4 +129,4 @@ jobs:
       notification_title: "Homebrew nightly integration test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-status.outputs.job_statistics }}"
 
     secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
