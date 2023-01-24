@@ -135,7 +135,7 @@ jobs:
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
       status: "failure"
-      notification_title: "pip nightly installation test failed for - ${{ inputs.package_name }}.  ${{ needs.get-jobs-status.outputs.job_statistics }}"
+      notification_title: "pip nightly installation test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-status.outputs.job_statistics }}"
 
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
