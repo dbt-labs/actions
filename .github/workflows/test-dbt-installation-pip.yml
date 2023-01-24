@@ -63,6 +63,9 @@ jobs:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
+      - name: "Fail Job"
+        run: exit 1
+      
       - name: "Set up Python - ${{ matrix.python-version }}"
         uses: actions/setup-python@v4
         with:
@@ -116,7 +119,8 @@ jobs:
 
   send-slack-notification:
     needs: [generate-artifact-name, pip-installation-test]
-    if: ${{ failure() && github.event_name == 'schedule' }}
+    if: ${{ failure() }}
+    # if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
     with:
