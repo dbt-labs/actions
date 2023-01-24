@@ -101,7 +101,7 @@ jobs:
         env:
           JOB_STATUS: ${{ toJson(job.status) }}
 
-      - name: "Upload Job Status"
+      - name: "Upload Job Status For Slack Notification"
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
