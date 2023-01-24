@@ -1,16 +1,15 @@
 # **what?**
-# Cuts the `*.latest` branch and cleans up all files in `.changes/unreleased` on main.
-#
+# Cuts the `*.latest` branch, bumps dependencies on it, cleans up all files in `.changes/unreleased`
+# and `.changes/previous verion on main and bumps main to the input version.
 
 # **why?**
 # Clean up the main branch after a release branch is cut and automate cutting the release branch.
+# Generally reduces the workload of engineers and reducing error.
 
 # **when?**
-# This will run when called manually in a workflow. 
+# This will run when called manually in a workflow.
 
-# Ideally this would be triggered when a `*.latest` branch is cut but the `create: branch`` trigger cannot filter so it would need to run every time a branch were created which is overkill.
-
-# Example Usage including required permissions
+# Example Usage including required permissions:  TODO: update once finalized
 
 # permissions:
 #   contents: read
@@ -21,161 +20,231 @@
 #   changelog:
 #     uses: dbt-labs/actions/.github/workflows/cut-release-branch.yml@main
 #    with:
-#      release_branch_name: 1.2.latest
-#      sha: 0e60fc1  (or nothing!)
+#      version_to_bump_main: 1.3.0a1
+#      new_branch_name: 1.2.latest
+#      repository: all
 #    secrets: inherit # this is only acceptable because we own the action we're calling
 #
 
-name: Check Changelog Entry Exists
+# Note: This should be moved into the actions repos so it can be used in all adapters as well
+# string together all updates into single action
+# Should open PRs in all repos, do all adapters first then put link to all adapter PRs in the core PR talking about dependency
+# add note to eventually commit changes directly and bypass checks - same as release - when we move to this model run test action after merge
+
+name: Cut new release branch
 
 on:
   workflow_call:
     inputs:
-      release_branch_name:
-        description: Name of release branch (ex. `1.2.latest`)
-        type: string
+      version_to_bump_main:
         required: true
-      sha:
-        description: The commit the release branch will be cut from, default to latest commit
         type: string
-        required: false
+      new_branch_name:
+        description: 'The full name of the new branch (ex. 1.5.latest)'
+        required: true
+        type: string
+      repository:
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      version_to_bump_main:
+        description: 'The alpha version main should bump to (ex. 1.6.0a1)'
+        required: true
+      new_branch_name:
+        description: 'The full name of the new branch (ex. 1.5.latest)'
+        required: true
+      repository:
+        description: "Repository to create new branch and cleanup main:"
+        required: true
+        type: choice
+        options:
+        - 'dbt-core'
+        - 'dbt-snowflake'
+        - 'dbt-redshift'
+        - 'dbt-bigquery'
+        - 'dbt-spark' 
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: write
 
 jobs:
-  prep:
-    name: Cut the Release branch
+  prep_work:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[DEBUG] Print Inputs"
+        run: |
+          echo "Version to bump main:    ${{ inputs.version_to_bump_main }}"
+          echo "Name of branch to cut:   ${{ inputs.new_branch_name }}"
+
+      - name: Audit New Version and Parse Into Parts
+        id: semver
+        uses: dbt-labs/actions/parse-semver@v1
+        with:
+          version: ${{ inputs.version_to_bump_main }}
+
+  cut_branch:
+    needs: ['prep_work']
     runs-on: ubuntu-latest
 
     steps:
-      - name: "[DEBUG] - Print Inputs"
-        shell: bash
-        id: echo_inputs
-        run: |
-          echo "all variables defined as inputs"
-          echo "Release Branch Name:   ${{ inputs.release_branch_name }}"
-          echo "Release sha:           ${{ inputs.sha }}"
 
-      - name: Checkout Branch
-        uses: actions/checkout@v3
+      - name: "Checkout ${{ inputs.repository }} repository"
+        uses: actions/checkout@v4
         with:
-          # specifying the ref avoids checking out the repository in a detached state
-          token: ${{ inputs.GITHUB_TOKEN }}
+          repository: ${{ inputs.repository }}
+          ref: "main"
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-      - name: Determine what to release
-      # grab the specific sha in the off chance someone pushes a change in the middle of this aciton running
-      # TODO: will this work? Do we ever release anything but the head?
+      - name: "Ensure New Branch Does Not Exist"
+        id: check_new_branch
         run: |
-          if [ -z "${{ inputs.sha }}" ]; then
-            echo "::set-output name=checkout_ref::"$(git rev-parse --short --verify main)"
-          else
-            echo "::set-output name=checkout_ref::${{ inputs.sha }}"
+          if git show-ref --quiet refs/heads/${{ inputs.new_branch_name }}; then
+            echo "Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
+            exit 1
           fi
-
-  cut_branch:    
-    name: Cut the Release branch
-    runs-on: ubuntu-latest
-    needs: [prep]
-
-    steps:
-      - name: "[DEBUG] - Print Inputs"
-        shell: bash
-        id: echo_inputs
-        run: |
-          echo "all variables used in this job"
-          echo "Ref to cut branch from:   ${{ needs.ref }}"
-          echo "Release Branch Name:      ${{ inputs.release_branch_name }}"
-
-      - name: Checkout Branch
-        uses: actions/checkout@v3
-        with:
-          # specifying the ref avoids checking out the repository in a detached state
-          ref: ${{ needs.ref }}
-          token: ${{ inputs.GITHUB_TOKEN }}
       
-      - name: Create Release branch
+      - name: "Create New Release Branch"
         run: |
-          git checkout -b ${{ inputs.release_branch_name }}
-          git push -u origin ${{ inputs.release_branch_name }}
+          git checkout -b ${{ inputs.new_branch_name }}
 
-      - name: Print branch status
+      - name: "Bump dependencies via script"
+        if: repo != dbt-core
         run: |
-          git status
-      
-      - name: Commit & Push changes
-        run: |
-          git config user.name 'Github Build Bot'
-          git config user.email 'buildbot@fishtownanalytics.com'
-          git push
+          echo "running some script yet to be written now"
+          scripts/update_dependencies.sh
 
-  changelog_cleanup:
-    name: Check if Changelog Exists
-    needs: [prep, cut_branch]
+      - name: "Commit & Push Changes"
+        run: |
+          #Data for commit
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          commit_message="Cutting .latest branch ${{ inputs.new_branch_name }}"
+          #Commit changes to branch
+          git config user.name "$user"
+          git config user.email "$email"
+          git pull
+          git add .
+          git commit -m "$commit_message"
+          git push --set-upstream origin ${{ inputs.new_branch_name }}
+
+  cleanup_main:
+    needs: [prep_work, 'cut_branch']
     runs-on: ubuntu-latest
-
     steps:
 
-      - name: "[DEBUG] - Print Inputs"
-        shell: bash
-        id: echo_inputs
-        run: |
-          echo "all variables used in this job"
-          echo "Ref to cut branch from:   ${{ needs.ref }}"
-          echo "Release Branch Name:      ${{ inputs.release_branch_name }}"
-
-      - name: Set branch value
+      - name: "Set Branch Value"
         id: variables
         run: |
-          echo "::set-output name=BRANCH_NAME::changelog_cleanup/${{ inputs.release_branch_name }}__$GITHUB_RUN_ID"
+          echo "BRANCH_NAME=cutting_release_branch/main_cleanup" >> $GITHUB_OUTPUT
 
-      - name: Checkout Branch
-        uses: actions/checkout@v3
+      - name: "Checkout ${{ inputs.repository }} Repository"
+        uses: actions/checkout@v4.3.0
         with:
-          # specifying the ref avoids checking out the repository in a detached state
-          ref: ${{ needs.ref }}
-          token: ${{ inputs.GITHUB_TOKEN }}
+          repository: ${{ inputs.repository }}
+          ref: "main"
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-      - name: Check if any changelog files exists
-        # if there are no changelog entries, exit!
+      - name: "Check Current Version In Code"
+        id: determine_version
+        run: |
+          current_version=$(grep current_version .bumpversion.cfg | sed 's/.*= //')
+          echo "current_version=$current_version" >> $GITHUB_OUTPUT
+      
+      - name: "Parse Current Version Into Parts for Changelog Directories"
+        id: semver-current
+        uses: dbt-labs/actions/parse-semver@v1
+        with:
+          version: ${{ steps.determine_version.outputs.current_version }}
+
+      - name: "Create PR Branch"
+        run: |
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          git config user.name "$user"
+          git config user.email "$email"
+          git checkout -b ${{ steps.variables.output.BRANCH_NAME }}
+          git push origin ${{ steps.variables.output.BRANCH_NAME }}
+          git branch --set-upstream-to=origin/${{ steps.variables.output.BRANCH_NAME }} ${{ steps.variables.output.BRANCH_NAME }}
+
+      - name: "Bump Version"
+        run: |
+          source env/bin/activate
+          pip install -r dev-requirements.txt
+          env/bin/bumpversion --allow-dirty --new-version ${{ inputs.version_to_bump_main }} major
+          git status
+
+      - name: "Commit Version Bump to Branch"
+        run: |
+          git add .
+          git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
+          git push
+
+      - name: "Install Homebrew Packages"
+        run: |
+          brew install pre-commit
+          brew tap miniscruff/changie https://github.com/miniscruff/changie
+          brew install changie
+
+      - name: "Check if Any Unreleased Changelog Files Exists"
         shell: bash
-        id: changelog_check
+        id: unreleased_changelog_check
         run: |
           git fetch origin ${{ inputs.sha }}
           if echo grep '.changes/unreleased/.*.yaml'; then
-            echo "::set-output name=exists::true"
-            echo "Changelogs exist for this PR, delete them now"
+            echo "unreleased_exists=true" >> $GITHUB_OUTPUT
+            echo "Unreleased changelogs exist for this PR, they will be deleted"
           else
-            echo "::set-output name=exists::false"
-            echo "No changelog exists for this PR, exit action"
-            exit 1
+            echo "unreleased_exists=false" >> $GITHUB_OUTPUT
+            echo "No unreleased changelog exists for this PR, nothing to delete"
           fi
 
-      - name: Create PR branch
+      - name: "Check if Any Prerelease Changelog Files Exists"
+        shell: bash
+        id: prerelease_changelog_check
         run: |
-          git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
-          git push -u origin ${{ steps.variables.outputs.BRANCH_NAME }}
+          git fetch origin ${{ inputs.sha }}
+          if echo grep '.changes/${{ steps.semver-current.outputs.base-version }}/.*.yaml'; then
+            echo "prerelease_exists=true" >> $GITHUB_OUTPUT
+            echo "Changelogs exist for this PR, delete them now"
+          else
+            echo "prerelease_exists=false" >> $GITHUB_OUTPUT
+            echo "No prerelease changelogs exists for this PR, nothing to delete"
+          fi
 
-      - name: Delete unreleased Changelogs
+      - name: "Delete Unreleased Changelog YAMLs"
+        if: ${{ steps.unreleased_changelog_check.outputs.unreleased_exists }} = true
         run: |
           rm .changes/unreleased/*.yaml
 
-      - name: Print branch status
+      - name: "Delete Pre Release Changelogs and YAMLs"
+        if: ${{ steps.prerelease_changelog_check.outputs.prerelease_exists }} = true
         run: |
-          git status
-      
-      - name: Commit & Push changes
+          echo "TODO: This should be using current branch, not branch we're bumping main to"
+          rm .changes/${{ steps.semver-current.outputs.base-version }}/*.yaml
+          rm .changes/${{ steps.semver-current.outputs.base-version }}.*.md
+
+      - name: "Cleanup CHANGELOG.md"
         run: |
-          git config user.name 'Github Build Bot'
-          git config user.email 'buildbot@fishtownanalytics.com'
-          git pull
+          changie merge
+
+      - name: "Commit Version Bump to Branch"
+        run: |
           git add .
-          git commit -m "Cleaning up changelogs after cutting release branch"
+          git commit -m "Clean up changelog on main"
           git push
 
-      - name: Create Pull Request
-        run: |
-          gh pr create --title "Cleanup Changelogs after Cutting Release Branch" \
-                       --body "Cleanup Changelogs after Cutting Release Branch ${{ inputs.release_branch_name }}" \
-                       --base main \
-                       --head ${{ steps.variables.outputs.BRANCH_NAME }} \
-                       --label "Skip Changelog"
-        env:
-          GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+      - name: "Create Pull Request"
+        uses: peter-evans/create-pull-request@v3
+        with:
+          author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
+          base: ${{github.ref}}
+          title: 'Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'
+          branch: '${{ steps.variables.output.BRANCH_NAME }}'
+          labels: |
+            Skip Changelog
