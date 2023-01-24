@@ -177,7 +177,7 @@ jobs:
                 }
             });
 
-            const jobs_statistics = `Test jobs statuses - ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}, ${JOB_STATUSES_ENUM.failure} - ${jobs_statuses.failure.length}, ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}, undefined status: - ${jobs_statuses.undefined.length}.`;  
+            const jobs_statistics = `Test jobs statuses: ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}, ${JOB_STATUSES_ENUM.failure} - ${jobs_statuses.failure.length}, ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}, undefined - ${jobs_statuses.undefined.length}.`;  
             const message = "pip nightly installation test failed for - ${{ inputs.package_name }}.";
             const slack_message = `${message} ${jobs_statistics}`;
             core.debug(slack_message);
