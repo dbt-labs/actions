@@ -140,7 +140,7 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            const path_to_files = './${{ needs.generate-artifact-name.outputs.artifact-name }}'
+            const artifact_folder = './${{ needs.generate-artifact-name.outputs.artifact-name }}'
 
             const JOB_STATUSES_ENUM = {
                 success: "success",
@@ -155,10 +155,11 @@ jobs:
                 undefined: []
             };
 
-            const files_list = fs.readdirSync(path_to_files);
+            const files_list = fs.readdirSync(artifact_folder);
+            core.debug(files_list);
 
             files_list.map(file => {
-                const buffer = fs.readFileSync(file);
+                const buffer = fs.readFileSync(`${artifact_folder}/${file}`);
                 const jobs_status = buffer.toString().trim().replace(/['"]+/g, '');
 
                 switch (jobs_status) {
