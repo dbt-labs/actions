@@ -53,7 +53,7 @@ jobs:
           name="${{ env.ARTIFACT_BASENAME }}-$date"
           echo "name=$name" >> $GITHUB_OUTPUT
 
-  homebrew-integration-test:
+  homebrew-installation-test:
     runs-on: macos-11
     needs: generate-artifact-name
 
@@ -115,7 +115,7 @@ jobs:
 
   get-jobs-status:
     name: "Check Job Statuses"
-    needs: [generate-artifact-name, homebrew-integration-test]
+    needs: [generate-artifact-name, homebrew-installation-test]
     if: ${{ failure() }}
 
     uses: ./.github/workflows/test-dbt-installation-verify-test-jobs-statuses.yml
