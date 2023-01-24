@@ -13,9 +13,9 @@ on:
         required: true
         type: string
     outputs:
-      slack_message:
-        description: "Message to post in Slack"
-        value: ${{ jobs.check-jobs-status.outputs.slack_message }}
+      job_statistics:
+        description: "Overall statistics regarding jobs statuses"
+        value: ${{ jobs.check-jobs-status.outputs.job_statistics }}
 
 jobs:
   check-jobs-status:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      slack_message: ${{ steps.get-slack-message.outputs.result }}
+      job_statistics: ${{ steps.get-job_statistics.outputs.result }}
 
     steps:
       - name: "Download Artifact ${{ inputs.artifact_name }}"
@@ -37,7 +37,7 @@ jobs:
 
       - name: "Generate Slack Message"
         uses: actions/github-script@v6
-        id: get-slack-message
+        id: get-job_statistics
         with:
           result-encoding: string
           script: |
@@ -80,9 +80,7 @@ jobs:
                 }
             });
 
-            const jobs_statistics = `Test jobs statuses: ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}, ${JOB_STATUSES_ENUM.failure} - ${jobs_statuses.failure.length}, ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}, undefined - ${jobs_statuses.undefined.length}.`;  
-            const message = "pip nightly installation test failed for - ${{ inputs.package_name }}.";
-            const slack_message = `${message} ${jobs_statistics}`;
-            core.debug(slack_message);
+            const job_statistics = `Test jobs statuses: ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}, ${JOB_STATUSES_ENUM.failure} - ${jobs_statuses.failure.length}, ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}, undefined - ${jobs_statuses.undefined.length}.`;
+            core.debug(job_statistics);
 
-            return slack_message;
+            return job_statistics;

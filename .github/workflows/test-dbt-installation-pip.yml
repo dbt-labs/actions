@@ -118,7 +118,7 @@ jobs:
           path: ${{ steps.job-status.outputs.path }}
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  check-jobs-status:
+  get-jobs-status:
     name: "Check Job Statuses"
     needs: [generate-artifact-name, pip-installation-test]
     if: ${{ failure() }}
@@ -129,13 +129,13 @@ jobs:
 
   slack-notification:
     name: "Post Scheduled Run Failures"
-    needs: check-jobs-status
+    needs: get-jobs-status
     if: ${{ failure() }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
       status: "failure"
-      notification_title: ${{ needs.check-jobs-status.outputs.slack_message }}
+      notification_title: "pip nightly installation test failed for - ${{ inputs.package_name }}.  ${{ needs.get-jobs-status.outputs.job_statistics }}"
 
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TEST_CHANNEL }}
