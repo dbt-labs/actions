@@ -7,7 +7,7 @@
 # Generally reduces the workload of engineers and reducing error.
 
 # **when?**
-# This will run when called manually in a workflow.
+# This will run when called manually or when triggered in another workflow.
 
 # Example Usage including required permissions:  TODO: update once finalized
 
@@ -22,13 +22,11 @@
 #    with:
 #      version_to_bump_main: 1.3.0a1
 #      new_branch_name: 1.2.latest
-#      repository: all
-#    secrets: inherit # this is only acceptable because we own the action we're calling
-#
+#      repository: dbt-snowflake
+#    secrets: 
+#      FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-# Note: This should be moved into the actions repos so it can be used in all adapters as well
-# string together all updates into single action
-# Should open PRs in all repos, do all adapters first then put link to all adapter PRs in the core PR talking about dependency
+# TODOs
 # add note to eventually commit changes directly and bypass checks - same as release - when we move to this model run test action after merge
 
 name: Cut new release branch
@@ -46,6 +44,20 @@ on:
       repository:
         required: true
         type: string
+      PR_title:
+        required: false
+        type: string
+      PR_body:
+        required: false
+        type: string
+    outputs:
+      PR_number:
+        description: "PR number for the opened PR"
+        value: ${{ jobs.cleanup_main.outputs.pr_number }}
+    secrets:
+      FISHTOWN_BOT_PAT:
+        description: "PAT that allows commits, creating branches and opening PRs so the repository"
+        required: true
 
   workflow_dispatch:
     inputs:
@@ -136,6 +148,9 @@ jobs:
   cleanup_main:
     needs: ['cut_branch']
     runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
+
     steps:
 
       - name: "Set Branch Value"
@@ -239,12 +254,30 @@ jobs:
           git commit -m "Clean up changelog on main"
           git push
 
+      - name: "Determine PR Title"
+        id: pr_title
+        run: |
+          echo "pr_title=${{ inputs.PR_title }}" >> $GITHUB_OUTPUT
+          if ${{ inputs.PR_title }} == ""; then
+            echo "pr_title='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
+          else
+
+      - name: "Determine PR Body"
+        id: pr_body
+        run: |
+          echo "pr_body=${{ inputs.PR_body }}" >> $GITHUB_OUTPUT
+          if ${{ inputs.PR_body }} == ""; then
+            echo "pr_body='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
+          else
+      
       - name: "Create Pull Request"
+        id: create_pr
         uses: peter-evans/create-pull-request@v3
         with:
           author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
           base: ${{github.ref}}
-          title: 'Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'
+          title: "${{ steps.pr_title.outputs.pr_title }}"
+          body: "${{ steps.pr_body.outputs.pr_body }}"
           branch: '${{ steps.variables.output.BRANCH_NAME }}'
           labels: |
             Skip Changelog

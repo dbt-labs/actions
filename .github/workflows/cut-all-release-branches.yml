@@ -9,11 +9,6 @@
 # **when?**
 # This will run when called manually in a workflow.
 
-# Note: This should be moved into the actions repos so it can be used in all adapters as well
-# string together all updates into single action
-# Should open PRs in all repos, do all adapters first then put link to all adapter PRs in the core PR talking about dependency
-# add note to eventually commit changes directly and bypass checks - same as release - when we move to this model run test action after merge
-
 name: Cut new release branch
 
 on:
@@ -34,18 +29,15 @@ permissions:
   contents: write
 
 jobs:
+
   cut_branch:
     needs: ['prep_work']
-    strategy:
-      fail-fast: false
-      matrix:
-        repository: ['dbt-core', 'dbt-snowflake', 'dbt-redshift', 'dbt-bigquery', 'dbt-spark']
-
     name: "Cut branch and clean up main for ${{ inputs.repository }}"
     uses: dbt-labs/actions/.github/workflows/cut-release-branch.yml@main
     with:
       version_to_bump_main: ${{ inputs.version_to_bump_main }}
       new_branch_name: ${{ inputs.new_branch_name }}
       repository: ${{ inputs.repository }}
+      PR_body: "All adapter PRs will fail CI until the `dbt-core` PR has been merged due to version conflicts."
     secrets:
       FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
