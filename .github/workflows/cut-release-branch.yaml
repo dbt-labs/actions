@@ -134,7 +134,7 @@ jobs:
           git push --set-upstream origin ${{ inputs.new_branch_name }}
 
   cleanup_main:
-    needs: [prep_work, 'cut_branch']
+    needs: ['cut_branch']
     runs-on: ubuntu-latest
     steps:
 
@@ -205,6 +205,7 @@ jobs:
           fi
 
       - name: "Check if Any Prerelease Changelog Files Exists"
+        # prerelease changelog files will be under the current version, not the version we just bumped to
         shell: bash
         id: prerelease_changelog_check
         run: |
@@ -225,15 +226,14 @@ jobs:
       - name: "Delete Pre Release Changelogs and YAMLs"
         if: ${{ steps.prerelease_changelog_check.outputs.prerelease_exists }} = true
         run: |
-          echo "TODO: This should be using current branch, not branch we're bumping main to"
           rm .changes/${{ steps.semver-current.outputs.base-version }}/*.yaml
-          rm .changes/${{ steps.semver-current.outputs.base-version }}.*.md
+          rm .changes/${{ steps.semver-current.outputs.major }}.${{ steps.semver-current.outputs.minor }}.*.md
 
       - name: "Cleanup CHANGELOG.md"
         run: |
           changie merge
 
-      - name: "Commit Version Bump to Branch"
+      - name: "Commit Changelog Cleanup to Branch"
         run: |
           git add .
           git commit -m "Clean up changelog on main"
