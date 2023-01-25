@@ -39,8 +39,24 @@ permissions:
 env:
   GITHUB_PACKAGES_LINK: "ghcr.io"
   NOTIFICATION_PREFIX: "[Docker Installation Tests]"
+  ARTIFACT_BASENAME: "docker-installation-test"
+  ARTIFACT_RETENTION_DAYS: 1
 
 jobs:
+  generate-artifact-name:
+    runs-on: ubuntu-latest
+
+    outputs:
+      artifact-name: ${{ steps.artifact-name.outputs.name }}
+
+    steps:
+      - name: "Generate Artifact Name"
+        id: artifact-name
+        run: |
+          date=$(date +'%m%d%Y')
+          name="${{ env.ARTIFACT_BASENAME }}-$date"
+          echo "name=$name" >> $GITHUB_OUTPUT
+
   fetch-container-tags:
     runs-on: ubuntu-latest
 
@@ -85,7 +101,7 @@ jobs:
 
   docker-installation-test:
     runs-on: ubuntu-latest
-    needs: fetch-container-tags
+    needs: [fetch-container-tags, generate-artifact-name]
 
     strategy:
       fail-fast: false
@@ -119,15 +135,37 @@ jobs:
           image: ${{ steps.image-info.outputs.ref }}
           run: dbt --version
 
-  slack-notification:
-    name: "Post Scheduled Run Failures"
-    needs: docker-installation-test
+      - name: "Dump Job Status"
+        if: ${{ always() }}
+        id: job-status
+        run: |
+          file="test-${{ strategy.job-index }}-tag-${{ matrix.tag }}.json"
+          # Create file
+          touch $file 
+          # Write job status to file
+          echo $JOB_STATUS >> $file
+          # Set path to file for subsequent steps          
+          echo "path=$file" >> $GITHUB_OUTPUT
+        env:
+          JOB_STATUS: ${{ toJson(job.status) }}
+
+      - name: "Upload Job Status For Slack Notification"
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+          path: ${{ steps.job-status.outputs.path }}
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  send-slack-notification:
+    needs: [generate-artifact-name, docker-installation-test]
     if: ${{ failure() && github.event_name == 'schedule' }}
 
-    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
+    uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
     with:
-      status: "failure"
-      notification_title: "Docker nightly integration test failed for - ${{ inputs.package_name }}"
+      artifact_name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+      installation_method: "Docker"
+      package_name: ${{ inputs.package_name }}
 
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
