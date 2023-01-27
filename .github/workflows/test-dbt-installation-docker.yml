@@ -61,42 +61,55 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      latest-tags: ${{ steps.get-latest-tags.outputs.result }}
+      latest-tags: ${{ steps.get-latest-tags.outputs.container-tags }}
 
     steps:
+      # - name: "Fetch ${{ inputs.package_name }} Tags From ${{ env.GITHUB_PACKAGES_LINK }}"
+      #   # Description: Fetch tags for specific container and filter out `latest` tags
+      #   # GH API doc: https://docs.github.com/en/rest/packages?apiVersion=2022-11-28#list-package-versions-for-a-package-owned-by-an-organization
+      #   uses: actions/github-script@v6
+      #   id: get-latest-tags
+      #   with:
+      #     retries: 3
+      #     script: |
+      #       try {
+      #           const response = await github.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
+      #               package_type: 'container',
+      #               package_name: '${{ inputs.package_name }}',
+      #               org: 'dbt-labs',
+      #           })
+      #           let tags = [];
+      #           if (response.data) {
+      #               const package_data = response.data;
+      #               for (const [key, value] of Object.entries(package_data)) {
+      #                   if (value.metadata.container.tags) {
+      #                       tags = tags.concat(value.metadata.container.tags)
+      #                   }
+      #               }
+      #               tags = tags.filter(t => t.endsWith('latest'))
+      #           }
+      #           return tags
+      #       } catch (error) {
+      #           core.setFailed(error.message);
+      #       }
+
       - name: "Fetch ${{ inputs.package_name }} Tags From ${{ env.GITHUB_PACKAGES_LINK }}"
         # Description: Fetch tags for specific container and filter out `latest` tags
         # GH API doc: https://docs.github.com/en/rest/packages?apiVersion=2022-11-28#list-package-versions-for-a-package-owned-by-an-organization
-        uses: actions/github-script@v6
+        uses: ./dbt-labs/actions/fetch-container-tags
         id: get-latest-tags
         with:
+          package_name: ${{ inputs.package_name }}
+          organization: "dbt-labs"
+          pat: ${{ secrets.GITHUB_TOKEN }}
+          regex: "latest$"
+          perform_match_method: "search"
           retries: 3
-          script: |
-            try {
-                const response = await github.rest.packages.getAllPackageVersionsForPackageOwnedByOrg({
-                    package_type: 'container',
-                    package_name: '${{ inputs.package_name }}',
-                    org: 'dbt-labs',
-                })
-                let tags = [];
-                if (response.data) {
-                    const package_data = response.data;
-                    for (const [key, value] of Object.entries(package_data)) {
-                        if (value.metadata.container.tags) {
-                            tags = tags.concat(value.metadata.container.tags)
-                        }
-                    }
-                    tags = tags.filter(t => t.endsWith('latest'))
-                }
-                return tags
-            } catch (error) {
-                core.setFailed(error.message);
-            }
 
       - name: "[ANNOTATION] ${{ inputs.package_name }} - tags to test"
         run: |
           title="${{ inputs.package_name }} - tags to test"
-          message="The workflow will run tests for the following tags of the ${{ inputs.package_name }} image: ${{ steps.get-latest-tags.outputs.result }}"
+          message="The workflow will run tests for the following tags of the ${{ inputs.package_name }} image: ${{ steps.get-latest-tags.outputs.container-tags }}"
           echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
 
   docker-installation-test:
