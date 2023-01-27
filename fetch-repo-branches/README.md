@@ -1,4 +1,4 @@
-# Fetch Container Tags
+# Fetch Repo Branches
 
 A [GitHub Action](https://github.com/features/actions) for fetching branches via GitHub API.
 
@@ -16,7 +16,7 @@ jobs:
         uses: dbt-labs/actions/fetch-repo-branches
         id: get-latest-branches
         with:
-          package_name: "dbt-core"
+          repo_name: "dbt-core"
           organization: "dbt-labs"
           pat: ${{ secrets.GITHUB_TOKEN }}
           fetch_protected_branches_only: true
