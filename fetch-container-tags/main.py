@@ -125,9 +125,8 @@ def main():
         container_tags = apply_regex_to_tags(
             regex, container_tags, perform_match_method)
 
-    print(f"::debug::tag list: {json.dumps(container_tags)}")
-
-    set_output("container-tags", json.dumps(container_tags))
+    print(f"::debug::tag list: {container_tags}")
+    set_output("container-tags", container_tags)
 
 
 if __name__ == "__main__":
