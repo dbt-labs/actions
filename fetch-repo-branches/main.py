@@ -130,7 +130,6 @@ def main():
     )
 
     request_response = fetch_repo_branches(request_data)
-    print(json.dumps(request_response))
     branches = get_branches_list(request_response)
 
     if (regex != ""):
