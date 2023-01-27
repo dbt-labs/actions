@@ -9,15 +9,21 @@ from dataclasses import dataclass
 
 @dataclass
 class FetchRequestData:
-    package_type: str
-    package_name: str
+    repo_name: str
     organization: str
+    protected_branches_only: bool
     pat: str
     attempts_limit: int
 
     def get_request_url(self) -> str:
-        url = f"https://api.github.com/orgs/{self.organization}/packages/{self.package_type}/{self.package_name}/versions"
+        url = f"https://api.github.com/repos/{self.organization}/{self.repo_name}/branches"
         return url
+
+    def get_request_parameters(self) -> dict:
+        parameters = {
+            "protected": self.protected_branches_only
+        }
+        return parameters
 
     def get_request_headers(self) -> dict:
         headers = {
@@ -47,15 +53,19 @@ def get_exponential_backoff_in_seconds(attempt_number: int) -> int:
     return pow(attempt_number + 2, 2)
 
 
-def fetch_package_metadata(request_data: FetchRequestData):
+def fetch_repo_branches(request_data: FetchRequestData):
     url: str = request_data.get_request_url()
     headers: dict = request_data.get_request_headers()
+    parameters: dict = request_data.get_request_parameters()
+
+    print(parameters)
 
     for attempt in range(request_data.attempts_limit):
         print(
             f"::debug::Fetching package metadata - attempt {attempt + 1} / {request_data.attempts_limit}")
         try:
-            response = requests.get(url=url, headers=headers)
+            response = requests.get(
+                url=url, params=parameters, headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             if attempt == request_data.attempts_limit - 1:
@@ -74,31 +84,31 @@ def fetch_package_metadata(request_data: FetchRequestData):
     return response.json()
 
 
-def get_tags_list(package_metadata) -> list:
+def get_branches_list(package_metadata) -> list:
     tags = []
     for key in package_metadata:
-        tags += key.get('metadata', {}).get('container', {}).get('tags')
+        tags.append(key["name"])
     return tags
 
 
-def apply_regex_to_tags(regex: str, tags: list, perform_method: SupportedMatchMethod):
+def apply_regex_to_list(regex: str, branches: list, perform_method: SupportedMatchMethod):
     regex = re.compile(regex)
     method: function = regex.match
     if (perform_method == SupportedMatchMethod.FINDALL):
         method = regex.match
     if (perform_method == SupportedMatchMethod.SEARCH):
         method = regex.search
-    return list(filter(method, tags))
+    return list(filter(method, branches))
 
 
 def main():
-    package_name = os.environ["INPUT_PACKAGE_NAME"]
-    package_type = "container"
+    repo_name = os.environ["INPUT_REPO_NAME"]
     organization = os.environ["INPUT_ORGANIZATION"]
     pat = os.environ["INPUT_PAT"]
+    protected_branches_only = os.environ["INPUT_FETCH_PROTECTED_BRANCHES_ONLY"] == "true"
     attempts_limit = int(os.environ["INPUT_RETRIES"]) + 1
-    regex = ""
 
+    regex = ""
     if os.environ.get('INPUT_REGEX') is not None:
         regex = os.environ["INPUT_REGEX"]
 
@@ -112,23 +122,23 @@ def main():
         raise RuntimeError("Error")
 
     request_data = FetchRequestData(
-        package_type=package_type,
-        package_name=package_name,
+        repo_name=repo_name,
         organization=organization,
         pat=pat,
+        protected_branches_only=protected_branches_only,
         attempts_limit=attempts_limit
     )
 
-    request_response = fetch_package_metadata(request_data)
-    container_tags = get_tags_list(request_response)
+    request_response = fetch_repo_branches(request_data)
+    print(json.dumps(request_response))
+    branches = get_branches_list(request_response)
 
     if (regex != ""):
-        container_tags = apply_regex_to_tags(
-            regex, container_tags, perform_match_method)
+        branches = apply_regex_to_list(regex, branches, perform_match_method)
 
-    print(f"::debug::tag list: {json.dumps(container_tags)}")
+    print(f"::debug::branches list: {json.dumps(branches)}")
 
-    set_output("repo-branches", json.dumps(container_tags))
+    set_output("container-tags", json.dumps(branches))
 
 
 if __name__ == "__main__":

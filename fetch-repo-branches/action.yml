@@ -1,8 +1,8 @@
-name: "Fetch Container Tags"
-description: "Gets Container Tags From GitHub Packages"
+name: "Fetch Repo Branches"
+description: "Gets Branches List Of Specified Repo"
 inputs:
   package_name:
-    description: "Package name"
+    description: "Repo name"
     required: true
   organization:
     description: "GitHub organization where package is stored"
@@ -12,7 +12,12 @@ inputs:
     required: true
   regex:
     description: "Regexp will be applied to fetch request result"
-    required: true
+    required: false
+    default: ""
+  fetch_protected_branches_only:
+    description: "Adjust request to fetch only protected branches"
+    required: false
+    default: "false"
   perform_match_method:
     description: "Set which match method will be used with regex. Supported methods: match, search, findall. Default: match"
     required: false
