@@ -1,7 +1,7 @@
 name: "Fetch Repo Branches"
 description: "Gets Branches List Of Specified Repo"
 inputs:
-  package_name:
+  repo_name:
     description: "Repo name"
     required: true
   organization:

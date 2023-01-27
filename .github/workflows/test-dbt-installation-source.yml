@@ -61,8 +61,8 @@ jobs:
       latest-branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
 
     steps:
-      - name: "Fetch ${{ inputs.package_name }} Protected Branches Metadata"
-        uses: dbt-labs/actions/fetch-container-tags@users/alexander-smolyakov/add-dbt-installation-gh-actions
+      - name: "Fetch dbt-core Latest Branches"
+        uses: dbt-labs/actions/fetch-repo-branches@users/alexander-smolyakov/add-dbt-installation-gh-actions
         id: get-latest-branches
         with:
           package_name: ${{ inputs.package_name }}
