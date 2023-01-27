@@ -139,7 +139,7 @@ jobs:
         if: ${{ always() }}
         id: job-status
         run: |
-          file="test-${{ strategy.job-index }}-tag-${{ matrix.tag }}.json"
+          file="test-${{ inputs.package_name }}-${{ strategy.job-index }}-tag-${{ matrix.tag }}.json"
           # Create file
           touch $file 
           # Write job status to file
