@@ -77,21 +77,23 @@ jobs:
             core.debug(files_list);
 
             files_list.map(file => {
-                const buffer = fs.readFileSync(`${artifact_folder}/${file}`);
-                const jobs_status = buffer.toString().trim().replace(/['"]+/g, '');
+                if (file.includes(${{ inputs.package_name }})) {
+                  const buffer = fs.readFileSync(`${artifact_folder}/${file}`);
+                  const jobs_status = buffer.toString().trim().replace(/['"]+/g, '');
 
-                switch (jobs_status) {
-                    case JOB_STATUSES_ENUM.success:
-                        jobs_statuses.success.push(file);
-                        break;
-                    case JOB_STATUSES_ENUM.failure:
-                        jobs_statuses.failure.push(file);
-                        break;
-                    case JOB_STATUSES_ENUM.cancelled:
-                        jobs_statuses.cancelled.push(file);
-                        break;
-                    default:
-                        jobs_statuses.undefined.push(file);
+                  switch (jobs_status) {
+                      case JOB_STATUSES_ENUM.success:
+                          jobs_statuses.success.push(file);
+                          break;
+                      case JOB_STATUSES_ENUM.failure:
+                          jobs_statuses.failure.push(file);
+                          break;
+                      case JOB_STATUSES_ENUM.cancelled:
+                          jobs_statuses.cancelled.push(file);
+                          break;
+                      default:
+                          jobs_statuses.undefined.push(file);
+                  }
                 }
             });
 
