@@ -118,7 +118,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tag: ${{ needs.fetch-container-tags.outputs.latest-tags }}
+        tag: ${{ fromJSON(needs.fetch-container-tags.outputs.latest-tags) }}
 
     steps:
       - name: "Resolve Image Ref"
