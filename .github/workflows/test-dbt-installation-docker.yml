@@ -93,6 +93,9 @@ jobs:
       #           core.setFailed(error.message);
       #       }
 
+      - name: "Checkout"
+        uses: actions/checkout@v3
+      
       - name: "Fetch ${{ inputs.package_name }} Tags From ${{ env.GITHUB_PACKAGES_LINK }}"
         # Description: Fetch tags for specific container and filter out `latest` tags
         # GH API doc: https://docs.github.com/en/rest/packages?apiVersion=2022-11-28#list-package-versions-for-a-package-owned-by-an-organization
