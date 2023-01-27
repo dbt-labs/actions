@@ -127,7 +127,7 @@ def main():
 
     print(f"::debug::tag list: {json.dumps(container_tags)}")
 
-    set_output("repo-branches", json.dumps(container_tags))
+    set_output("container-tags", json.dumps(container_tags))
 
 
 if __name__ == "__main__":
