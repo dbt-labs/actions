@@ -27,8 +27,8 @@ inputs:
     required: false
     default: "3"
 outputs:
-  container-tags:
-    description: "List of containers tag"
+  repo-branches:
+    description: "List of available branches"
 runs:
   using: "docker"
   image: "Dockerfile"
