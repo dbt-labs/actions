@@ -107,7 +107,6 @@ def main():
     perform_match_method = -1
     if hasattr(SupportedMatchMethod, perform_match_method_input):
         perform_match_method = SupportedMatchMethod[perform_match_method_input]
-        print(f"{perform_match_method=}")
     else:
         raise RuntimeError("Error")
 
