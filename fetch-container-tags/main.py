@@ -1,10 +1,14 @@
 import requests
 import re
 import os
-import json
 import time
 from enum import Enum
 from dataclasses import dataclass
+
+
+class ProvidedMatchMethodNotSupportedOrIncorrect(Exception):
+    """The specified match method is no supported or incorrect"""
+    pass
 
 
 @dataclass
@@ -51,6 +55,8 @@ def fetch_package_metadata(request_data: FetchRequestData):
     url: str = request_data.get_request_url()
     headers: dict = request_data.get_request_headers()
 
+    print(f"::debug::Start fetching package metadata")
+
     for attempt in range(request_data.attempts_limit):
         print(
             f"::debug::Fetching package metadata - attempt {attempt + 1} / {request_data.attempts_limit}")
@@ -71,6 +77,8 @@ def fetch_package_metadata(request_data: FetchRequestData):
                 continue
         break
 
+    print(f"::debug::Finish fetching metadata")
+
     return response.json()
 
 
@@ -88,6 +96,7 @@ def apply_regex_to_tags(regex: str, tags: list, perform_method: SupportedMatchMe
         method = regex.match
     if (perform_method == SupportedMatchMethod.SEARCH):
         method = regex.search
+    print(f"::debug::Applying regex {regex} via {perform_method}")
     return list(filter(method, tags))
 
 
@@ -98,17 +107,22 @@ def main():
     pat = os.environ["INPUT_PAT"]
     attempts_limit = int(os.environ["INPUT_RETRIES"]) + 1
     regex = ""
+    perform_match_method_input = ""
+    perform_match_method = -1
 
     if os.environ.get('INPUT_REGEX') is not None:
         regex = os.environ["INPUT_REGEX"]
 
-    perform_match_method_input = os.environ["INPUT_PERFORM_MATCH_METHOD"].upper(
-    )
-    perform_match_method = -1
-    if hasattr(SupportedMatchMethod, perform_match_method_input):
-        perform_match_method = SupportedMatchMethod[perform_match_method_input]
-    else:
-        raise RuntimeError("Error")
+    try:
+        perform_match_method_input = os.environ["INPUT_PERFORM_MATCH_METHOD"].upper(
+        )
+        if hasattr(SupportedMatchMethod, perform_match_method_input):
+            perform_match_method = SupportedMatchMethod[perform_match_method_input]
+        else:
+            raise ProvidedMatchMethodNotSupportedOrIncorrect(
+                f"Match method {perform_match_method_input} is not supported or incorrect")
+    except Exception as e:
+        raise RuntimeError(f"{e}")
 
     request_data = FetchRequestData(
         package_type=package_type,
@@ -125,7 +139,10 @@ def main():
         container_tags = apply_regex_to_tags(
             regex, container_tags, perform_match_method)
 
-    print(f"::debug::tag list: {container_tags}")
+    print("::group::Parse Semver Outputs")
+    print(f"container-tags={container_tags}")
+    print("::endgroup::")
+
     set_output("container-tags", container_tags)
 
 
