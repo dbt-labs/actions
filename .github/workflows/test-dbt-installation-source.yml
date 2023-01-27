@@ -153,7 +153,7 @@ jobs:
         if: ${{ always() }}
         id: job-status
         run: |
-          file="test-${{ strategy.job-index }}-branch-${{ matrix.branch }}-python-v${{ matrix.python-version }}.json"
+          file="test-${{ inputs.package_name }}-${{ strategy.job-index }}-branch-${{ matrix.branch }}-python-v${{ matrix.python-version }}.json"
           # Create file
           touch $file 
           # Write job status to file
