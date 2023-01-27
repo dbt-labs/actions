@@ -7,6 +7,11 @@ from enum import Enum
 from dataclasses import dataclass
 
 
+class ProvidedMatchMethodNotSupportedOrIncorrect(Exception):
+    """The specified match method is no supported or incorrect"""
+    pass
+
+
 @dataclass
 class FetchRequestData:
     repo_name: str
@@ -58,6 +63,8 @@ def fetch_repo_branches(request_data: FetchRequestData):
     headers: dict = request_data.get_request_headers()
     parameters: dict = request_data.get_request_parameters()
 
+    print(f"::debug::Start fetching package metadata")
+
     print(parameters)
 
     for attempt in range(request_data.attempts_limit):
@@ -81,6 +88,8 @@ def fetch_repo_branches(request_data: FetchRequestData):
                 continue
         break
 
+    print(f"::debug::Finish fetching metadata")
+
     return response.json()
 
 
@@ -98,6 +107,7 @@ def apply_regex_to_list(regex: str, branches: list, perform_method: SupportedMat
         method = regex.match
     if (perform_method == SupportedMatchMethod.SEARCH):
         method = regex.search
+    print(f"::debug::Applying regex {regex} via {perform_method}")
     return list(filter(method, branches))
 
 
@@ -107,19 +117,23 @@ def main():
     pat = os.environ["INPUT_PAT"]
     protected_branches_only = os.environ["INPUT_FETCH_PROTECTED_BRANCHES_ONLY"] == "true"
     attempts_limit = int(os.environ["INPUT_RETRIES"]) + 1
-
     regex = ""
+    perform_match_method_input = ""
+    perform_match_method = -1
+
     if os.environ.get('INPUT_REGEX') is not None:
         regex = os.environ["INPUT_REGEX"]
 
-    perform_match_method_input = os.environ["INPUT_PERFORM_MATCH_METHOD"].upper(
-    )
-    perform_match_method = -1
-    if hasattr(SupportedMatchMethod, perform_match_method_input):
-        perform_match_method = SupportedMatchMethod[perform_match_method_input]
-        print(f"{perform_match_method=}")
-    else:
-        raise RuntimeError("Error")
+    try:
+        perform_match_method_input = os.environ["INPUT_PERFORM_MATCH_METHOD"].upper(
+        )
+        if hasattr(SupportedMatchMethod, perform_match_method_input):
+            perform_match_method = SupportedMatchMethod[perform_match_method_input]
+        else:
+            raise ProvidedMatchMethodNotSupportedOrIncorrect(
+                f"Match method {perform_match_method_input} is not supported or incorrect")
+    except Exception as e:
+        raise RuntimeError(f"{e}")
 
     request_data = FetchRequestData(
         repo_name=repo_name,
@@ -135,9 +149,11 @@ def main():
     if (regex != ""):
         branches = apply_regex_to_list(regex, branches, perform_match_method)
 
-    print(f"::debug::branches list: {json.dumps(branches)}")
+    print("::group::Parse Semver Outputs")
+    print(f"repo-branches={branches}")
+    print("::endgroup::")
 
-    set_output("repo-branches", json.dumps(branches))
+    set_output("repo-branches", branches)
 
 
 if __name__ == "__main__":
