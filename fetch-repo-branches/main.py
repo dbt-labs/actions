@@ -21,6 +21,10 @@ class FetchRequestData:
     attempts_limit: int
 
     def get_request_url(self) -> str:
+        """
+        Description: Fetch branches metadata for specific repo
+        GH API doc: https://docs.github.com/en/rest/branches/branches?apiVersion=2022-11-28#list-branches
+        """
         url = f"https://api.github.com/repos/{self.organization}/{self.repo_name}/branches"
         return url
 
