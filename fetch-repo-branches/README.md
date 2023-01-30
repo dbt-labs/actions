@@ -33,19 +33,19 @@ jobs:
         run: |
           echo container tags: ${{ steps.get-latest-branches.outputs.repo-branches }}
       
-      dynamic-matrix:
-        runs-on: ubuntu-latest
-        needs: fetch-latest-branches
+    dynamic-matrix:
+      runs-on: ubuntu-latest
+      needs: fetch-latest-branches
 
-        strategy:
-          fail-fast: false
-          matrix:
-            branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
-        
-        steps:
-          - name: "Display Branch Name"
-            run: |
-              echo container tags: ${{ matrix.branch }}
+      strategy:
+        fail-fast: false
+        matrix:
+          branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
+      
+      steps:
+        - name: "Display Branch Name"
+          run: |
+            echo container tags: ${{ matrix.branch }}
 ```
 
 ### Inputs
