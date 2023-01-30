@@ -8,10 +8,15 @@ Example usage:
 name: Example Workflow for Fetch Repo Branches
 on: push
 jobs:
-  parse:
+  fetch-latest-branches:
     runs-on: ubuntu-latest
+    
+    outputs:
+      latest-branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
+    
     steps:
       - uses: actions/checkout@v2
+      
       - name: "Fetch ${{ inputs.package_name }} Protected Branches Metadata"
         uses: dbt-labs/actions/fetch-repo-branches
         id: get-latest-branches
@@ -24,9 +29,23 @@ jobs:
           perform_match_method: "match"
           retries: 3
 
-      - name: Display Latest Branches
+      - name: "Display Latest Branches"
         run: |
           echo container tags: ${{ steps.get-latest-branches.outputs.repo-branches }}
+      
+      dynamic-matrix:
+        runs-on: ubuntu-latest
+        needs: fetch-latest-branches
+
+        strategy:
+          fail-fast: false
+          matrix:
+            branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
+        
+        steps:
+          - name: "Display Branch Name"
+            run: |
+              echo container tags: ${{ matrix.branch }}
 ```
 
 ### Inputs
@@ -43,6 +62,6 @@ jobs:
 
 ### Outputs
 
-| Property       | Example                                                              | Description            |
-| -------------- | -------------------------------------------------------------------- | ---------------------- |
+| Property      | Example                                                                  | Description                       |
+| ------------- | ------------------------------------------------------------------------ | --------------------------------- |
 | repo-branches | `['1.0.latest', '1.1.latest', '1.2.latest', '1.3.latest', '1.4.latest']` | List of branches matching request |
