@@ -31,7 +31,7 @@ jobs:
 
       - name: "Display Latest Branches"
         run: |
-          echo repo branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
+          echo repo latest branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
       
     dynamic-matrix:
       runs-on: ubuntu-latest
@@ -45,7 +45,7 @@ jobs:
       steps:
         - name: "Display Branch Name"
           run: |
-            echo repo branch: ${{ matrix.branch }}
+            echo branch name: ${{ matrix.branch }}
 ```
 
 ### Inputs
