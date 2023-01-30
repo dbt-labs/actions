@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 
 class ProvidedMatchMethodNotSupportedOrIncorrect(Exception):
-    """The specified match method is no supported or incorrect"""
+    """The specified match method is not supported or incorrect"""
     pass
 
 
