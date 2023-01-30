@@ -45,7 +45,7 @@ jobs:
       steps:
         - name: "Display Branch Name"
           run: |
-            echo container tags: ${{ matrix.branch }}
+            echo repo branch: ${{ matrix.branch }}
 ```
 
 ### Inputs
