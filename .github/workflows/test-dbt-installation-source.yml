@@ -62,7 +62,7 @@ jobs:
 
     steps:
       - name: "Fetch dbt-core Latest Branches"
-        uses: dbt-labs/actions/fetch-repo-branches@users/alexander-smolyakov/add-dbt-installation-gh-actions
+        uses: dbt-labs/actions/fetch-repo-branches@main
         id: get-latest-branches
         with:
           repo_name: ${{ inputs.package_name }}
