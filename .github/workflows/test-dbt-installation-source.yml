@@ -62,7 +62,7 @@ jobs:
 
     steps:
       - name: "Fetch dbt-core Latest Branches"
-        uses: dbt-labs/actions/fetch-repo-branches@main
+        uses: dbt-labs/actions/fetch-repo-branches@v1.1.1
         id: get-latest-branches
         with:
           repo_name: ${{ inputs.package_name }}

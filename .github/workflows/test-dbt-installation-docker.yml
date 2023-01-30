@@ -65,7 +65,7 @@ jobs:
 
     steps:
       - name: "Fetch ${{ inputs.package_name }} Tags From ${{ env.GITHUB_PACKAGES_LINK }}"
-        uses: dbt-labs/actions/fetch-container-tags@main
+        uses: dbt-labs/actions/fetch-container-tags@v1.1.1
         id: get-latest-tags
         with:
           package_name: ${{ inputs.package_name }}
