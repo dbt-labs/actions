@@ -20,7 +20,7 @@ jobs:
           organization: "dbt-labs"
           pat: ${{ secrets.GITHUB_TOKEN }}
           fetch_protected_branches_only: true
-          regex: "^1.*.latest"
+          regex: "^1.[0-9]+.latest$"
           perform_match_method: "match"
           retries: 3
 
