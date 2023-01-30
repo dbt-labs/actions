@@ -77,7 +77,7 @@ jobs:
             core.debug(files_list);
 
             files_list.map(file => {
-                if (file.includes(${{ inputs.package_name }})) {
+                if (file.includes("${{ inputs.package_name }}")) {
                   const buffer = fs.readFileSync(`${artifact_folder}/${file}`);
                   const jobs_status = buffer.toString().trim().replace(/['"]+/g, '');
 
