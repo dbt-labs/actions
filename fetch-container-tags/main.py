@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 
 class ProvidedMatchMethodNotSupportedOrIncorrect(Exception):
-    """The specified match method is no supported or incorrect"""
+    """The specified match method is not supported or incorrect"""
     pass
 
 
@@ -20,6 +20,10 @@ class FetchRequestData:
     attempts_limit: int
 
     def get_request_url(self) -> str:
+        """
+        Description: Fetch tags for specific container
+        GH API doc: https://docs.github.com/en/rest/packages?apiVersion=2022-11-28#list-package-versions-for-a-package-owned-by-an-organization
+        """
         url = f"https://api.github.com/orgs/{self.organization}/packages/{self.package_type}/{self.package_name}/versions"
         return url
 
