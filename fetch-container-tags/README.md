@@ -8,11 +8,16 @@ Example usage:
 name: Example Workflow for Fetch Container Tags
 on: push
 jobs:
-  parse:
+  fetch-latest-tags:
     runs-on: ubuntu-latest
+    
+    outputs:
+      latest-tags: ${{ steps.fetch-latest-tags.outputs.container-tags }}
+    
     steps:
       - uses: actions/checkout@v2
-      - name: Fetch dbt-postgres Container Tags
+      
+      - name: "Fetch dbt-postgres Container Tags"
         id: get-latest-tags
         uses: dbt-labs/actions/fetch-container-tags
         with:
@@ -23,9 +28,23 @@ jobs:
           perform_match_method: "search"
           retries: 3
 
-      - name: Display Container Tags
+      - name: "Display Container Tags"
         run: |
-          echo container tags: ${{ steps.get-latest-tags.outputs.container-tags }}
+          echo container latest tags: ${{ steps.fetch-latest-tags.outputs.container-tags }}
+    
+  dynamic-matrix:
+    runs-on: ubuntu-latest
+    needs: fetch-latest-tags
+
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJSON(needs.fetch-latest-tags.outputs.latest-tags) }}
+    
+    steps:
+      - name: "Display Tag Name"
+        run: |
+          echo container tag: ${{ matrix.tag }}
 ```
 
 ### Inputs
