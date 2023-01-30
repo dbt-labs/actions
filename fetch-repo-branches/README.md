@@ -45,4 +45,4 @@ jobs:
 
 | Property       | Example                                                              | Description            |
 | -------------- | -------------------------------------------------------------------- | ---------------------- |
-| container-tags | `['1.0.latest', '1.1.latest', '1.2.latest', '1.3.latest', '1.4.latest']` | List of container tags |
+| repo-branches | `['1.0.latest', '1.1.latest', '1.2.latest', '1.3.latest', '1.4.latest']` | List of branches matching request |
