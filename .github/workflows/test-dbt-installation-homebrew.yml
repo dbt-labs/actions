@@ -60,7 +60,7 @@ jobs:
     steps:
       - name: Fail Job
         run: exit 1
-      
+
       - name: "Prepare Brew"
         # brew upgrade generates some symlink update warnings that cause failures without the || true.
         # They're just that the symlink wasn't updated which is okay to ignore.
@@ -112,8 +112,26 @@ jobs:
           path: ${{ steps.job-status.outputs.path }}
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  send-slack-notification:
+  resolve-slack-secret-key:
+    runs-on: ubuntu-latest
     needs: [generate-artifact-name, homebrew-installation-test]
+
+    outputs:
+      secret_key: ${{ outputs.get-secret-key.output.key }}
+
+    steps:
+      - name: "Resolve Secret Key"
+        id: get-secret-key
+        run: |
+          key="SLACK_DEV_CORE_ALERTS"
+          if [[ github.event_name == 'schedule' ]]
+          then
+            key="SLACK_WEBHOOK_URL"
+          fi
+          "key=$key" >> $GITHUB_OUTPUT
+
+  send-slack-notification:
+    needs: resolve-slack-secret-key
     if: ${{ failure() }}
     # if: ${{ failure() && github.event_name == 'schedule' }}
 
