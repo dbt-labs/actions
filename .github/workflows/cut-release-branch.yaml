@@ -102,7 +102,7 @@ jobs:
           git checkout -b ${{ inputs.new_branch_name }}
 
       - name: "Bump dependencies via script"
-        if: github.repository.name != "dbt-core"
+        if: ${{ !contains(github.repository.name, 'dbt-core') }}
         run: |
           echo ${{ github.repository.name }}
           echo "running some script yet to be written now"
