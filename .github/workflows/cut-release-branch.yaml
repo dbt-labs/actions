@@ -118,7 +118,6 @@ jobs:
           #Commit changes to branch
           git config user.name "$user"
           git config user.email "$email"
-          git push -u origin ${{ inputs.new_branch_name }}
           git add .
           git commit -m "$commit_message"
           git push --set-upstream origin ${{ inputs.new_branch_name }}
