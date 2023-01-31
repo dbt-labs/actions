@@ -146,7 +146,7 @@ jobs:
 
       - name: "Install Python Dependencies"
         run: |
-          python3 -m venv env
+          python -m venv env
           source env/bin/activate
           python -m pip install --upgrade pip
 
@@ -175,12 +175,11 @@ jobs:
           git config user.name "$user"
           git config user.email "$email"
           git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
-          git push origin ${{ steps.variables.outputs.BRANCH_NAME }}
-          git branch --set-upstream-to=origin/${{ steps.variables.outputs.BRANCH_NAME }} ${{ steps.variables.outputs.BRANCH_NAME }}
+          git push --set-upstream origin ${{ steps.variables.outputs.BRANCH_NAME }}
 
       - name: "Bump Version"
         run: |
-          pip install -r dev-requirements.txt
+          python pip install -r dev-requirements.txt
           env/bin/bumpversion --allow-dirty --new-version ${{ inputs.version_to_bump_main }} major
           git status
 
