@@ -126,7 +126,7 @@ jobs:
           git checkout -b ${{ inputs.new_branch_name }}
 
       - name: "Bump dependencies via script"
-        if: repo != dbt-core
+        if: ${{ inputs.repository }} != dbt-core
         run: |
           echo "running some script yet to be written now"
           scripts/update_dependencies.sh
