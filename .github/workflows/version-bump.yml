@@ -96,13 +96,16 @@ jobs:
           team_list_single=$(echo $team_list | tr '\n' ' ')
           echo "CHANGIE_CORE_TEAM=$team_list_single" >> $GITHUB_ENV
 
-      - name: Run changie
+      - name: "Run changie"
         run: |
           if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
           then
             changie batch ${{ steps.semver.outputs.base-version }}  --move-dir '${{ steps.semver.outputs.base-version }}' --prerelease '${{ steps.semver.outputs.pre-release }}'
-          else
+          elif [[ -d ".changes/${{ steps.semver.outputs.base-version }}" ]]
+          then
             changie batch ${{ steps.semver.outputs.base-version }}  --include '${{ steps.semver.outputs.base-version }}' --remove-prereleases
+          else # releasing a final patch with no prereleases
+            changie batch ${{ steps.semver.outputs.base-version }}
           fi
           changie merge
           git status
