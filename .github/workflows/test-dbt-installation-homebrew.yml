@@ -143,4 +143,4 @@ jobs:
       package_name: ${{ inputs.package_name }}
 
     secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets[needs.resolve-slack-secret-key.output.secret_key] }}
+      SLACK_WEBHOOK_URL: ${{ secrets[needs.resolve-slack-secret-key.outputs.secret_key] }}
