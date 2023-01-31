@@ -102,6 +102,7 @@ jobs:
           git checkout -b ${{ inputs.new_branch_name }}
 
       - name: "Bump dependencies via script"
+        # This bumps the dependency on dbt-core in the adapters
         if: ${{ !contains(github.repository, 'dbt-core') }}
         run: |
           echo ${{ github.repository }}
@@ -117,7 +118,7 @@ jobs:
           #Commit changes to branch
           git config user.name "$user"
           git config user.email "$email"
-          git pull
+          git push -u origin ${{ inputs.new_branch_name }}
           git add .
           git commit -m "$commit_message"
           git push --set-upstream origin ${{ inputs.new_branch_name }}
