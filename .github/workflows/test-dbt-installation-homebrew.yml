@@ -58,6 +58,9 @@ jobs:
     needs: generate-artifact-name
 
     steps:
+      - name: Fail Job
+        run: exit 1
+      
       - name: "Prepare Brew"
         # brew upgrade generates some symlink update warnings that cause failures without the || true.
         # They're just that the symlink wasn't updated which is okay to ignore.
