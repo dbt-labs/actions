@@ -131,7 +131,7 @@ jobs:
           "key=$key" >> $GITHUB_OUTPUT
 
   send-slack-notification:
-    needs: [resolve-slack-secret-key, generate-artifact-nam]
+    needs: [resolve-slack-secret-key, generate-artifact-name]
     if: ${{ failure() }}
     # if: ${{ failure() && github.event_name == 'schedule' }}
 
