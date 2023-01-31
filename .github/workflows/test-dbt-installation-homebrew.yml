@@ -115,6 +115,7 @@ jobs:
   resolve-slack-secret-key:
     runs-on: ubuntu-latest
     needs: [generate-artifact-name, homebrew-installation-test]
+    if: ${{ failure() }}
 
     outputs:
       secret_key: ${{ steps.get-secret-key.output.key }}
