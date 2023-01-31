@@ -145,6 +145,11 @@ jobs:
           ref: "main"
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
+      - name: "Install Spark Dependencies"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          sudo apt-get install libsasl2-dev
+
       - name: "Check Current Version In Code"
         id: determine_version
         run: |
@@ -189,6 +194,10 @@ jobs:
           git add .
           git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
           git push
+
+      - name: "Add Homebrew To PATH"
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
 
       - name: "Install Homebrew Packages"
         run: |
