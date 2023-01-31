@@ -117,7 +117,7 @@ jobs:
     needs: [generate-artifact-name, homebrew-installation-test]
 
     outputs:
-      secret_key: ${{ outputs.get-secret-key.output.key }}
+      secret_key: ${{ steps.get-secret-key.output.key }}
 
     steps:
       - name: "Resolve Secret Key"
