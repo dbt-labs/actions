@@ -134,7 +134,7 @@ jobs:
       - name: "Set Branch Value"
         id: variables
         run: |
-          echo "BRANCH_NAME=cutting_release_branch/main_cleanup" >> $GITHUB_OUTPUT
+          echo "BRANCH_NAME=cutting_release_branch/main_cleanup_$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
       - name: "Checkout ${{ github.repository }}"
         uses: actions/checkout@v3
@@ -160,9 +160,9 @@ jobs:
           email="buildbot@fishtownanalytics.com"
           git config user.name "$user"
           git config user.email "$email"
-          git checkout -b ${{ steps.variables.output.BRANCH_NAME }}
-          git push origin ${{ steps.variables.output.BRANCH_NAME }}
-          git branch --set-upstream-to=origin/${{ steps.variables.output.BRANCH_NAME }} ${{ steps.variables.output.BRANCH_NAME }}
+          git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
+          git push origin ${{ steps.variables.outputs.BRANCH_NAME }}
+          git branch --set-upstream-to=origin/${{ steps.variables.outputs.BRANCH_NAME }} ${{ steps.variables.outputs.BRANCH_NAME }}
 
       - name: "Bump Version"
         run: |
@@ -245,7 +245,7 @@ jobs:
           echo "pr_body=${{ inputs.PR_body }}" >> $GITHUB_OUTPUT
           if ${{ inputs.PR_body }} == ""; then
             echo "pr_body='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
-          else
+          fi
       
       - name: "Create Pull Request"
         id: create_pr
@@ -255,6 +255,6 @@ jobs:
           base: ${{github.ref}}
           title: "${{ steps.pr_title.outputs.pr_title }}"
           body: "${{ steps.pr_body.outputs.pr_body }}"
-          branch: '${{ steps.variables.output.BRANCH_NAME }}'
+          branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
           labels: |
             Skip Changelog
