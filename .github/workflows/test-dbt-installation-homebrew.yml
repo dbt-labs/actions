@@ -125,7 +125,7 @@ jobs:
         id: get-secret-key
         run: |
           key="SLACK_DEV_CORE_ALERTS"
-          if [[ github.event_name == 'schedule' ]]
+          if [[ ${{ github.event_name }} == "schedule" ]]
           then
             key="SLACK_WEBHOOK_URL"
           fi
