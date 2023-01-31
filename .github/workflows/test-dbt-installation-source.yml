@@ -155,8 +155,26 @@ jobs:
           path: ${{ steps.job-status.outputs.path }}
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  send-slack-notification:
+  resolve-slack-secret-key:
+    runs-on: ubuntu-latest
     needs: [generate-artifact-name, source-installation-test]
+
+    outputs:
+      secret_key: ${{ outputs.get-secret-key.output.key }}
+
+    steps:
+      - name: "Resolve Secret Key"
+        id: get-secret-key
+        run: |
+          key="SLACK_DEV_CORE_ALERTS"
+          if [[ github.event_name == 'schedule' ]]
+          then
+            key="SLACK_WEBHOOK_URL"
+          fi
+          "key=$key" >> $GITHUB_OUTPUT
+
+  send-slack-notification:
+    needs: [resolve-slack-secret-key]
     if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
@@ -166,4 +184,4 @@ jobs:
       package_name: ${{ inputs.package_name }}
 
     secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets[needs.resolve-slack-secret-key.output.secret_key] }}
