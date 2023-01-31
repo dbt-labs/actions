@@ -114,7 +114,8 @@ jobs:
 
   send-slack-notification:
     needs: [generate-artifact-name, homebrew-installation-test]
-    if: ${{ failure() && github.event_name == 'schedule' }}
+    if: ${{ failure() }}
+    # if: ${{ failure() && github.event_name == 'schedule' }}
 
     uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
     with:
