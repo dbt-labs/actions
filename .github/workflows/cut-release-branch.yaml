@@ -101,15 +101,7 @@ jobs:
         run: |
           git checkout -b ${{ inputs.new_branch_name }}
 
-      - name: "Bump dependencies via script"
-        # This bumps the dependency on dbt-core in the adapters
-        if: ${{ !contains(github.repository, 'dbt-core') }}
-        run: |
-          echo ${{ github.repository }}
-          echo "running some script yet to be written now"
-          scripts/update_dependencies.sh
-
-      - name: "Commit & Push Changes"
+      - name: "Push up New Branch"
         run: |
           #Data for commit
           user="Github Build Bot"
@@ -118,9 +110,18 @@ jobs:
           #Commit changes to branch
           git config user.name "$user"
           git config user.email "$email"
+          git push --set-upstream origin ${{ inputs.new_branch_name }}
+
+      - name: "Bump dependencies via script"
+        # This bumps the dependency on dbt-core in the adapters
+        if: ${{ !contains(github.repository, 'dbt-core') }}
+        run: |
+          echo ${{ github.repository }}
+          echo "running some script yet to be written now"
+          scripts/update_dependencies.sh
           git add .
           git commit -m "$commit_message"
-          git push --set-upstream origin ${{ inputs.new_branch_name }}
+          git push
 
   cleanup_main:
     needs: ['cut_branch']
