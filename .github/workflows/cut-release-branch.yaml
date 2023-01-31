@@ -62,6 +62,9 @@ defaults:
 permissions:
   contents: write
 
+env:
+  PYTHON_TARGET_VERSION: 3.8
+
 jobs:
   prep_work:
     runs-on: ubuntu-latest
@@ -136,6 +139,17 @@ jobs:
         run: |
           echo "BRANCH_NAME=cutting_release_branch/main_cleanup_$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
+      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_TARGET_VERSION }}
+
+      - name: "Install Python Dependencies"
+        run: |
+          python3 -m venv env
+          source env/bin/activate
+          python -m pip install --upgrade pip
+
       - name: "Checkout ${{ github.repository }}"
         uses: actions/checkout@v3
         with:
@@ -166,7 +180,6 @@ jobs:
 
       - name: "Bump Version"
         run: |
-          source env/bin/activate
           pip install -r dev-requirements.txt
           env/bin/bumpversion --allow-dirty --new-version ${{ inputs.version_to_bump_main }} major
           git status
