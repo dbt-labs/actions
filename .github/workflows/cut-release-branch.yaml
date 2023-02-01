@@ -205,38 +205,14 @@ jobs:
           brew tap miniscruff/changie https://github.com/miniscruff/changie
           brew install changie
 
-      - name: "Check if Any Unreleased Changelog Files Exists"
-        shell: bash
-        id: unreleased_changelog_check
-        run: |
-          if [ -f ".changes/unreleased/*.yaml" ]; then
-            echo "unreleased_exists=true" >> $GITHUB_OUTPUT
-            echo "Unreleased changelogs exist for this PR, they will be deleted"
-          else
-            echo "unreleased_exists=false" >> $GITHUB_OUTPUT
-            echo "No unreleased changelog exists for this PR, nothing to delete"
-          fi
-
-      - name: "Check if Any Prerelease Changelog Files Exists"
-        # prerelease changelog files will be under the current version, not the version we just bumped to
-        shell: bash
-        id: prerelease_changelog_check
-        run: |
-          if [ -f ".changes/${{ steps.semver-current.outputs.base-version }}/*.yaml" ]; then
-            echo "prerelease_exists=true" >> $GITHUB_OUTPUT
-            echo "Changelogs exist for this PR, delete them now"
-          else
-            echo "prerelease_exists=false" >> $GITHUB_OUTPUT
-            echo "No prerelease changelogs exists for this PR, nothing to delete"
-          fi
-
       - name: "Delete Unreleased Changelog YAMLs"
-        if: ${{ steps.unreleased_changelog_check.outputs.unreleased_exists }} == true
+        # fails when no files exists for removal, but that's okay because we just want them gone
+        continue-on-error: true
         run: |
           rm .changes/unreleased/*.yaml
 
       - name: "Delete Pre Release Changelogs and YAMLs"
-        if: ${{ steps.prerelease_changelog_check.outputs.prerelease_exists }} == true
+        continue-on-error: true
         run: |
           rm .changes/${{ steps.semver-current.outputs.base-version }}/*.yaml
           rm .changes/${{ steps.semver-current.outputs.major }}.${{ steps.semver-current.outputs.minor }}.*.md
