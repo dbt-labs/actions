@@ -247,7 +247,7 @@ jobs:
       - name: "Add Branch Details"
         id: pr_body_branch
         run: |
-          branch_details="This PR also created a new branch: `${{ inputs.new_branch_name }}`"
+          branch_details="This PR also created a new branch: ${{ inputs.new_branch_name }}"
           full_body="${{ steps.pr_body.outputs.pr_body }} $branch_details"
           echo "pr_full_body=$full_body" >> $GITHUB_OUTPUT
       
@@ -258,7 +258,7 @@ jobs:
           author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
           base: ${{github.ref}}
           title: "${{ steps.pr_title.outputs.pr_title }}"
-          body: "${{ steps.pr_body.outputs.pr_body }}"
+          body: "${{ steps.pr_body_branch.outputs.pr_full_body }}"
           branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
           labels: |
             Skip Changelog
