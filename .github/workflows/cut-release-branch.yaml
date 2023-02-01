@@ -232,7 +232,7 @@ jobs:
         id: pr_title
         run: |
           echo "pr_title=${{ inputs.PR_title }}" >> $GITHUB_OUTPUT
-          if ${{ inputs.PR_title }} == ""; then
+          if [${{ inputs.PR_title }} == ""]; then
             echo "pr_title='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
           fi
 
@@ -240,7 +240,7 @@ jobs:
         id: pr_body
         run: |
           echo "pr_body=${{ inputs.PR_body }}" >> $GITHUB_OUTPUT
-          if ${{ inputs.PR_body }} == ""; then
+          if [${{ inputs.PR_body }} == ""]; then
             echo "pr_body='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
           fi
 
