@@ -251,18 +251,18 @@ jobs:
           full_body="${{ steps.pr_body.outputs.pr_body }} $branch_details"
           echo "pr_full_body=$full_body" >> $GITHUB_OUTPUT
       
-      - name: "Pull Request URL"
+      - name: "Open Pull Request"
         id: create_pr
         uses: peter-evans/create-pull-request@v3
         with:
           author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
-          base: ${{github.ref}}
+          base: 'main'
           title: "${{ steps.pr_title.outputs.pr_title }}"
           body: "${{ steps.pr_body_branch.outputs.pr_full_body }}"
           branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
           labels: |
             Skip Changelog
       
-      - name: "[DEBUG] Pull Request"
+      - name: "[DEBUG] Pull Request URL"
         run:
           echo "PR opened at ${{ steps.create_pr.outputs.pull-request-url }}"
