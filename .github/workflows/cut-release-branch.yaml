@@ -251,7 +251,7 @@ jobs:
           full_body="${{ steps.pr_body.outputs.pr_body }} $branch_details"
           echo "pr_full_body=$full_body" >> $GITHUB_OUTPUT
       
-      - name: "Create Pull Request"
+      - name: "Pull Request URL"
         id: create_pr
         uses: peter-evans/create-pull-request@v3
         with:
@@ -262,3 +262,7 @@ jobs:
           branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
           labels: |
             Skip Changelog
+      
+      - name: "[DEBUG] Pull Request"
+        run:
+          echo "PR opened at ${{ steps.create_pr.outputs.pull-request-url }}"
