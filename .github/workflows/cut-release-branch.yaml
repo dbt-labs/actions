@@ -206,12 +206,13 @@ jobs:
           brew install changie
 
       - name: "Delete Unreleased Changelog YAMLs"
-        # fails when no files exists for removal, but that's okay because we just want them gone
+        # removal fails if no files exist. OK to continue since we're just cleaning up the files.
         continue-on-error: true
         run: |
           rm .changes/unreleased/*.yaml
 
       - name: "Delete Pre Release Changelogs and YAMLs"
+        # removal fails if no files exist. OK to continue since we're just cleaning up the files.
         continue-on-error: true
         run: |
           rm .changes/${{ steps.semver-current.outputs.base-version }}/*.yaml
@@ -233,7 +234,7 @@ jobs:
           echo "pr_title=${{ inputs.PR_title }}" >> $GITHUB_OUTPUT
           if ${{ inputs.PR_title }} == ""; then
             echo "pr_title='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
-          else
+          fi
 
       - name: "Determine PR Body"
         id: pr_body
@@ -242,6 +243,13 @@ jobs:
           if ${{ inputs.PR_body }} == ""; then
             echo "pr_body='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
           fi
+
+      - name: "Add Branch Details"
+        id: pr_body_branch
+        run: |
+          branch_details="This PR also created a new branch: `${{ inputs.new_branch_name }}`"
+          full_body="${{ steps.pr_body.outputs.pr_body }} $branch_details"
+          echo "pr_full_body=$full_body" >> $GITHUB_OUTPUT
       
       - name: "Create Pull Request"
         id: create_pr
