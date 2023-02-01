@@ -231,12 +231,12 @@ jobs:
           fi
 
       - name: "Delete Unreleased Changelog YAMLs"
-        if: ${{ steps.unreleased_changelog_check.outputs.unreleased_exists }} = true
+        if: ${{ steps.unreleased_changelog_check.outputs.unreleased_exists }} == true
         run: |
           rm .changes/unreleased/*.yaml
 
       - name: "Delete Pre Release Changelogs and YAMLs"
-        if: ${{ steps.prerelease_changelog_check.outputs.prerelease_exists }} = true
+        if: ${{ steps.prerelease_changelog_check.outputs.prerelease_exists }} == true
         run: |
           rm .changes/${{ steps.semver-current.outputs.base-version }}/*.yaml
           rm .changes/${{ steps.semver-current.outputs.major }}.${{ steps.semver-current.outputs.minor }}.*.md
