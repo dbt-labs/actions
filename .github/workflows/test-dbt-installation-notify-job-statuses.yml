@@ -1,0 +1,115 @@
+# **what?**
+# Check dumps of installation test jobs to aggregate statistics
+# and send the Slack notification.
+
+# **why?**
+# A consistent way to notify about failed dbt installation test
+# and provide additional context for the notification.
+
+# **when?**
+# When dbt installation test failed.
+# This reusable workflow can be launched on call by specifying:
+#  artifact_name       - that contains jobs dump
+#  package_name        - dbt adapter/repo/container that was tested
+#  installation_method - installation method that failed
+
+name: dbt Installation - Notify Job Statuses In Slack
+
+on:
+  workflow_call:
+    inputs:
+      artifact_name:
+        required: true
+        type: string
+      installation_method:
+        required: true
+        type: string
+      package_name:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        description: Slack app webhook url
+        required: true
+
+jobs:
+  get-jobs-statuses:
+    name: "Check Job Statuses"
+    runs-on: ubuntu-latest
+
+    outputs:
+      jobs-statuses: ${{ steps.get-job_statistics.outputs.result }}
+
+    steps:
+      - name: "Download Artifact ${{ inputs.artifact_name }}"
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.version_number }}
+          path: .
+
+      - name: "[DEBUG] Display Structure Of All Downloaded Files"
+        run: ls -R
+
+      - name: "Generate Slack Message"
+        uses: actions/github-script@v6
+        id: get-job_statistics
+        with:
+          result-encoding: string
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const artifact_folder = './${{ inputs.artifact_name }}'
+
+            const JOB_STATUSES_ENUM = {
+                success: "success",
+                failure: "failure",
+                cancelled: "cancelled"
+            };
+
+            const jobs_statuses = {
+                failure: [],
+                success: [],
+                cancelled: [],
+                undefined: []
+            };
+
+            const files_list = fs.readdirSync(artifact_folder);
+            core.debug(files_list);
+
+            files_list.map(file => {
+                if (file.includes("${{ inputs.package_name }}")) {
+                  const buffer = fs.readFileSync(`${artifact_folder}/${file}`);
+                  const jobs_status = buffer.toString().trim().replace(/['"]+/g, '');
+
+                  switch (jobs_status) {
+                      case JOB_STATUSES_ENUM.success:
+                          jobs_statuses.success.push(file);
+                          break;
+                      case JOB_STATUSES_ENUM.failure:
+                          jobs_statuses.failure.push(file);
+                          break;
+                      case JOB_STATUSES_ENUM.cancelled:
+                          jobs_statuses.cancelled.push(file);
+                          break;
+                      default:
+                          jobs_statuses.undefined.push(file);
+                  }
+                }
+            });
+
+            const job_statistics = `Test jobs statuses: ${JOB_STATUSES_ENUM.success} - ${jobs_statuses.success.length}, ${JOB_STATUSES_ENUM.failure} - ${jobs_statuses.failure.length}, ${JOB_STATUSES_ENUM.cancelled} - ${jobs_statuses.cancelled.length}, undefined - ${jobs_statuses.undefined.length}.`;
+            core.debug(job_statistics);
+
+            return job_statistics;
+
+  slack-notification:
+    name: "Post Scheduled Run Failures"
+    needs: get-jobs-statuses
+
+    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
+    with:
+      status: "failure"
+      notification_title: "${{ inputs.installation_method }} nightly installation test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-statuses.outputs.jobs-statuses }}"
+
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

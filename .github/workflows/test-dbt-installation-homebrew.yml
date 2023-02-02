@@ -1,0 +1,123 @@
+# **what?**
+# This workflow installs the latest version of dbt adapter from homebrew.
+# It then runs 'dbt --version' to verify the installation was successful.
+# If it fails for the scheduled runs, it will post to our team alerts channel.
+
+# **why?**
+# This is a simple way to test all adapter installations at a single
+# time. It allows us to test them on a schedule as well to check for
+# any breaking dependency changes that might happen and alert us on it.
+
+# **when?**
+# This reusable workflow can be called or started manually
+# by specifying the package name
+
+name: dbt Installation - Homebrew Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Package name to test (i.e. dbt-postgres)"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      package_name:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        description: Slack app webhook url
+        required: true
+
+permissions:
+  contents: read # required for slack-post-notification workflow
+
+env:
+  ARTIFACT_BASENAME: "homebrew-installation-test"
+  ARTIFACT_RETENTION_DAYS: 1
+
+jobs:
+  generate-artifact-name:
+    runs-on: ubuntu-latest
+
+    outputs:
+      artifact-name: ${{ steps.artifact-name.outputs.name }}
+
+    steps:
+      - name: "Generate Artifact Name"
+        id: artifact-name
+        run: |
+          date=$(date +'%m%d%Y')
+          name="${{ env.ARTIFACT_BASENAME }}-$date"
+          echo "name=$name" >> $GITHUB_OUTPUT
+
+  homebrew-installation-test:
+    runs-on: macos-11
+    needs: generate-artifact-name
+
+    steps:
+      - name: "Prepare Brew"
+        # brew upgrade generates some symlink update warnings that cause failures without the || true.
+        # They're just that the symlink wasn't updated which is okay to ignore.
+        # This does cause other errors to be ignored but for this case that's safe since the brew install
+        # step would likely fail at that point.
+        run: |
+          brew update
+          brew upgrade || true
+
+      - name: "[DEBUG] Show List Of Installed Homebrew Packages"
+        run: |
+          brew list
+
+      - name: "Tap dbt-labs/dbt Repository To Homebrew Formulae"
+        run: |
+          brew tap dbt-labs/dbt
+
+      - name: "[DEBUG] Show List Of All Currently Tapped Repositories"
+        run: |
+          brew tap
+
+      - name: "Brew Install ${{ inputs.package_name }}"
+        run: |
+          brew install --verbose ${{ inputs.package_name }}
+
+      - name: "Verify ${{ inputs.package_name }} Version"
+        run: |
+          dbt --version
+
+      - name: "Dump Job Status"
+        if: ${{ always() }}
+        id: job-status
+        run: |
+          file="test-${{ inputs.package_name }}.json"
+          # Create file
+          touch $file 
+          # Write job status to file
+          echo $JOB_STATUS >> $file
+          # Set path to file for subsequent steps          
+          echo "path=$file" >> $GITHUB_OUTPUT
+        env:
+          JOB_STATUS: ${{ toJson(job.status) }}
+
+      - name: "Upload Job Status For Slack Notification"
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+          path: ${{ steps.job-status.outputs.path }}
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  send-slack-notification:
+    needs: [generate-artifact-name, homebrew-installation-test]
+    if: ${{ failure() && github.event_name == 'schedule' }}
+
+    uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
+    with:
+      artifact_name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+      installation_method: "Homebrew"
+      package_name: ${{ inputs.package_name }}
+
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
