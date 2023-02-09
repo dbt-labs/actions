@@ -101,7 +101,7 @@ jobs:
           if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
           then
             changie batch ${{ steps.semver.outputs.base-version }}  --move-dir '${{ steps.semver.outputs.base-version }}' --prerelease '${{ steps.semver.outputs.pre-release }}'
-          elif [[ -d ".changes/${{ steps.semver.outputs.base-version }}" ]]
+          elif [[ -d ".changes/${{ steps.semver.outputs.base-version }}" ]]  # releasing a final patch with prereleases
           then
             changie batch ${{ steps.semver.outputs.base-version }}  --include '${{ steps.semver.outputs.base-version }}' --remove-prereleases
           else # releasing a final patch with no prereleases
