@@ -1,0 +1,29 @@
+name: "Fetch Container Tags"
+description: "Gets Container Tags From GitHub Packages"
+inputs:
+  package_name:
+    description: "Package name"
+    required: true
+  organization:
+    description: "GitHub organization where package is stored"
+    required: true
+  pat:
+    description: "Personal access token"
+    required: true
+  regex:
+    description: "Regexp will be applied to fetch request result"
+    required: true
+  perform_match_method:
+    description: "Set which match method will be used with regex. Supported methods: match, search, findall. Default: match"
+    required: false
+    default: "match"
+  retries:
+    description: "How many retries before failure"
+    required: false
+    default: "3"
+outputs:
+  container-tags:
+    description: "List of containers tag"
+runs:
+  using: "docker"
+  image: "Dockerfile"

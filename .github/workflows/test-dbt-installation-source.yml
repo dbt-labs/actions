@@ -1,0 +1,169 @@
+# **what?**
+# This workflow installs the latest version of dbt adapter from sources.
+# It then runs 'dbt --version' to verify the installation was successful.
+# If it fails for the scheduled runs, it will post to our team alerts channel.
+
+# **why?**
+# This is a simple way to test all adapter installations at a single
+# time. It allows us to test them on a schedule as well to check for
+# any breaking dependency changes that might happen and alert us on it.
+
+# **when?**
+# This reusable workflow can be called or started manually
+# by specifying the package name
+
+name: dbt Installation - Source Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Package name to test (i.e. dbt-core)"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      package_name:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        description: Slack app webhook url
+        required: true
+
+permissions:
+  contents: read # required for slack-post-notification workflow
+
+env:
+  NOTIFICATION_PREFIX: "[Source Installation Tests]"
+  ARTIFACT_BASENAME: "source-installation-test"
+  ARTIFACT_RETENTION_DAYS: 1
+
+jobs:
+  generate-artifact-name:
+    runs-on: ubuntu-latest
+
+    outputs:
+      artifact-name: ${{ steps.artifact-name.outputs.name }}
+
+    steps:
+      - name: "Generate Artifact Name"
+        id: artifact-name
+        run: |
+          date=$(date +'%m%d%Y')
+          name="${{ env.ARTIFACT_BASENAME }}-$date"
+          echo "name=$name" >> $GITHUB_OUTPUT
+
+  fetch-latest-branches:
+    runs-on: ubuntu-latest
+
+    outputs:
+      latest-branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
+
+    steps:
+      - name: "Fetch dbt-core Latest Branches"
+        uses: dbt-labs/actions/fetch-repo-branches@v1.1.1
+        id: get-latest-branches
+        with:
+          repo_name: ${{ inputs.package_name }}
+          organization: "dbt-labs"
+          pat: ${{ secrets.GITHUB_TOKEN }}
+          fetch_protected_branches_only: true
+          regex: "^1.[0-9]+.latest$"
+          perform_match_method: "match"
+          retries: 3
+
+      - name: "[ANNOTATION] ${{ inputs.package_name }} - branches to test"
+        run: |
+          title="${{ inputs.package_name }} - branches to test"
+          message="The workflow will run tests for the following branches of the ${{ inputs.package_name }} repo: ${{ steps.get-latest-branches.outputs.repo-branches }}"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+  source-installation-test:
+    runs-on: ubuntu-latest
+    needs: [fetch-latest-branches, generate-artifact-name]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    steps:
+      - name: "Resolve Repository"
+        id: repo-info
+        run: |
+          name="dbt-labs/${{ inputs.package_name }}"
+          echo "name=$name" >> $GITHUB_OUTPUT
+
+      - name: "Checkout ${{ steps.repo-info.outputs.name }} Branch ${{ matrix.branch }}"
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ steps.repo-info.outputs.name }}
+          persist-credentials: false
+          ref: ${{ matrix.branch }}
+
+      - name: "[DEBUG] Show Work Folder Content"
+        run: |
+          ls -lh
+
+      - name: "Set up Python - ${{ matrix.python-version }}"
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: "Update Python Packages"
+        run: |
+          python -m pip install --user --upgrade pip
+
+      - name: "[DEBUG] Show Package Installer Python Version"
+        run: |
+          python -m pip --version
+
+      - name: "Install Packages From PyPI For ${{ inputs.package_name }}"
+        run: |
+          if [[ ${{ inputs.package_name }} == "dbt-core" ]]
+          then
+            python -m pip install -r requirements.txt
+          else
+            python -m pip install .
+          fi
+
+      - name: "Verify ${{ inputs.package_name }} Version"
+        run: |
+          dbt --version
+
+      - name: "Dump Job Status"
+        if: ${{ always() }}
+        id: job-status
+        run: |
+          file="test-${{ inputs.package_name }}-${{ strategy.job-index }}-branch-${{ matrix.branch }}-python-v${{ matrix.python-version }}.json"
+          # Create file
+          touch $file 
+          # Write job status to file
+          echo $JOB_STATUS >> $file
+          # Set path to file for subsequent steps          
+          echo "path=$file" >> $GITHUB_OUTPUT
+        env:
+          JOB_STATUS: ${{ toJson(job.status) }}
+
+      - name: "Upload Job Status For Slack Notification"
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+          path: ${{ steps.job-status.outputs.path }}
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  send-slack-notification:
+    needs: [generate-artifact-name, source-installation-test]
+    if: ${{ failure() && github.event_name == 'schedule' }}
+
+    uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
+    with:
+      artifact_name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+      installation_method: "Source"
+      package_name: ${{ inputs.package_name }}
+
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
