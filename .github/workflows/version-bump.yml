@@ -36,7 +36,7 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.8"
 
@@ -128,7 +128,7 @@ jobs:
           git status
 
       - name: Commit version bump to branch
-        uses: EndBug/add-and-commit@v7
+        uses: EndBug/add-and-commit@v9.1.1
         with:
           author_name: "Github Build Bot"
           author_email: "buildbot@fishtownanalytics.com"
@@ -137,7 +137,7 @@ jobs:
           push: "origin origin/${{ steps.variables.outputs.BRANCH_NAME }}"
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         with:
           author: "Github Build Bot <buildbot@fishtownanalytics.com>"
           base: ${{github.ref}}
