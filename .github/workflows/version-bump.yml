@@ -32,8 +32,6 @@ jobs:
         run: |
           echo "all variables defined as inputs"
           echo "The version_number:          ${{ github.event.inputs.version_number }}"
-          echo "Secret(IT_TEAM_MEMBERSHIP):  ${{ secrets.IT_TEAM_MEMBERSHIP }}"
-          echo "Secret(GITHUB_TOKEN):        ${{ secrets.GITHUB_TOKEN }}"
 
       - name: Check out the repository
         uses: actions/checkout@v3
