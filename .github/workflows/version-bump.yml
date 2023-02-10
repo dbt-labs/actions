@@ -89,8 +89,7 @@ jobs:
         run: |
           gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/Core/members > output.json
         env:
-          GH_TOKEN: ${{ github.token }}
-          # GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
+          GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
 
       - name: Set Core Team Membership for Changie Contributors exclusion
         id: set_team_membership
