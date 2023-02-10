@@ -85,20 +85,29 @@ jobs:
           env/bin/bumpversion --allow-dirty --new-version ${{ github.event.inputs.version_number }} major
           git status
 
+      - name: "Set json File Name"
+        id: json_file
+        run: |
+          echo "name=output_$GITHUB_RUN_ID.json" >> $GITHUB_OUTPUT
+
       - name: Get Core Team Membership
         run: |
-          gh_output=$(gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/Core/members)
+          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/Core/members > ${{ steps.json_file.outputs.name }}
         env:
           GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
 
       - name: Set Core Team Membership for Changie Contributors exclusion
         id: set_team_membership
         run: |
-          team_list=$(jq -r '.[].login' $gh_output)
+          team_list=$(jq -r '.[].login' ${{ steps.json_file.outputs.name }})
           echo $team_list
           team_list_single=$(echo $team_list | tr '\n' ' ')
           echo "CHANGIE_CORE_TEAM=$team_list_single" >> $GITHUB_ENV
 
+      - name: "Delete the json File"
+        run: |
+          rm ${{ steps.json_file.outputs.name }}
+      
       - name: "Run changie"
         run: |
           if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
@@ -127,14 +136,19 @@ jobs:
           pre-commit run end-of-file-fixer --files .bumpversion.cfg CHANGELOG.md .changes/*
           git status
 
-      - name: Commit version bump to branch
-        uses: EndBug/add-and-commit@v9.1.1
-        with:
-          author_name: "Github Build Bot"
-          author_email: "buildbot@fishtownanalytics.com"
-          message: "Bumping version to ${{ github.event.inputs.version_number }} and generate CHANGELOG"
-          branch: "${{ steps.variables.outputs.BRANCH_NAME }}"
-          push: "origin origin/${{ steps.variables.outputs.BRANCH_NAME }}"
+      - name: "Commit & Push Changes"
+        run: |
+          #Data for commit
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          commit_message="Bumping version to ${{ github.event.inputs.version_number }} and generate CHANGELOG"
+          #Commit changes to branch
+          git config user.name "$user"
+          git config user.email "$email"
+          git pull
+          git add .
+          git commit -m "$commit_message"
+          git push
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
