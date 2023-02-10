@@ -33,52 +33,53 @@ jobs:
           echo "all variables defined as inputs"
           echo "The version_number:          ${{ github.event.inputs.version_number }}"
 
-      - name: Check out the repository
+      - name: "Check out the repository"
         uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - name: "Setup Python"
+        uses: actions/setup-python@v4
         with:
           python-version: "3.8"
 
-      - name: Install spark dependencies
+      - name: "Install spark dependencies"
         if: (( github.repository == 'dbt-labs/dbt-spark' ))
         run: |
           sudo apt-get install libsasl2-dev
 
-      - name: Install python dependencies
+      - name: "Install python dependencies"
         run: |
           python3 -m venv env
           source env/bin/activate
           pip install --upgrade pip
 
-      - name: Add Homebrew to PATH
+      - name: "Add Homebrew to PATH"
         run: |
           echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
 
-      - name: Install Homebrew packages
+      - name: "Install Homebrew packages"
         run: |
           brew install pre-commit
           brew tap miniscruff/changie https://github.com/miniscruff/changie
           brew install changie
 
-      - name: Audit Version and Parse Into Parts
+      - name: "Audit Version and Parse Into Parts"
         id: semver
         uses: dbt-labs/actions/parse-semver@v1
         with:
           version: ${{ github.event.inputs.version_number }}
 
-      - name: Set branch value
+      - name: "Set branch value"
         id: variables
         run: |
           echo "BRANCH_NAME=prep-release/${{ github.event.inputs.version_number }}_$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
-      - name: Create PR branch
+      - name: "Create PR branch"
         run: |
           git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
           git push origin ${{ steps.variables.outputs.BRANCH_NAME }}
           git branch --set-upstream-to=origin/${{ steps.variables.outputs.BRANCH_NAME }} ${{ steps.variables.outputs.BRANCH_NAME }}
 
-      - name: Bump version
+      - name: "Bump version"
         run: |
           source env/bin/activate
           pip install -r dev-requirements.txt
@@ -90,13 +91,13 @@ jobs:
         run: |
           echo "name=output_$GITHUB_RUN_ID.json" >> $GITHUB_OUTPUT
 
-      - name: Get Core Team Membership
+      - name: "Get Core Team Membership"
         run: |
           gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/Core/members > ${{ steps.json_file.outputs.name }}
         env:
           GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
 
-      - name: Set Core Team Membership for Changie Contributors exclusion
+      - name: "Set Core Team Membership for Changie Contributors exclusion"
         id: set_team_membership
         run: |
           team_list=$(jq -r '.[].login' ${{ steps.json_file.outputs.name }})
@@ -123,34 +124,20 @@ jobs:
           git status
 
       # this step will fail on whitespace errors but also correct them
-      - name: Remove trailing whitespace
+      - name: "Remove trailing whitespace"
         continue-on-error: true
         run: |
           pre-commit run trailing-whitespace --files .bumpversion.cfg CHANGELOG.md .changes/*
           git status
 
       # this step will fail on newline errors but also correct them
-      - name: Removing extra newlines
+      - name: "Removing extra newlines"
         continue-on-error: true
         run: |
           pre-commit run end-of-file-fixer --files .bumpversion.cfg CHANGELOG.md .changes/*
           git status
 
-      - name: "Commit & Push Changes"
-        run: |
-          #Data for commit
-          user="Github Build Bot"
-          email="buildbot@fishtownanalytics.com"
-          commit_message="Bumping version to ${{ github.event.inputs.version_number }} and generate CHANGELOG"
-          #Commit changes to branch
-          git config user.name "$user"
-          git config user.email "$email"
-          git pull
-          git add .
-          git commit -m "$commit_message"
-          git push
-
-      - name: Create Pull Request
+      - name: "Commit & Create Pull Request"
         uses: peter-evans/create-pull-request@v4
         with:
           author: "Github Build Bot <buildbot@fishtownanalytics.com>"
