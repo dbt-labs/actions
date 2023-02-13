@@ -20,6 +20,9 @@ on:
         description: "The version number to bump to (ex. 1.2.0, 1.3.0b1)"
         type: string
         required: true
+    secrets:
+      IT_TEAM_MEMBERSHIP:
+        required: true
 
 jobs:
   bump:
@@ -28,96 +31,114 @@ jobs:
       - name: "[DEBUG] Print Variables"
         run: |
           echo "all variables defined as inputs"
-          echo The version_number: ${{ github.event.inputs.version_number }}
+          echo "The version_number:          ${{ github.event.inputs.version_number }}"
 
-      - name: Check out the repository
-        uses: actions/checkout@v2
+      - name: "Check out the repository"
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - name: "Setup Python"
+        uses: actions/setup-python@v4
         with:
           python-version: "3.8"
 
-      - name: Install spark dependencies
+      - name: "Install spark dependencies"
         if: (( github.repository == 'dbt-labs/dbt-spark' ))
         run: |
           sudo apt-get install libsasl2-dev
 
-      - name: Install python dependencies
+      - name: "Install python dependencies"
         run: |
           python3 -m venv env
           source env/bin/activate
           pip install --upgrade pip
 
-      - name: Add Homebrew to PATH
+      - name: "Add Homebrew to PATH"
         run: |
           echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
 
-      - name: Install Homebrew packages
+      - name: "Install Homebrew packages"
         run: |
           brew install pre-commit
           brew tap miniscruff/changie https://github.com/miniscruff/changie
           brew install changie
 
-      - name: Audit Version and Parse Into Parts
+      - name: "Audit Version and Parse Into Parts"
         id: semver
         uses: dbt-labs/actions/parse-semver@v1
         with:
           version: ${{ github.event.inputs.version_number }}
 
-      - name: Set branch value
+      - name: "Set branch value"
         id: variables
         run: |
           echo "BRANCH_NAME=prep-release/${{ github.event.inputs.version_number }}_$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
-      - name: Create PR branch
+      - name: "Create PR branch"
         run: |
           git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
           git push origin ${{ steps.variables.outputs.BRANCH_NAME }}
           git branch --set-upstream-to=origin/${{ steps.variables.outputs.BRANCH_NAME }} ${{ steps.variables.outputs.BRANCH_NAME }}
 
-      - name: Bump version
+      - name: "Bump version"
         run: |
           source env/bin/activate
           pip install -r dev-requirements.txt
           env/bin/bumpversion --allow-dirty --new-version ${{ github.event.inputs.version_number }} major
           git status
 
-      - name: Run changie
+      - name: "Set json File Name"
+        id: json_file
+        run: |
+          echo "name=output_$GITHUB_RUN_ID.json" >> $GITHUB_OUTPUT
+
+      - name: "Get Core Team Membership"
+        run: |
+          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/Core/members > ${{ steps.json_file.outputs.name }}
+        env:
+          GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
+
+      - name: "Set Core Team Membership for Changie Contributors exclusion"
+        id: set_team_membership
+        run: |
+          team_list=$(jq -r '.[].login' ${{ steps.json_file.outputs.name }})
+          echo $team_list
+          team_list_single=$(echo $team_list | tr '\n' ' ')
+          echo "CHANGIE_CORE_TEAM=$team_list_single" >> $GITHUB_ENV
+
+      - name: "Delete the json File"
+        run: |
+          rm ${{ steps.json_file.outputs.name }}
+      
+      - name: "Run changie"
         run: |
           if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
           then
             changie batch ${{ steps.semver.outputs.base-version }}  --move-dir '${{ steps.semver.outputs.base-version }}' --prerelease '${{ steps.semver.outputs.pre-release }}'
-          else
+          elif [[ -d ".changes/${{ steps.semver.outputs.base-version }}" ]]  # releasing a final patch with prereleases
+          then
             changie batch ${{ steps.semver.outputs.base-version }}  --include '${{ steps.semver.outputs.base-version }}' --remove-prereleases
+          else # releasing a final patch with no prereleases
+            changie batch ${{ steps.semver.outputs.base-version }}
           fi
           changie merge
           git status
 
       # this step will fail on whitespace errors but also correct them
-      - name: Remove trailing whitespace
+      - name: "Remove trailing whitespace"
         continue-on-error: true
         run: |
           pre-commit run trailing-whitespace --files .bumpversion.cfg CHANGELOG.md .changes/*
           git status
 
       # this step will fail on newline errors but also correct them
-      - name: Removing extra newlines
+      - name: "Removing extra newlines"
         continue-on-error: true
         run: |
           pre-commit run end-of-file-fixer --files .bumpversion.cfg CHANGELOG.md .changes/*
           git status
 
-      - name: Commit version bump to branch
-        uses: EndBug/add-and-commit@v7
-        with:
-          author_name: "Github Build Bot"
-          author_email: "buildbot@fishtownanalytics.com"
-          message: "Bumping version to ${{ github.event.inputs.version_number }} and generate CHANGELOG"
-          branch: "${{ steps.variables.outputs.BRANCH_NAME }}"
-          push: "origin origin/${{ steps.variables.outputs.BRANCH_NAME }}"
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
+      - name: "Commit & Create Pull Request"
+        uses: peter-evans/create-pull-request@v4
         with:
           author: "Github Build Bot <buildbot@fishtownanalytics.com>"
           base: ${{github.ref}}
