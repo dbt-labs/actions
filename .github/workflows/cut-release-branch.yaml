@@ -125,17 +125,20 @@ jobs:
           message="New branch ${{ inputs.new_branch_name }} created"
           echo "::notice title="New branch created": $title::$message"
 
-      - name: "Bump dependencies via script"
-        # This bumps the dependency on dbt-core in the adapters
-        if: ${{ !contains(github.repository, 'dbt-core') }}
-        run: |
-          echo ${{ github.repository }}
-          echo "running some script yet to be written now"
-          scripts/update_dependencies.sh
-          git status
-          git add .
-          git commit -m "$commit_message"
-          git push
+      # TODO: need to add scripts into the adapters to automate bumping the core 
+      # dependency on the `*.latest` branch.  The script should also bump the 
+      # nightly release test branch to the new `*.latest` branch
+      # - name: "Bump dependencies via script"
+      #   # This bumps the dependency on dbt-core in the adapters
+      #   if: ${{ !contains(github.repository, 'dbt-core') }}
+      #   run: |
+      #     echo ${{ github.repository }}
+      #     echo "running some script yet to be written now"
+      #     scripts/update_dependencies.sh
+      #     git status
+      #     git add .
+      #     git commit -m "$commit_message"
+      #     git push
 
   create_temp_branch:
     name: "Create Temp branch off main"
