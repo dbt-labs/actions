@@ -103,7 +103,7 @@ jobs:
       - name: "Create New Release Branch"
         run: |
           git checkout -b ${{ inputs.new_branch_name }}
-
+      
       - name: "Push up New Branch"
         run: |
           #Data for commit
@@ -114,6 +114,12 @@ jobs:
           git config user.name "$user"
           git config user.email "$email"
           git push --set-upstream origin ${{ inputs.new_branch_name }}
+
+      - name: "[Notification] New branch created"
+        run: |
+          title="New branch created"
+          message="The ${{ inputs.new_branch_name }} branch created"
+          echo "::notice $title::$message"
 
       - name: "Bump dependencies via script"
         # This bumps the dependency on dbt-core in the adapters
@@ -138,7 +144,7 @@ jobs:
         id: variables
         run: |
           echo "BRANCH_NAME=cutting_release_branch/main_cleanup_$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
-
+      
       - name: "Checkout ${{ github.repository }}"
         uses: actions/checkout@v3
         with:
@@ -155,7 +161,13 @@ jobs:
         run: |
           current_version=$(grep current_version .bumpversion.cfg | sed 's/.*= //')
           echo "current_version=$current_version" >> $GITHUB_OUTPUT
-      
+
+      - name: "[Notification] Check Current Version In Code"
+        run: |
+          title="Current Version Check"
+          message="The current version is ${{ steps.determine_version.outputs.current_version }}"
+          echo "::notice $title::$message"
+
       - name: "Parse Current Version Into Parts for Changelog Directories"
         id: semver-current
         uses: dbt-labs/actions/parse-semver@v1
@@ -170,6 +182,12 @@ jobs:
           git config user.email "$email"
           git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
           git push --set-upstream origin ${{ steps.variables.outputs.BRANCH_NAME }}
+
+      - name: "[Notification] Temp branch created"
+        run: |
+          title="Temporary branch created"
+          message="Temp branch ${{ steps.variables.outputs.BRANCH_NAME }} created"
+          echo "::notice $title::$message"
 
       - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
         uses: actions/setup-python@v4
@@ -221,6 +239,13 @@ jobs:
       - name: "Cleanup CHANGELOG.md"
         run: |
           changie merge
+
+      - name: "[Notification] Changelog Cleaned Up"
+        if: needs.audit-changelog.outputs.exists == 'false'
+        run: |
+          title="Changelog"
+          message="Changelog cleaned up on main"
+          echo "::notice $title::$message"
 
       - name: "Commit Changelog Cleanup to Branch"
         run: |
