@@ -336,16 +336,17 @@ jobs:
       
       - name: "Open Pull Request"
         id: create_pr
-        uses: peter-evans/create-pull-request@v4
-        with:
-          token: ${{ secrets.FISHTOWN_BOT_PAT }}
-          author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
-          base: 'refs/heads/main'
-          title: "${{ steps.pr_title.outputs.pr_title }}"
-          body: "${{ steps.pr_body_branch.outputs.pr_full_body }}"
-          branch: "${{ needs.create_temp_branch.outputs.temp_branch_name }}"
-          labels: |
-            Skip Changelog
+        run: |
+          gh pr create -B main -H ${{ needs.create_temp_branch.outputs.temp_branch_name }} -l "Skip Changelog" -t "${{ steps.pr_title.outputs.pr_title }}" -b "${{ steps.pr_body_branch.outputs.pr_full_body }}"
+        # with:
+        #   token: ${{ secrets.FISHTOWN_BOT_PAT }}
+        #   author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
+        #   base: 'refs/heads/main'
+        #   title: "${{ steps.pr_title.outputs.pr_title }}"
+        #   body: "${{ steps.pr_body_branch.outputs.pr_full_body }}"
+        #   branch: "${{ needs.create_temp_branch.outputs.temp_branch_name }}"
+        #   labels: |
+        #     Skip Changelog
       
       - name: "[DEBUG] Pull Request URL"
         run:
