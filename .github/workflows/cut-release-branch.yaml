@@ -119,9 +119,8 @@ jobs:
 
       - name: "[Notification] New branch created"
         run: |
-          title="New branch created"
-          message="The ${{ inputs.new_branch_name }} branch created"
-          echo "::notice $title::$message"
+          message="New branch ${{ inputs.new_branch_name }} created"
+          echo "::notice title="New branch created": $title::$message"
 
       - name: "Bump dependencies via script"
         # This bumps the dependency on dbt-core in the adapters
@@ -164,9 +163,8 @@ jobs:
 
       - name: "[Notification] Temp branch created"
         run: |
-          title="Temporary branch created"
           message="Temp branch ${{ steps.variables.outputs.BRANCH_NAME }} created"
-          echo "::notice $title::$message"
+          echo "::notice title="Temporary branch created": $title::$message"
 
   bump_version:
     needs: ['create_temp_branch']
@@ -213,6 +211,11 @@ jobs:
           git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
           git push
 
+      - name: "[Notification] Version Bump completed"
+        run: |
+          message="Version on ${{ needs.create_temp_branch.outputs.temp_branch_name }} bumped to ${{ inputs.version_to_bump_main }}"
+          echo "::notice title="Version Bump Completed": $title::$message"
+
   cleanup_changelog:
     needs: ['bump_version', 'create_temp_branch']
     runs-on: ubuntu-latest
@@ -243,9 +246,8 @@ jobs:
 
       - name: "[Notification] Check Current Version In Code"
         run: |
-          title="Current Version Check"
           message="The current version is ${{ steps.determine_version.outputs.current_version }}"
-          echo "::notice $title::$message"
+          echo "::notice title="Version Bump Check": $title::$message"
 
       - name: "Parse Current Version Into Parts for Changelog Directories"
         id: semver-current
@@ -270,13 +272,6 @@ jobs:
         run: |
           changie merge
 
-      - name: "[Notification] Changelog Cleaned Up"
-        if: needs.audit-changelog.outputs.exists == 'false'
-        run: |
-          title="Changelog"
-          message="Changelog cleaned up on main"
-          echo "::notice $title::$message"
-
       - name: "Commit Changelog Cleanup to Branch"
         run: |
           user="Github Build Bot"
@@ -286,6 +281,11 @@ jobs:
           git add .
           git commit -m "Clean up changelog on main"
           git push
+
+      - name: "[Notification] Changelog cleaned up"
+        run: |
+          message="Changelog on ${{ needs.create_temp_branch.outputs.temp_branch_name }} cleaned up"
+          echo "::notice title="Changelog cleaned up": $title::$message"
 
   open_pr:
     needs: ['cleanup_changelog', 'create_temp_branch']
@@ -320,7 +320,7 @@ jobs:
       - name: "Add Branch Details"
         id: pr_body_branch
         run: |
-          branch_details="This PR also created a new branch: ${{ inputs.new_branch_name }}"
+          branch_details="The workflow that generated this PR also created a new branch: ${{ inputs.new_branch_name }}"
           full_body="${{ steps.pr_body.outputs.pr_body }} $branch_details"
           echo "pr_full_body=$full_body" >> $GITHUB_OUTPUT
       
@@ -332,10 +332,15 @@ jobs:
           base: 'main'
           title: "${{ steps.pr_title.outputs.pr_title }}"
           body: "${{ steps.pr_body_branch.outputs.pr_full_body }}"
-          branch: '${{ steps.variables.outputs.BRANCH_NAME }}'
+          branch: '${{ needs.create_temp_branch.outputs.temp_branch_name }}'
           labels: |
             Skip Changelog
       
       - name: "[DEBUG] Pull Request URL"
         run:
           echo "PR opened at ${{ steps.create_pr.outputs.pull-request-url }}"
+
+      - name: "[Notification] Pull Request Opened"
+        run: |
+          message="PR opened at ${{ steps.create_pr.outputs.pull-request-url }}"
+          echo "::notice title="Pull Request Opened": $title::$message"
