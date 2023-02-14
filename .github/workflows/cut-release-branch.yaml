@@ -95,11 +95,13 @@ jobs:
       - name: "Ensure New Branch Does Not Exist"
         id: check_new_branch
         run: |
+          title="Check New Branch Existence"
           if git show-ref --quiet refs/heads/${{ inputs.new_branch_name }}; then
-            echo "Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
+            message="Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
+            echo "::error $title::$message"
             exit 1
           fi
-      
+
       - name: "Create New Release Branch"
         run: |
           git checkout -b ${{ inputs.new_branch_name }}
@@ -132,11 +134,11 @@ jobs:
           git commit -m "$commit_message"
           git push
 
-  cleanup_main:
+  create_temp_branch:
     needs: ['cut_branch']
     runs-on: ubuntu-latest
     outputs:
-      pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
+      temp_branch_name: ${{ steps.variables.outputs.BRANCH_NAME }}
 
     steps:
 
@@ -150,29 +152,6 @@ jobs:
         with:
           ref: "main"
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
-
-      - name: "Install Spark Dependencies"
-        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
-        run: |
-          sudo apt-get install libsasl2-dev
-
-      - name: "Check Current Version In Code"
-        id: determine_version
-        run: |
-          current_version=$(grep current_version .bumpversion.cfg | sed 's/.*= //')
-          echo "current_version=$current_version" >> $GITHUB_OUTPUT
-
-      - name: "[Notification] Check Current Version In Code"
-        run: |
-          title="Current Version Check"
-          message="The current version is ${{ steps.determine_version.outputs.current_version }}"
-          echo "::notice $title::$message"
-
-      - name: "Parse Current Version Into Parts for Changelog Directories"
-        id: semver-current
-        uses: dbt-labs/actions/parse-semver@v1
-        with:
-          version: ${{ steps.determine_version.outputs.current_version }}
 
       - name: "Create PR Branch"
         run: |
@@ -189,10 +168,27 @@ jobs:
           message="Temp branch ${{ steps.variables.outputs.BRANCH_NAME }} created"
           echo "::notice $title::$message"
 
+  bump_version:
+    needs: ['create_temp_branch']
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
       - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_TARGET_VERSION }}
+
+      - name: "Install Spark Dependencies"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          sudo apt-get install libsasl2-dev
 
       - name: "Install Python Dependencies"
         run: |
@@ -213,6 +209,18 @@ jobs:
           git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
           git push
 
+  cleanup_changelog:
+    needs: ['bump_version', 'create_temp_branch']
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
       - name: "Add Homebrew To PATH"
         run: |
           echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
@@ -222,6 +230,24 @@ jobs:
           brew install pre-commit
           brew tap miniscruff/changie https://github.com/miniscruff/changie
           brew install changie
+
+      - name: "Check Current Version In Code"
+        id: determine_version
+        run: |
+          current_version=$(grep current_version .bumpversion.cfg | sed 's/.*= //')
+          echo "current_version=$current_version" >> $GITHUB_OUTPUT
+
+      - name: "[Notification] Check Current Version In Code"
+        run: |
+          title="Current Version Check"
+          message="The current version is ${{ steps.determine_version.outputs.current_version }}"
+          echo "::notice $title::$message"
+
+      - name: "Parse Current Version Into Parts for Changelog Directories"
+        id: semver-current
+        uses: dbt-labs/actions/parse-semver@v1
+        with:
+          version: ${{ steps.determine_version.outputs.current_version }}
 
       - name: "Delete Unreleased Changelog YAMLs"
         # removal fails if no files exist. OK to continue since we're just cleaning up the files.
@@ -252,6 +278,20 @@ jobs:
           git add .
           git commit -m "Clean up changelog on main"
           git push
+
+  open_pr:
+    needs: ['cleanup_changelog', 'create_temp_branch']
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
+
+    steps:
+
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
       - name: "Determine PR Title"
         id: pr_title
