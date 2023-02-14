@@ -236,15 +236,15 @@ jobs:
           ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-      # - name: "Add Homebrew To PATH"
-      #   run: |
-      #     echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+      - name: "Add Homebrew To PATH"
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
 
-      # - name: "Install Homebrew Packages"
-      #   run: |
-      #     brew install pre-commit
-      #     brew tap miniscruff/changie https://github.com/miniscruff/changie
-      #     brew install changie
+      - name: "Install Homebrew Packages"
+        run: |
+          brew install pre-commit
+          brew tap miniscruff/changie https://github.com/miniscruff/changie
+          brew install changie
 
       - name: "Check Current Version In Code"
         id: determine_version
@@ -276,15 +276,9 @@ jobs:
           rm .changes/${{ steps.semver-current.outputs.base-version }}/*.yaml
           rm .changes/${{ steps.semver-current.outputs.major }}.${{ steps.semver-current.outputs.minor }}.*.md
 
-      # - name: "Cleanup CHANGELOG.md"
-      #   run: |
-      #     changie merge
-      - name: "Generate new CHANGELOG.md"
-        uses: miniscruff/changie-action@v1
-        with:
-          version: latest
-          args: merge
-          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+      - name: "Cleanup CHANGELOG.md"
+        run: |
+          changie merge
 
       - name: "Commit Changelog Cleanup to Branch"
         run: |
