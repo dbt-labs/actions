@@ -22,7 +22,6 @@
 #    with:
 #      version_to_bump_main: 1.3.0a1
 #      new_branch_name: 1.2.latest
-#      repository: dbt-snowflake
 #    secrets: 
 #      FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
 
@@ -41,9 +40,6 @@ on:
         description: 'The full name of the new branch (ex. 1.5.latest)'
         required: true
         type: string
-      repository:
-        required: true
-        type: string
       PR_title:
         required: false
         type: string
@@ -56,27 +52,8 @@ on:
         value: ${{ jobs.cleanup_main.outputs.pr_number }}
     secrets:
       FISHTOWN_BOT_PAT:
-        description: "PAT that allows commits, creating branches and opening PRs so the repository"
+        description: "PAT that allows commits, creating branches and opening PRs"
         required: true
-
-  workflow_dispatch:
-    inputs:
-      version_to_bump_main:
-        description: 'The alpha version main should bump to (ex. 1.6.0a1)'
-        required: true
-      new_branch_name:
-        description: 'The full name of the new branch (ex. 1.5.latest)'
-        required: true
-      repository:
-        description: "Repository to create new branch and cleanup main:"
-        required: true
-        type: choice
-        options:
-        - 'dbt-core'
-        - 'dbt-snowflake'
-        - 'dbt-redshift'
-        - 'dbt-bigquery'
-        - 'dbt-spark' 
 
 defaults:
   run:
@@ -85,8 +62,12 @@ defaults:
 permissions:
   contents: write
 
+env:
+  PYTHON_TARGET_VERSION: 3.8
+
 jobs:
   prep_work:
+    name: "Audit Inputs"
     runs-on: ubuntu-latest
     steps:
       - name: "[DEBUG] Print Inputs"
@@ -100,38 +81,35 @@ jobs:
         with:
           version: ${{ inputs.version_to_bump_main }}
 
-  cut_branch:
+  cut_new_branch:
+    name: "Cut New Branch ${{ inputs.new_branch_name }}"
     needs: ['prep_work']
     runs-on: ubuntu-latest
 
     steps:
 
-      - name: "Checkout ${{ inputs.repository }} repository"
-        uses: actions/checkout@v4
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
         with:
-          repository: ${{ inputs.repository }}
           ref: "main"
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
+          fetch-depth: 2
 
       - name: "Ensure New Branch Does Not Exist"
         id: check_new_branch
         run: |
+          title="Check New Branch Existence"
           if git show-ref --quiet refs/heads/${{ inputs.new_branch_name }}; then
-            echo "Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
+            message="Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
+            echo "::error $title::$message"
             exit 1
           fi
-      
+
       - name: "Create New Release Branch"
         run: |
           git checkout -b ${{ inputs.new_branch_name }}
-
-      - name: "Bump dependencies via script"
-        if: repo != dbt-core
-        run: |
-          echo "running some script yet to be written now"
-          scripts/update_dependencies.sh
-
-      - name: "Commit & Push Changes"
+      
+      - name: "Push up New Branch"
         run: |
           #Data for commit
           user="Github Build Bot"
@@ -140,42 +118,47 @@ jobs:
           #Commit changes to branch
           git config user.name "$user"
           git config user.email "$email"
-          git pull
-          git add .
-          git commit -m "$commit_message"
           git push --set-upstream origin ${{ inputs.new_branch_name }}
 
-  cleanup_main:
-    needs: ['cut_branch']
+      - name: "[Notification] New branch created"
+        run: |
+          message="New branch ${{ inputs.new_branch_name }} created"
+          echo "::notice title="New branch created": $title::$message"
+
+      # TODO: need to add scripts into the adapters to automate bumping the core 
+      # dependency on the `*.latest` branch.  The script should also bump the 
+      # nightly release test branch to the new `*.latest` branch
+      # - name: "Bump dependencies via script"
+      #   # This bumps the dependency on dbt-core in the adapters
+      #   if: ${{ !contains(github.repository, 'dbt-core') }}
+      #   run: |
+      #     echo ${{ github.repository }}
+      #     echo "running some script yet to be written now"
+      #     scripts/update_dependencies.sh
+      #     git status
+      #     git add .
+      #     git commit -m "$commit_message"
+      #     git push
+
+  create_temp_branch:
+    name: "Create Temp branch off main"
+    needs: ['cut_new_branch']
     runs-on: ubuntu-latest
     outputs:
-      pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
+      temp_branch_name: ${{ steps.variables.outputs.BRANCH_NAME }}
 
     steps:
 
       - name: "Set Branch Value"
         id: variables
         run: |
-          echo "BRANCH_NAME=cutting_release_branch/main_cleanup" >> $GITHUB_OUTPUT
-
-      - name: "Checkout ${{ inputs.repository }} Repository"
-        uses: actions/checkout@v4.3.0
+          echo "BRANCH_NAME=cutting_release_branch/main_cleanup_$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+      
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
         with:
-          repository: ${{ inputs.repository }}
           ref: "main"
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
-
-      - name: "Check Current Version In Code"
-        id: determine_version
-        run: |
-          current_version=$(grep current_version .bumpversion.cfg | sed 's/.*= //')
-          echo "current_version=$current_version" >> $GITHUB_OUTPUT
-      
-      - name: "Parse Current Version Into Parts for Changelog Directories"
-        id: semver-current
-        uses: dbt-labs/actions/parse-semver@v1
-        with:
-          version: ${{ steps.determine_version.outputs.current_version }}
 
       - name: "Create PR Branch"
         run: |
@@ -183,22 +166,82 @@ jobs:
           email="buildbot@fishtownanalytics.com"
           git config user.name "$user"
           git config user.email "$email"
-          git checkout -b ${{ steps.variables.output.BRANCH_NAME }}
-          git push origin ${{ steps.variables.output.BRANCH_NAME }}
-          git branch --set-upstream-to=origin/${{ steps.variables.output.BRANCH_NAME }} ${{ steps.variables.output.BRANCH_NAME }}
+          git checkout -b ${{ steps.variables.outputs.BRANCH_NAME }}
+          git push --set-upstream origin ${{ steps.variables.outputs.BRANCH_NAME }}
 
-      - name: "Bump Version"
+      - name: "[Notification] Temp branch created"
+        run: |
+          message="Temp branch ${{ steps.variables.outputs.BRANCH_NAME }} created"
+          echo "::notice title="Temporary branch created": $title::$message"
+
+  bump_version:
+    name: "Bump to version ${{ inputs.version_to_bump_main }}"
+    needs: ['create_temp_branch']
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_TARGET_VERSION }}
+
+      - name: "Install Spark Dependencies"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          sudo apt-get install libsasl2-dev
+
+      - name: "Install Python Dependencies"
+        run: |
+          python -m venv env
+          source env/bin/activate
+          python -m pip install --upgrade pip
+
+      - name: "Bump Version To ${{ inputs.version_to_bump_main }}"
         run: |
           source env/bin/activate
-          pip install -r dev-requirements.txt
+          python -m pip install -r dev-requirements.txt
           env/bin/bumpversion --allow-dirty --new-version ${{ inputs.version_to_bump_main }} major
           git status
 
       - name: "Commit Version Bump to Branch"
         run: |
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          git config user.name "$user"
+          git config user.email "$email"
+          git status
           git add .
           git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
           git push
+
+      - name: "[Notification] Version Bump completed"
+        run: |
+          message="Version on ${{ needs.create_temp_branch.outputs.temp_branch_name }} bumped to ${{ inputs.version_to_bump_main }}"
+          echo "::notice title="Version Bump Completed": $title::$message"
+
+  cleanup_changelog:
+    name: "Clean Up Changelog"
+    needs: ['bump_version', 'create_temp_branch']
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      - name: "Add Homebrew To PATH"
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
 
       - name: "Install Homebrew Packages"
         run: |
@@ -206,40 +249,32 @@ jobs:
           brew tap miniscruff/changie https://github.com/miniscruff/changie
           brew install changie
 
-      - name: "Check if Any Unreleased Changelog Files Exists"
-        shell: bash
-        id: unreleased_changelog_check
+      - name: "Check Current Version In Code"
+        id: determine_version
         run: |
-          git fetch origin ${{ inputs.sha }}
-          if echo grep '.changes/unreleased/.*.yaml'; then
-            echo "unreleased_exists=true" >> $GITHUB_OUTPUT
-            echo "Unreleased changelogs exist for this PR, they will be deleted"
-          else
-            echo "unreleased_exists=false" >> $GITHUB_OUTPUT
-            echo "No unreleased changelog exists for this PR, nothing to delete"
-          fi
+          current_version=$(grep current_version .bumpversion.cfg | sed 's/.*= //')
+          echo "current_version=$current_version" >> $GITHUB_OUTPUT
 
-      - name: "Check if Any Prerelease Changelog Files Exists"
-        # prerelease changelog files will be under the current version, not the version we just bumped to
-        shell: bash
-        id: prerelease_changelog_check
+      - name: "[Notification] Check Current Version In Code"
         run: |
-          git fetch origin ${{ inputs.sha }}
-          if echo grep '.changes/${{ steps.semver-current.outputs.base-version }}/.*.yaml'; then
-            echo "prerelease_exists=true" >> $GITHUB_OUTPUT
-            echo "Changelogs exist for this PR, delete them now"
-          else
-            echo "prerelease_exists=false" >> $GITHUB_OUTPUT
-            echo "No prerelease changelogs exists for this PR, nothing to delete"
-          fi
+          message="The current version is ${{ steps.determine_version.outputs.current_version }}"
+          echo "::notice title="Version Bump Check": $title::$message"
+
+      - name: "Parse Current Version Into Parts for Changelog Directories"
+        id: semver-current
+        uses: dbt-labs/actions/parse-semver@v1
+        with:
+          version: ${{ steps.determine_version.outputs.current_version }}
 
       - name: "Delete Unreleased Changelog YAMLs"
-        if: ${{ steps.unreleased_changelog_check.outputs.unreleased_exists }} = true
+        # removal fails if no files exist. OK to continue since we're just cleaning up the files.
+        continue-on-error: true
         run: |
           rm .changes/unreleased/*.yaml
 
       - name: "Delete Pre Release Changelogs and YAMLs"
-        if: ${{ steps.prerelease_changelog_check.outputs.prerelease_exists }} = true
+        # removal fails if no files exist. OK to continue since we're just cleaning up the files.
+        continue-on-error: true
         run: |
           rm .changes/${{ steps.semver-current.outputs.base-version }}/*.yaml
           rm .changes/${{ steps.semver-current.outputs.major }}.${{ steps.semver-current.outputs.minor }}.*.md
@@ -250,34 +285,67 @@ jobs:
 
       - name: "Commit Changelog Cleanup to Branch"
         run: |
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          git config user.name "$user"
+          git config user.email "$email"
+          git status
           git add .
           git commit -m "Clean up changelog on main"
           git push
+
+      - name: "[Notification] Changelog cleaned up"
+        run: |
+          message="Changelog on ${{ needs.create_temp_branch.outputs.temp_branch_name }} cleaned up"
+          echo "::notice title="Changelog cleaned up": $title::$message"
+
+  open_pr:
+    name: "Open PR Against main"
+    needs: ['cleanup_changelog', 'create_temp_branch']
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
+
+    steps:
+
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
       - name: "Determine PR Title"
         id: pr_title
         run: |
           echo "pr_title=${{ inputs.PR_title }}" >> $GITHUB_OUTPUT
-          if ${{ inputs.PR_title }} == ""; then
+          if [${{ inputs.PR_title }} == ""]; then
             echo "pr_title='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
-          else
+          fi
 
       - name: "Determine PR Body"
         id: pr_body
         run: |
           echo "pr_body=${{ inputs.PR_body }}" >> $GITHUB_OUTPUT
-          if ${{ inputs.PR_body }} == ""; then
+          if [${{ inputs.PR_body }} == ""]; then
             echo "pr_body='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
-          else
+          fi
+
+      - name: "Add Branch Details"
+        id: pr_body_branch
+        run: |
+          branch_details="The workflow that generated this PR also created a new branch: ${{ inputs.new_branch_name }}"
+          full_body="${{ steps.pr_body.outputs.pr_body }} $branch_details"
+          echo "pr_full_body=$full_body" >> $GITHUB_OUTPUT
       
-      - name: "Create Pull Request"
+      - name: "Open Pull Request"
         id: create_pr
-        uses: peter-evans/create-pull-request@v3
-        with:
-          author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
-          base: ${{github.ref}}
-          title: "${{ steps.pr_title.outputs.pr_title }}"
-          body: "${{ steps.pr_body.outputs.pr_body }}"
-          branch: '${{ steps.variables.output.BRANCH_NAME }}'
-          labels: |
-            Skip Changelog
+        run: |
+          pr_url=$(gh pr create -B main -H ${{ needs.create_temp_branch.outputs.temp_branch_name }} -l "Skip Changelog" -t "${{ steps.pr_title.outputs.pr_title }}" -b "${{ steps.pr_body_branch.outputs.pr_full_body }}")
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+      
+      - name: "[Notification] Pull Request Opened"
+        run: |
+          message="PR opened at ${{ steps.create_pr.outputs.pr_url }}"
+          echo "::notice title="Pull Request Opened": $title::$message"
