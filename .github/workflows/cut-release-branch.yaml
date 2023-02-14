@@ -80,7 +80,7 @@ jobs:
         with:
           version: ${{ inputs.version_to_bump_main }}
 
-  cut_branch:
+  cut_new_branch:
     needs: ['prep_work']
     runs-on: ubuntu-latest
 
@@ -129,12 +129,13 @@ jobs:
           echo ${{ github.repository }}
           echo "running some script yet to be written now"
           scripts/update_dependencies.sh
+          git status
           git add .
           git commit -m "$commit_message"
           git push
 
   create_temp_branch:
-    needs: ['cut_branch']
+    needs: ['cut_new_branch']
     runs-on: ubuntu-latest
     outputs:
       temp_branch_name: ${{ steps.variables.outputs.BRANCH_NAME }}
@@ -207,6 +208,7 @@ jobs:
           email="buildbot@fishtownanalytics.com"
           git config user.name "$user"
           git config user.email "$email"
+          git status
           git add .
           git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
           git push
@@ -278,6 +280,7 @@ jobs:
           email="buildbot@fishtownanalytics.com"
           git config user.name "$user"
           git config user.email "$email"
+          git status
           git add .
           git commit -m "Clean up changelog on main"
           git push
@@ -300,6 +303,10 @@ jobs:
         with:
           ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      - name: "[DEBUG] Git Diff"
+        run: |
+          git diff main..${{ needs.create_temp_branch.outputs.temp_branch_name }}
 
       - name: "Determine PR Title"
         id: pr_title
@@ -326,9 +333,11 @@ jobs:
       
       - name: "Open Pull Request"
         id: create_pr
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         with:
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
           author: 'Github Build Bot <buildbot@fishtownanalytics.com>'
+          committer: 'Github Build Bot <buildbot@fishtownanalytics.com>'
           base: 'main'
           title: "${{ steps.pr_title.outputs.pr_title }}"
           body: "${{ steps.pr_body_branch.outputs.pr_full_body }}"
