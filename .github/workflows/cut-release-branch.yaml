@@ -284,6 +284,7 @@ jobs:
         with:
           version: latest
           args: merge
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
       - name: "Commit Changelog Cleanup to Branch"
         run: |
