@@ -171,7 +171,7 @@ jobs:
 
       - name: "[DEBUG] Git Diff"
         run: |
-          git diff --name-only main..${{ steps.variables.outputs.temp_branch_name }}
+          git diff --name-only origin/main origin/${{ steps.variables.outputs.temp_branch_name }}
 
   bump_version:
     needs: ['create_temp_branch']
@@ -227,7 +227,7 @@ jobs:
 
       - name: "[DEBUG] Git Diff"
         run: |
-          git diff --name-only main..${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          git diff --name-only origin/main origin/${{ needs.create_temp_branch.outputs.temp_branch_name }}
 
   cleanup_changelog:
     needs: ['bump_version', 'create_temp_branch']
@@ -304,7 +304,7 @@ jobs:
 
       - name: "[DEBUG] Git Diff"
         run: |
-          git diff --name-only main..${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          git diff --name-only origin/main origin/${{ needs.create_temp_branch.outputs.temp_branch_name }}
 
   open_pr:
     needs: ['cleanup_changelog', 'create_temp_branch']
@@ -323,7 +323,7 @@ jobs:
 
       - name: "[DEBUG] Git Diff"
         run: |
-          git diff --name-only main..${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          git diff --name-only origin/main origin/${{ needs.create_temp_branch.outputs.temp_branch_name }}
 
       - name: "Determine PR Title"
         id: pr_title
