@@ -54,12 +54,15 @@ jobs:
           echo "name=$name" >> $GITHUB_OUTPUT
 
   pip-installation-test:
-    runs-on: macos-latest
+    name: verify pip install / python ${{ matrix.python-version }} / ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
     needs: generate-artifact-name
 
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
