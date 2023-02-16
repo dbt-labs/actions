@@ -54,7 +54,7 @@ jobs:
           echo "name=$name" >> $GITHUB_OUTPUT
 
   pip-installation-test:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     needs: generate-artifact-name
 
     strategy:
