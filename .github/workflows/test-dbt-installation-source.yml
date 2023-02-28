@@ -88,6 +88,11 @@ jobs:
       matrix:
         branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
         python-version: ["3.7", "3.8", "3.9", "3.10"]
+        exclude:
+          - branch: "1.0.latest"
+            python-version: 3.9
+          - branch: "1.0.latest"
+            python-version: 3.10
 
     steps:
       - name: "Resolve Repository"
