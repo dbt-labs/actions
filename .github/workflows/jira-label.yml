@@ -40,7 +40,7 @@ jobs:
     outputs:
       issueId: ${{ steps.extract.outputs.issueId }}
     steps:
-      - name: Extract Jira issue ID from title
+      - name: "Extract Jira issue ID from title"
         id: extract
         env:
           TITLE: "${{ github.event.issue.title }}"
@@ -48,9 +48,23 @@ jobs:
           issueId=$(echo -n $TITLE | awk '{print $1}' | awk -F'[][]' '{print $2}')
           echo "issueId=${issueId}" >> $GITHUB_OUTPUT
 
+      - name: "Notify Issue ID"
+        run: |
+          # Send notification
+          title="Jira Issue ID on GitHub Issue"
+          if [${{ steps.extract.outputs.issueId }} != '']
+          then
+            message="Jira issue ${{ steps.extract.outputs.issueId }}"
+          else
+            message="Jira issue id could not be verified.  Labels cannot be synced."
+          fi
+          echo "::notice title=$title::$message"
+
   edit-label:
     runs-on: ubuntu-latest
     needs: extract-id
+    # don't run this if the title didn't have an issue id in it, there's nothing to sync
+    if: needs.extract-id.outputs.issueId != ''
     env:
       JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
       JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
@@ -64,10 +78,10 @@ jobs:
           echo "Issue ID:            ${{ needs.extract-id.outputs.issueId }}"
 
       - name: Setup Jira
-        uses: atlassian/gajira-cli@v2.0.2
+        uses: atlassian/gajira-cli@v3
 
       - name: Login
-        uses: atlassian/gajira-login@v2.0.0
+        uses: atlassian/gajira-login@v3
 
       - name: Add label
         if: github.event.action == 'labeled'
