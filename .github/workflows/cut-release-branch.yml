@@ -137,11 +137,12 @@ jobs:
           git push
 
       - name: "Bump env variable via script"
-      # bumps the RELEASE_BRANCH variable in nightly-release.yml
+        # bumps the RELEASE_BRANCH variable in nightly-release.yml in adapters
+        if: ${{ !contains(github.repository, 'dbt-core') }}
         run: |
           echo ${{ github.repository }}
           echo "running some script yet to be written now"
-          scripts/update_nightly_release.sh ${{ inputs.new_branch_name }}
+          scripts/update_release_branch.sh ${{ inputs.new_branch_name }}
           commit_message="updating env variable to ${{ inputs.new_branch_name }} in nightly-release.yml"
           git status
           git add .
