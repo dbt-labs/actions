@@ -129,8 +129,7 @@ jobs:
         run: |
           echo ${{ github.repository }}
           echo "running update_dependencies script"
-          chmod +x ./github/scripts/update_dependencies.sh
-          ./github/scripts/update_dependencies.sh ${{ inputs.new_branch_name }}
+          bash ./github/scripts/update_dependencies.sh ${{ inputs.new_branch_name }}
           commit_message="bumping .latest branch variable in update_dependencies.sh to ${{ inputs.new_branch_name }}"
           git status
           git add .
@@ -143,8 +142,7 @@ jobs:
         run: |
           echo ${{ github.repository }}
           echo "running some script yet to be written now"
-          chmod +x ./github/scripts/update_release_branch.sh
-          ./github/scripts/update_release_branch.sh ${{ inputs.new_branch_name }}
+          bash ./github/scripts/update_release_branch.sh ${{ inputs.new_branch_name }}
           commit_message="updating env variable to ${{ inputs.new_branch_name }} in nightly-release.yml"
           git status
           git add .
