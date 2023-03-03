@@ -98,7 +98,7 @@ jobs:
         id: check_new_branch
         run: |
           title="Check New Branch Existence"
-          if git show-ref --verify refs/heads/${{ inputs.new_branch_name }}; then
+          if git show-ref --verify --quiet refs/heads/${{ inputs.new_branch_name }}; then
             message="Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
             echo "::error $title::$message"
             exit 1
