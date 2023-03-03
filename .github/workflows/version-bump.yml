@@ -44,6 +44,7 @@ jobs:
       - name: "Install spark dependencies"
         if: (( github.repository == 'dbt-labs/dbt-spark' ))
         run: |
+          sudo apt-get update
           sudo apt-get install libsasl2-dev
 
       - name: "Install python dependencies"
