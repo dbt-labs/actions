@@ -137,7 +137,7 @@ jobs:
 
       - name: "Bump env variable via script"
         # bumps the RELEASE_BRANCH variable in nightly-release.yml in adapters
-        if: ${{ !contains('["dbt-core", "dbt-spark"]', github.repository) }}
+        if: ${{ !contains(github.repository, 'dbt-core') && !endwith(github.repository, 'spark') }}
         run: |
           echo ${{ github.repository }}
           echo "running some script yet to be written now"
