@@ -140,6 +140,7 @@ jobs:
         if: ${{ !contains(github.repository, 'dbt-core') }}
         run: |
           file = "./.github/scripts/update_release_branch.sh"
+          message= "running on circle ci"
           if test -f $file; then
             echo ${{ github.repository }}
             echo "running some script yet to be written now"
@@ -149,6 +150,8 @@ jobs:
             git add .
             git commit -m "$commit_message"
             git push
+          else
+            echo "::notice title="No ENV to update": $title::$message"
           fi
 
   create_temp_branch:
