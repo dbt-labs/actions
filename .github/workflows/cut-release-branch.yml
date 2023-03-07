@@ -137,17 +137,21 @@ jobs:
 
       - name: "Bump env variable via script"
         # bumps the RELEASE_BRANCH variable in nightly-release.yml in adapters
-        if: ${{ !contains(github.repository, 'dbt-core') && !endsWith(github.repository, 'spark') }}
+        if: ${{ !contains(github.repository, 'dbt-core') }}
         run: |
-          echo ${{ github.repository }}
-          echo "running some script yet to be written now"
-          bash ${GITHUB_WORKSPACE}/.github/scripts/update_release_branch.sh ${{ inputs.new_branch_name }}
-          commit_message="updating env variable to ${{ inputs.new_branch_name }} in nightly-release.yml"
-          git status
-          git add .
-          git commit -m "$commit_message"
-          git push
-
+          file="./.github/scripts/update_release_branch.sh"
+          if test -f "$file"; then
+            echo ${{ github.repository }}
+            echo "running some script yet to be written now"
+            bash ${GITHUB_WORKSPACE}/.github/scripts/update_release_branch.sh ${{ inputs.new_branch_name }}
+            commit_message="updating env variable to ${{ inputs.new_branch_name }} in nightly-release.yml"
+            git status
+            git add .
+            git commit -m "$commit_message"
+            git push
+          else
+            echo "no $file seen skipping step"
+          fi
 
   create_temp_branch:
     name: "Create Temp branch off main"
