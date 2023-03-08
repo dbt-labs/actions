@@ -143,7 +143,7 @@ jobs:
           if test -f "$file"; then
             echo ${{ github.repository }}
             echo "running some script yet to be written now"
-            bash ${GITHUB_WORKSPACE}/.github/scripts/update_release_branch.sh ${{ inputs.new_branch_name }}
+            bash $file ${{ inputs.new_branch_name }}
             commit_message="updating env variable to ${{ inputs.new_branch_name }} in nightly-release.yml"
             git status
             git add .
