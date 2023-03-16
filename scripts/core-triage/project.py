@@ -33,6 +33,7 @@ ISSUE_LABELS = [
     "Team:Language",
     "Team:Execution",
     "Team:Adapters",
+    "internal_tooling",
 ]
 # prs added by label individually TODO: unused, add label filtering
 PR_LABELS = ["ready_for_review"]
