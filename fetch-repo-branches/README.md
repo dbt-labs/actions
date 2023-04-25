@@ -10,13 +10,13 @@ on: push
 jobs:
   fetch-latest-branches:
     runs-on: ubuntu-latest
-    
+
     outputs:
       latest-branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
-    
+
     steps:
-      - uses: actions/checkout@v2
-      
+      - uses: actions/checkout@v3
+
       - name: "Fetch ${{ inputs.package_name }} Protected Branches Metadata"
         uses: dbt-labs/actions/fetch-repo-branches
         id: get-latest-branches
@@ -32,7 +32,7 @@ jobs:
       - name: "Display Latest Branches"
         run: |
           echo repo latest branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
-      
+
     dynamic-matrix:
       runs-on: ubuntu-latest
       needs: fetch-latest-branches
@@ -41,7 +41,7 @@ jobs:
         fail-fast: false
         matrix:
           branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
-      
+
       steps:
         - name: "Display Branch Name"
           run: |

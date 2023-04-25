@@ -11,7 +11,7 @@ jobs:
   parse:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Get Package Info
         id: package-info
         uses: dbt-labs/actions/py-package-info

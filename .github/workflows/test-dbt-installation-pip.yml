@@ -98,10 +98,10 @@ jobs:
         run: |
           file="test-${{ inputs.package_name }}-${{ strategy.job-index }}-python-v${{ matrix.python-version }}.json"
           # Create file
-          touch $file 
+          touch $file
           # Write job status to file
           echo $JOB_STATUS >> $file
-          # Set path to file for subsequent steps          
+          # Set path to file for subsequent steps
           echo "path=$file" >> $GITHUB_OUTPUT
         env:
           JOB_STATUS: ${{ toJson(job.status) }}

@@ -109,7 +109,7 @@ jobs:
       - name: "Delete the json File"
         run: |
           rm ${{ steps.json_file.outputs.name }}
-      
+
       - name: "Run changie"
         run: |
           if [[ ${{ steps.semver.outputs.is-pre-release }} -eq 1 ]]
@@ -139,7 +139,7 @@ jobs:
           git status
 
       - name: "Commit & Create Pull Request"
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           author: "Github Build Bot <buildbot@fishtownanalytics.com>"
           base: ${{github.ref}}
