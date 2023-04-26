@@ -64,10 +64,10 @@ jobs:
           echo "Issue ID:            ${{ needs.extract-id.outputs.issueId }}"
 
       - name: Setup Jira
-        uses: atlassian/gajira-cli@v2.0.2
+        uses: atlassian/gajira-cli@v3
 
       - name: Login
-        uses: atlassian/gajira-login@v2.0.0
+        uses: atlassian/gajira-login@v3
 
       - name: Add label
         if: github.event.action == 'labeled'

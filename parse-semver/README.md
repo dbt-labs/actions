@@ -11,7 +11,7 @@ jobs:
   parse:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Parse Semver
         id: parse-valid
         uses: dbt-labs/actions/parse-semver

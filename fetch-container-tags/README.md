@@ -10,13 +10,13 @@ on: push
 jobs:
   fetch-latest-tags:
     runs-on: ubuntu-latest
-    
+
     outputs:
       latest-tags: ${{ steps.fetch-latest-tags.outputs.container-tags }}
-    
+
     steps:
-      - uses: actions/checkout@v2
-      
+      - uses: actions/checkout@v3
+
       - name: "Fetch dbt-postgres Container Tags"
         id: get-latest-tags
         uses: dbt-labs/actions/fetch-container-tags
@@ -31,7 +31,7 @@ jobs:
       - name: "Display Container Tags"
         run: |
           echo container latest tags: ${{ steps.fetch-latest-tags.outputs.container-tags }}
-    
+
   dynamic-matrix:
     runs-on: ubuntu-latest
     needs: fetch-latest-tags
@@ -40,7 +40,7 @@ jobs:
       fail-fast: false
       matrix:
         tag: ${{ fromJSON(needs.fetch-latest-tags.outputs.latest-tags) }}
-    
+
     steps:
       - name: "Display Tag Name"
         run: |
