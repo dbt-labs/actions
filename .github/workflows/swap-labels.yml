@@ -52,7 +52,7 @@ jobs:
       - name: "Remove awaiting_response label"
         uses: actions/github-script@v6
         with:
-        script: |
+          script: |
             github.rest.issues.removeLabel({
               issue_number: context.issue.number,
               owner: context.repo.owner,
