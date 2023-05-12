@@ -23,7 +23,7 @@ Actions and workflows should be self documented.  See individual actions for mor
 
 ## Releasing
 
-See each repository.  Parents workflows live in [dbt-labs/dbt-release](https://github.com/dbt-labs/dbt-release/)
+See each repository.  Parent workflows live in [dbt-labs/dbt-release](https://github.com/dbt-labs/dbt-release/)
 
 ## Development
 
