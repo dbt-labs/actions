@@ -103,7 +103,7 @@ jobs:
       - name: Wait for run to complete
         id: monitor-run
         run: |
-          gh run watch ${{ steps.workflow-id.outputs.id }} --exit-status
+          gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
         env:
           GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
 
