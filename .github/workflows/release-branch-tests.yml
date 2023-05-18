@@ -26,7 +26,7 @@ on:
 permissions: read-all
 
 jobs:
-  prep_work:
+  prep-work:
     name: "Audit Inputs"
     runs-on: ubuntu-latest
     steps:
@@ -35,7 +35,6 @@ jobs:
           echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
 
   fetch-latest-branches:
-    needs: [prep-work]
     runs-on: ubuntu-latest
 
     outputs:
