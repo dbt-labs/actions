@@ -74,7 +74,7 @@ jobs:
         branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
         include:
           - branch: 'main'
-        workflow_name: ["main.yml"]
+        workflow_name: ${{ fromJson(${{ inputs.workflows_to_run }}) }}
 
     steps:
       - name: Check out ${{ matrix.branch }}
