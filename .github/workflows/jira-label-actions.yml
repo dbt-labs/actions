@@ -13,6 +13,7 @@ name: Jira Label Mirroring
 on:
   issues:
     types: [labeled, unlabeled]
+  workflow_call:
 
 permissions:
   issues: read
