@@ -1,6 +1,6 @@
 # **what?**
 # The purpose of this workflow is to trigger CI to run for each
-# release branch and main branch on a regular cadence. If the CI workflow
+# release branch and main branch in a reusable format. If the CI workflow
 # fails for a branch, it will post to dev-core-alerts to raise awareness.
 
 # **why?**
@@ -26,7 +26,16 @@ on:
 permissions: read-all
 
 jobs:
+  prep_work:
+    name: "Audit Inputs"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[DEBUG] Print Inputs"
+        run: |
+          echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
+
   fetch-latest-branches:
+    needs: [prep-work]
     runs-on: ubuntu-latest
 
     outputs:
