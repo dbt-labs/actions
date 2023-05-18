@@ -87,7 +87,7 @@ jobs:
         run: |
           gh workflow run ${{ matrix.workflow_name }} --ref ${{ matrix.branch }}
         env:
-          GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get workflow run ID
         id: workflow-id
@@ -98,14 +98,14 @@ jobs:
            echo $id
            echo "id=$id" >> $GITHUB_OUTPUT
         env:
-          GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Wait for run to complete
         id: monitor-run
         run: |
           gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
         env:
-          GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # - name: Post failure to Slack
     #   uses: ravsamhq/notify-slack-action@v2
