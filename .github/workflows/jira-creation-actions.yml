@@ -13,6 +13,7 @@ name: Jira Issue Creation
 on:
   issues:
     types: [opened, labeled]
+  workflow_call:
 
 permissions:
   issues: write
