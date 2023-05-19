@@ -56,7 +56,8 @@ jobs:
       - name: "Add main to branch list"
         id: add-main
         run: |
-          full_branch_list=(${{ steps.get-latest-branches.outputs.repo-branches }} "main")
+          echo ${{ steps.get-latest-branches.outputs.repo-branches }}
+          full_branch_list=("${{ steps.get-latest-branches.outputs.repo-branches }}" "main")
           echo "full_branch_list=$full_branch_list" >> $GITHUB_OUTPUT
 
       - name: "[ANNOTATION] ${{ github.event.repository.name }} - branches to test"
