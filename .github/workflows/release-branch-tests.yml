@@ -56,9 +56,10 @@ jobs:
       - name: "Add main to branch list"
         id: add-main
         run: |
-          echo ${{ steps.get-latest-branches.outputs.repo-branches }}
+          full_branch_list=${{ steps.get-latest-branches.outputs.repo-branches }}
+          echo $full_branch_list
           # Swap single and double quotes using jq because bash doesnt interpret correctly
-          full_branch_list=$(jq -R 'gsub("\'\''"; "__SINGLE_QUOTE__") | gsub("\""; "'\''") | gsub("__SINGLE_QUOTE__"; "\"")' <<< "${{ steps.get-latest-branches.outputs.repo-branches }}")
+          full_branch_list=$(jq -R 'gsub("\'\''"; "__SINGLE_QUOTE__") | gsub("\""; "'\''") | gsub("__SINGLE_QUOTE__"; "\"")' <<< "$full_branch_list")
           echo $full_branch_list
           full_branch_list=($(echo "$full_branch_list" | jq -r '.[]'))
           echo $full_branch_list
