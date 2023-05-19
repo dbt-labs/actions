@@ -62,7 +62,8 @@ jobs:
           full_branch_list="${full_branch_list//\"/\'}"
           full_branch_list="${full_branch_list//__SINGLE_QUOTE__/\"}"
           echo $full_branch_list
-          full_branch_list=($(echo "$full_branch_list" | jq -r '.[]'))
+          # now convert it to a bash array and add the main branch
+          IFS=$'\n' read -d '' -r -a full_branch_list <<< "$(jq -r '.[]' <<< "$full_branch_list")"
           echo $full_branch_list
           full_branch_list+=("main")
           echo $full_branch_list
