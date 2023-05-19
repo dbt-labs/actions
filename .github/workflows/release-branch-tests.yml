@@ -59,7 +59,7 @@ jobs:
           full_branch_list="${{ steps.get-latest-branches.outputs.repo-branches }}"
           # Swap single and double quotes because bash doesnt interpret correctly
           full_branch_list="${full_branch_list//\'/__SINGLE_QUOTE__}"
-          full_branch_list="${full_branch_list//\"/'}"
+          full_branch_list="${full_branch_list//\"/\'}"
           full_branch_list="${full_branch_list//__SINGLE_QUOTE__/\"}"
           echo $full_branch_list
           full_branch_list=($(echo "$full_branch_list" | jq -r '.[]'))
