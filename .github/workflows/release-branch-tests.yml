@@ -58,7 +58,8 @@ jobs:
         run: |
           echo ${{ steps.get-latest-branches.outputs.repo-branches }}
           full_branch_list=($(echo "${{ fromJSON(steps.get-latest-branches.outputs.repo-branches) }}" | jq -r '.[]'))
-          full_branch_list+="main"
+          echo $full_branch_list
+          full_branch_list+=("main")
           echo $full_branch_list
           echo "full_branch_list=$full_branch_list" >> $GITHUB_OUTPUT
 
