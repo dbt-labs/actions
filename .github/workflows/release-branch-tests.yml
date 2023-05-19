@@ -41,7 +41,7 @@ jobs:
       latest-branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
 
     steps:
-      - name: "Fetch dbt-core Latest Branches"
+      - name: "Fetch ${{ github.event.repository.name }} Latest Branches"
         uses: dbt-labs/actions/fetch-repo-branches@v1.1.1
         id: get-latest-branches
         with:
@@ -71,48 +71,54 @@ jobs:
       max-parallel: 1
       fail-fast: false
       matrix:
+        workflow_name: ${{ fromJson(inputs.workflows_to_run) }}
         branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
         include:
           - branch: 'main'
-        workflow_name: ${{ fromJson(inputs.workflows_to_run) }}
+          - workflow_name: ${{ fromJson(inputs.workflows_to_run) }}
 
     steps:
-      - name: Check out ${{ matrix.branch }}
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ matrix.branch }}
-
-      - name: Call CI workflow for ${{ matrix.branch }} branch
-        id: trigger-step
+      - name: "[DEBUG] Print Inputs"
         run: |
-          gh workflow run ${{ matrix.workflow_name }} --ref ${{ matrix.branch }}
-        env:
-          GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+          echo "matrix.branch:           ${{ matrix.branch }}"
+          echo "matrix.workflow_name:    ${{ matrix.workflow_name }}"
 
-      - name: Get workflow run ID
-        id: workflow-id
-        run: |
-           table=$(gh run list --workflow=${{ matrix.workflow_name }})
-           echo $table
-           id=$(echo "$table" | awk 'NR==1' | jq -Rr 'split("\t")[6]')
-           echo $id
-           echo "id=$id" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Check out ${{ matrix.branch }}
+      #   uses: actions/checkout@v3
+      #   with:
+      #     ref: ${{ matrix.branch }}
 
-      - name: Wait for run to complete
-        id: monitor-run
-        run: |
-          gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Call CI workflow for ${{ matrix.branch }} branch
+      #   id: trigger-step
+      #   run: |
+      #     gh workflow run ${{ matrix.workflow_name }} --ref ${{ matrix.branch }}
+      #   env:
+      #     GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      # - name: Get workflow run ID
+      #   id: workflow-id
+      #   run: |
+      #      table=$(gh run list --workflow=${{ matrix.workflow_name }})
+      #      echo $table
+      #      id=$(echo "$table" | awk 'NR==1' | jq -Rr 'split("\t")[6]')
+      #      echo $id
+      #      echo "id=$id" >> $GITHUB_OUTPUT
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Wait for run to complete
+      #   id: monitor-run
+      #   run: |
+      #     gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # - name: Post failure to Slack
     #   uses: ravsamhq/notify-slack-action@v2
     #   if: ${{ always() && !contains(steps.trigger-step.outputs.workflow-conclusion,'success') }}
     #   with:
     #     status: ${{ job.status }}
-    #     notification_title: 'dbt-core scheduled run of "${{ matrix.branch }}" branch not successful'
+    #     notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
     #     message_format: ':x: CI on branch "${{ matrix.branch }}" ${{ steps.trigger-step.outputs.workflow-conclusion }}'
     #     footer: 'Linked failed CI run ${{ steps.trigger-step.outputs.workflow-url }}'
     #   env:
