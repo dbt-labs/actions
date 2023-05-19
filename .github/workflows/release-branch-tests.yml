@@ -64,9 +64,9 @@ jobs:
           echo $full_branch_list
           # now convert it to a bash array and add the main branch
           IFS=$'\n' read -d '' -r -a full_branch_list <<< "$(jq -r '.[]' <<< "$full_branch_list")"
-          echo $full_branch_list
+          for item in "${full_branch_list[@]}"; do   echo "$item"; done
           full_branch_list+=("main")
-          echo $full_branch_list
+          for item in "${full_branch_list[@]}"; do   echo "$item"; done
           echo "full_branch_list=$full_branch_list" >> $GITHUB_OUTPUT
 
       - name: "[ANNOTATION] ${{ github.event.repository.name }} - branches to test"
