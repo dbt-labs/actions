@@ -124,18 +124,28 @@ jobs:
 
       - name: Wait for run to complete
         id: monitor-run
+        continue-on-error: true
         run: |
           gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get slack message details for failed runs
+        if: ${{ steps.monitor-run.outcome != 'success' }}
+        id: status-check
+        run: |
+          url=$(gh run view ${{ steps.workflow-id.outputs.id }} --json url -q ".url")
+          echo "workflow-url=$url" >> $GITHUB_OUTPUT
+          conclusion=$(gh run view ${{ steps.workflow-id.outputs.id }} --json conclusion -q ".conclusion")
+          echo "workflow-conclusion=$uconclusionrl" >> $GITHUB_OUTPUT
+
       - name: Post failure to Slack
         uses: ravsamhq/notify-slack-action@v2
-        if: ${{ always() && !contains(steps.trigger-step.outputs.workflow-conclusion,'success') }}
+        if: ${{ steps.monitor-run.outcome != 'success' }}
         with:
           status: ${{ job.status }}
           notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
-          message_format: ':x: CI on branch "${{ matrix.branch }}" ${{ steps.trigger-step.outputs.workflow-conclusion }}'
-          footer: 'Linked failed CI run ${{ steps.trigger-step.outputs.workflow-url }}'
+          message_format: ':x: CI on branch "${{ matrix.branch }}" ${{ steps.status-check.outputs.workflow-conclusion }}'
+          footer: 'Linked failed CI run ${{ steps.status-check.outputs.workflow-url }}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
