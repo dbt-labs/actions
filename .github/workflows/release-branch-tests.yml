@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      latest-branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
+      branches_to_test: ${{ steps.add-main.outputs.full_branch_list }}
 
     steps:
       - name: "Fetch ${{ github.event.repository.name }} Latest Branches"
@@ -53,10 +53,16 @@ jobs:
           perform_match_method: "match"
           retries: 3
 
+      - name: "Add main to branch list"
+        id: add-main
+        run: |
+          full_branch_list=(${{ steps.get-latest-branches.outputs.repo-branches }} "main")
+          echo "full_branch_list=full_branch_list" >> $GITHUB_OUTPUT
+
       - name: "[ANNOTATION] ${{ github.event.repository.name }} - branches to test"
         run: |
           title="${{ github.event.repository.name }} - branches to test"
-          message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: ${{ steps.get-latest-branches.outputs.repo-branches }}"
+          message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: ${{ steps.add-main.outputs.full_branch_list }}"
           echo "::notice $title::$message"
 
   kick-off-ci:
@@ -72,10 +78,7 @@ jobs:
       fail-fast: false
       matrix:
         workflow_name: ${{ fromJson(inputs.workflows_to_run) }}
-        branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.latest-branches) }}
-        include:
-          - branch: 'main'
-          - workflow_name: ${{ fromJson(inputs.workflows_to_run) }}
+        branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.branches_to_test) }}
 
     steps:
       - name: "[DEBUG] Print Inputs"
