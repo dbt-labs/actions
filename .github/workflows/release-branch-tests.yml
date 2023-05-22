@@ -104,6 +104,10 @@ jobs:
         with:
           ref: ${{ matrix.branch }}
 
+      # We have to use a workflow_dispatch here because we're using the matrix branch value.
+      # Calling a workflow using the `uses` syntax does not give us access to any context so
+      # we must use hardcoded tags/branches/SHAs.  This also means we need to manually monitor
+      # for when the workflow completes.
       - name: Call CI workflow for ${{ matrix.branch }} branch
         id: trigger-step
         run: |
