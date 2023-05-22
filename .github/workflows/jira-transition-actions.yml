@@ -15,6 +15,13 @@ on:
   issues:
     types: [closed, deleted, reopened]
   workflow_call:
+    secrets:
+      JIRA_BASE_URL:
+        required: true
+      JIRA_USER_EMAIL:
+        required: true
+      JIRA_API_TOKEN:
+        required: true
 
 # no special access is needed
 permissions: read-all
