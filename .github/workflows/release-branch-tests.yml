@@ -138,6 +138,8 @@ jobs:
           echo "workflow-url=$url" >> $GITHUB_OUTPUT
           conclusion=$(gh run view ${{ steps.workflow-id.outputs.id }} --json conclusion -q ".conclusion")
           echo "workflow-conclusion=$conclusion" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post failure to Slack
         uses: ravsamhq/notify-slack-action@v2
