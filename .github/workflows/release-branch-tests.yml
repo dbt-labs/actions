@@ -91,7 +91,7 @@ jobs:
       fail-fast: false
       matrix:
         workflow_name: ${{ fromJson(inputs.workflows_to_run) }}
-        branch: ['1.5.latest']
+        branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.branches_to_test) }}
 
     steps:
       - name: "[DEBUG] Print Inputs"
