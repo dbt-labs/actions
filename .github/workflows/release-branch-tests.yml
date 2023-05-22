@@ -124,15 +124,14 @@ jobs:
 
       - name: Wait for run to complete
         id: monitor-run
-        continue-on-error: true
         run: |
-          gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
+          # gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
           exit 1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get slack message details for failed runs
-        if: ${{ steps.monitor-run.outcome != 'success' }}
+        if: ${{ always() && steps.monitor-run.outcome != 'success' }}
         id: status-check
         run: |
           url=$(gh run view ${{ steps.workflow-id.outputs.id }} --json url -q ".url")
@@ -142,7 +141,7 @@ jobs:
 
       - name: Post failure to Slack
         uses: ravsamhq/notify-slack-action@v2
-        if: ${{ steps.monitor-run.outcome != 'success' }}
+        if: ${{ always() && steps.monitor-run.outcome != 'success' }}
         with:
           status: ${{ job.status }}
           # notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
