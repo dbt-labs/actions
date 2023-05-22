@@ -125,8 +125,7 @@ jobs:
       - name: Wait for run to complete
         id: monitor-run
         run: |
-          # gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
-          exit 1
+          gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -146,8 +145,7 @@ jobs:
         if: ${{ always() && steps.monitor-run.outcome != 'success' }}
         with:
           status: ${{ job.status }}
-          # notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
-          notification_title: 'This is Emily testing - ignore it'
+          notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
           message_format: ':x: CI on branch "${{ matrix.branch }}" ${{ steps.status-check.outputs.workflow-conclusion }}'
           footer: 'Linked failed CI run ${{ steps.status-check.outputs.workflow-url }}'
         env:
