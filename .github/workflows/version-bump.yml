@@ -94,7 +94,7 @@ jobs:
 
       - name: "Get Core Team Membership"
         run: |
-          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/Core/members > ${{ steps.json_file.outputs.name }}
+          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/core-group/members > ${{ steps.json_file.outputs.name }}
         env:
           GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
 
