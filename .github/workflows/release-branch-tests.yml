@@ -1,0 +1,156 @@
+# **what?**
+# The purpose of this workflow is to trigger CI to run for each
+# release branch and main branch in a reusable format. If the CI workflow
+# fails for a branch, it will post to dev-core-alerts to raise awareness.
+
+# **why?**
+# Ensures release branches and main are always shippable and not broken.
+# Also, can catch any dependencies shifting beneath us that might
+# introduce breaking changes (could also impact Cloud).
+
+# **when?**
+# Mainly on a schedule of 9:00, 13:00, 18:00 UTC everyday.
+# Manual trigger can also test on demand
+
+name: Release branch scheduled testing
+
+on:
+  workflow_call:
+    inputs:
+      workflows_to_run:
+        description: 'A list of workflow(s) to run against ex: ["main.yml, "integration.yml"]'
+        required: true
+        type: string
+
+# no special access is needed
+permissions: read-all
+
+jobs:
+  prep-work:
+    name: "Audit Inputs"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[DEBUG] Print Inputs"
+        run: |
+          echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
+
+  fetch-latest-branches:
+    runs-on: ubuntu-latest
+
+    outputs:
+      branches_to_test: ${{ steps.add-main.outputs.full_branch_list }}
+
+    steps:
+      - name: "Fetch ${{ github.event.repository.name }} Latest Branches"
+        uses: dbt-labs/actions/fetch-repo-branches@v1.1.1
+        id: get-latest-branches
+        with:
+          repo_name: ${{ github.event.repository.name }}
+          organization: "dbt-labs"
+          pat: ${{ secrets.GITHUB_TOKEN }}
+          fetch_protected_branches_only: true
+          regex: "^1.[0-9]+.latest$"
+          perform_match_method: "match"
+          retries: 3
+
+      - name: "Add main to branch list"
+        id: add-main
+        run: |
+          full_branch_list="${{ steps.get-latest-branches.outputs.repo-branches }}"
+          # Swap single and double quotes because bash doesnt interpret correctly
+          full_branch_list="${full_branch_list//\'/__SINGLE_QUOTE__}"
+          full_branch_list="${full_branch_list//\"/\'}"
+          full_branch_list="${full_branch_list//__SINGLE_QUOTE__/\"}"
+          # now convert it to a bash array and add the main branch
+          full_branch_list=($(echo "$full_branch_list" | jq -r '.[]'))
+          for item in "${full_branch_list[@]}"; do   echo "$item"; done
+          full_branch_list+=("main")
+          # Convert the array to a string
+          full_branch_list_string=$(printf "'%s', " "${full_branch_list[@]}")
+          full_branch_list_string="[${full_branch_list_string%, }]"
+          # Assign the string to a variable
+          echo $full_branch_list_string
+          echo "full_branch_list=$full_branch_list_string" >> $GITHUB_OUTPUT
+
+      - name: "[ANNOTATION] ${{ github.event.repository.name }} - branches to test"
+        run: |
+          title="${{ github.event.repository.name }} - branches to test"
+          message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: ${{ steps.add-main.outputs.full_branch_list }}"
+          echo "::notice $title::$message"
+
+  kick-off-ci:
+    needs: [fetch-latest-branches]
+    name: Kick-off CI
+    runs-on: ubuntu-latest
+
+    strategy:
+      # must run CI 1 branch at a time b/c the workflow-dispatch polls for
+      # latest run for results and it gets confused when we kick off multiple runs
+      # at once. There is a race condition so we will just run in sequential order.
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        workflow_name: ${{ fromJson(inputs.workflows_to_run) }}
+        branch: ${{ fromJSON(needs.fetch-latest-branches.outputs.branches_to_test) }}
+
+    steps:
+      - name: "[DEBUG] Print Inputs"
+        run: |
+          echo "matrix.branch:           ${{ matrix.branch }}"
+          echo "matrix.workflow_name:    ${{ matrix.workflow_name }}"
+
+      - name: Check out ${{ matrix.branch }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.branch }}
+
+      # We have to use a workflow_dispatch here because we're using the matrix branch value.
+      # Calling a workflow using the `uses` syntax does not give us access to any context so
+      # we must use hardcoded tags/branches/SHAs.  This also means we need to manually monitor
+      # for when the workflow completes.
+      - name: Call CI workflow for ${{ matrix.branch }} branch
+        id: trigger-step
+        run: |
+          gh workflow run ${{ matrix.workflow_name }} --ref ${{ matrix.branch }}
+        env:
+          GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      - name: Get workflow run ID
+        id: workflow-id
+        run: |
+           table=$(gh run list --workflow=${{ matrix.workflow_name }})
+           echo $table
+           id=$(echo "$table" | awk 'NR==1' | jq -Rr 'split("\t")[6]')
+           echo $id
+           echo "id=$id" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for run to complete
+        id: monitor-run
+        run: |
+          gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get slack message details for failed runs
+        if: ${{ always() && steps.monitor-run.outcome != 'success' }}
+        id: status-check
+        run: |
+          url=$(gh run view ${{ steps.workflow-id.outputs.id }} --json url -q ".url")
+          echo "workflow-url=$url" >> $GITHUB_OUTPUT
+          conclusion=$(gh run view ${{ steps.workflow-id.outputs.id }} --json conclusion -q ".conclusion")
+          echo "workflow-conclusion=$conclusion" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post failure to Slack
+        uses: ravsamhq/notify-slack-action@v2
+        if: ${{ always() && steps.monitor-run.outcome != 'success' }}
+        with:
+          status: ${{ job.status }}
+          notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
+          message_format: ':x: CI on branch "${{ matrix.branch }}" ${{ steps.status-check.outputs.workflow-conclusion }}'
+          footer: 'Linked failed CI run ${{ steps.status-check.outputs.workflow-url }}'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
