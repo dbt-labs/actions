@@ -45,10 +45,12 @@ jobs:
         env:
           TITLE: "${{ github.event.issue.title }}"
         run: |
+          echo $TITLE
           issueId=$(echo -n $TITLE | awk '{print $1}' | awk -F'[][]' '{print $2}')
           echo "issueId=${issueId}" >> $GITHUB_OUTPUT
 
   edit-label:
+    if: needs.extract-id.outputs.issueId != ''
     runs-on: ubuntu-latest
     needs: extract-id
     env:
