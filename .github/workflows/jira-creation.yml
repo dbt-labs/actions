@@ -82,7 +82,7 @@ jobs:
     needs:
       - create-issue
     outputs:
-      labels: ${{ steps.generate-labels.outputs.labels }}
+      json_labels: ${{ steps.generate-labels.outputs.labels }}
     steps:
       - name: Generate Labels
         id: generate-labels
@@ -95,13 +95,14 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
   add-labels:
+    if: needs.find-labels.outputs.json_labels != '[]'
     runs-on: ubuntu-latest
     needs:
       - create-issue
       - find-labels
     strategy:
       matrix:
-        label: ${{ fromJSON(needs.find-labels.outputs.labels) }}
+        label: ${{ fromJSON(needs.find-labels.outputs.json_labels) }}
     steps:
       - name: "[DEBUG] - Print Job Inputs"
         shell: bash
