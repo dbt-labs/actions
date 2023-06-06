@@ -12,7 +12,7 @@ ORG = "dbt-labs"
 PROJECT_NAME = "Core triage"
 PROJECT_NUM = 22
 # core team name
-CORE_TEAM = "core"
+CORE_TEAM = "core-group"
 # repos determined by querying the team
 # exclude some repos (generally internal) that will cause failure
 # include some extra repos not in the team
@@ -33,7 +33,7 @@ ISSUE_LABELS = [
     "Team:Language",
     "Team:Execution",
     "Team:Adapters",
-    "internal_tooling",
+    "oss_tooling",
 ]
 # prs added by label individually TODO: unused, add label filtering
 PR_LABELS = ["ready_for_review"]
