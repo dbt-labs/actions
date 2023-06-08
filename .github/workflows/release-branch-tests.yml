@@ -115,6 +115,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
 
+      # If you check for running workflows too fast, the one just submitted won't be there yet
+      - name: "Wait for it"
+        id: waiting
+        run: |
+          sleep 5s
+
       - name: Get workflow run ID
         id: workflow-id
         run: |
