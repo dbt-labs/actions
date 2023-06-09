@@ -119,12 +119,12 @@ jobs:
       - name: "Wait for it"
         id: waiting
         run: |
-          sleep 5s
+          sleep 25s
 
       - name: Get workflow run ID
         id: workflow-id
         run: |
-           table=$(gh run list --workflow=${{ matrix.workflow_name }})
+           table=$(gh run list --workflow=${{ matrix.workflow_name }} --branch=${{ matrix.branch }} --event=workflow_dispatch)
            echo $table
            id=$(echo "$table" | awk 'NR==1' | jq -Rr 'split("\t")[6]')
            echo $id
