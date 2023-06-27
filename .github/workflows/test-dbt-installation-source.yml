@@ -93,6 +93,8 @@ jobs:
             python-version: 3.9
           - branch: "1.0.latest"
             python-version: 3.10
+          - branch: "1.5.latest"
+            python-version: 3.7
 
     steps:
       - name: "Resolve Repository"
