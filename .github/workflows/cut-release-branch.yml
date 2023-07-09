@@ -187,62 +187,9 @@ jobs:
           message="Temp branch ${{ steps.variables.outputs.BRANCH_NAME }} created"
           echo "::notice title="Temporary branch created": $title::$message"
 
-  bump_version:
-    name: "Bump to version ${{ inputs.version_to_bump_main }}"
-    needs: ['create_temp_branch']
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: "Checkout ${{ github.repository }}"
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
-          token: ${{ secrets.FISHTOWN_BOT_PAT }}
-
-      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_TARGET_VERSION }}
-
-      - name: "Install Spark Dependencies"
-        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install libsasl2-dev
-
-      - name: "Install Python Dependencies"
-        run: |
-          python -m venv env
-          source env/bin/activate
-          python -m pip install --upgrade pip
-
-      - name: "Bump Version To ${{ inputs.version_to_bump_main }}"
-        run: |
-          source env/bin/activate
-          python -m pip install -r dev-requirements.txt
-          env/bin/bumpversion --allow-dirty --new-version ${{ inputs.version_to_bump_main }} major
-          git status
-
-      - name: "Commit Version Bump to Branch"
-        run: |
-          user="Github Build Bot"
-          email="buildbot@fishtownanalytics.com"
-          git config user.name "$user"
-          git config user.email "$email"
-          git status
-          git add .
-          git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
-          git push
-
-      - name: "[Notification] Version Bump completed"
-        run: |
-          message="Version on ${{ needs.create_temp_branch.outputs.temp_branch_name }} bumped to ${{ inputs.version_to_bump_main }}"
-          echo "::notice title="Version Bump Completed": $title::$message"
-
   cleanup_changelog:
     name: "Clean Up Changelog"
-    needs: ['bump_version', 'create_temp_branch']
+    needs: ['create_temp_branch']
     runs-on: ubuntu-latest
 
     steps:
@@ -312,6 +259,59 @@ jobs:
         run: |
           message="Changelog on ${{ needs.create_temp_branch.outputs.temp_branch_name }} cleaned up"
           echo "::notice title="Changelog cleaned up": $title::$message"
+
+  bump_version:
+    name: "Bump to version ${{ inputs.version_to_bump_main }}"
+    needs: ['cleanup_changelog', 'create_temp_branch']
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_TARGET_VERSION }}
+
+      - name: "Install Spark Dependencies"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install libsasl2-dev
+
+      - name: "Install Python Dependencies"
+        run: |
+          python -m venv env
+          source env/bin/activate
+          python -m pip install --upgrade pip
+
+      - name: "Bump Version To ${{ inputs.version_to_bump_main }}"
+        run: |
+          source env/bin/activate
+          python -m pip install -r dev-requirements.txt
+          env/bin/bumpversion --allow-dirty --new-version ${{ inputs.version_to_bump_main }} major
+          git status
+
+      - name: "Commit Version Bump to Branch"
+        run: |
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          git config user.name "$user"
+          git config user.email "$email"
+          git status
+          git add .
+          git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
+          git push
+
+      - name: "[Notification] Version Bump completed"
+        run: |
+          message="Version on ${{ needs.create_temp_branch.outputs.temp_branch_name }} bumped to ${{ inputs.version_to_bump_main }}"
+          echo "::notice title="Version Bump Completed": $title::$message"
 
   open_pr:
     name: "Open PR Against main"
