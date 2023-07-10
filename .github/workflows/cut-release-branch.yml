@@ -34,7 +34,8 @@ on:
   workflow_call:
     inputs:
       version_to_bump_main:
-        required: true
+        description: "DEPRECATED: The version to bump main to.  This is no longer used."
+        required: false
         type: string
       new_branch_name:
         description: 'The full name of the new branch (ex. 1.5.latest)'
@@ -227,6 +228,10 @@ jobs:
         with:
           version: ${{ steps.determine_version.outputs.current_version }}
 
+      - name: "Add Semver Outputs to Github Output"
+        run: |
+          echo "next-version=${{ steps.semver-current.outputs.next-minor-version }}" >> $GITHUB_OUTPUT
+
       - name: "Delete Unreleased Changelog YAMLs"
         # removal fails if no files exist. OK to continue since we're just cleaning up the files.
         continue-on-error: true
@@ -261,7 +266,7 @@ jobs:
           echo "::notice title="Changelog cleaned up": $title::$message"
 
   bump_version:
-    name: "Bump to version ${{ inputs.version_to_bump_main }}"
+    name: "Bump to next minor version"
     needs: ['cleanup_changelog', 'create_temp_branch']
     runs-on: ubuntu-latest
 
@@ -294,7 +299,8 @@ jobs:
         run: |
           source env/bin/activate
           python -m pip install -r dev-requirements.txt
-          env/bin/bumpversion --allow-dirty --new-version ${{ inputs.version_to_bump_main }} major
+          env/bin/bumpversion --allow-dirty \ 
+           --new-version : ${{ fromJSON(needs.create_temp_branch.outputs.next-version) }} major
           git status
 
       - name: "Commit Version Bump to Branch"

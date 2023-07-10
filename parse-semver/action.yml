@@ -7,6 +7,8 @@ inputs:
 outputs:
   version:
     description: "Parsed version"
+  next-minor-version:
+    description: "Increment minor version and add a1 to parsed version"
   base-version:
     description: "Base version"
   major:
