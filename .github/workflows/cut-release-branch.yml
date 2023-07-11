@@ -300,7 +300,7 @@ jobs:
           source env/bin/activate
           python -m pip install -r dev-requirements.txt
           env/bin/bumpversion --allow-dirty \ 
-           --new-version : ${{ fromJSON(needs.create_temp_branch.outputs.next-version) }} major
+           --new-version ${{ needs.create_temp_branch.outputs.next-version }} major
           git status
 
       - name: "Commit Version Bump to Branch"
