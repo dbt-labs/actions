@@ -32,7 +32,7 @@ def main():
 
     print("::group::Parse Semver Outputs")
     print(f"version={parsed_version.public}")
-    print(f"next-minor-version={next_parsed_version.public}")
+    print(f"next-minor-alpha-version={next_parsed_version.public}")
     print(f"base-version={parsed_version.base_version}")
     print(f"major={parsed_version.major}")
     print(f"minor={parsed_version.minor}")

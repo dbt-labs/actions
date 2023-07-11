@@ -224,7 +224,7 @@ jobs:
 
       - name: "Add Semver Outputs to Github Output"
         run: |
-          echo "next-version=${{ steps.semver-current.outputs.next-minor-version }}" >> $GITHUB_OUTPUT
+          echo "next-version=${{ steps.semver-current.outputs.next-minor-alpha-version }}" >> $GITHUB_OUTPUT
 
       - name: "Delete Unreleased Changelog YAMLs"
         # removal fails if no files exist. OK to continue since we're just cleaning up the files.
