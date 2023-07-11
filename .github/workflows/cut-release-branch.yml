@@ -76,12 +76,6 @@ jobs:
           echo "Version to bump main:    ${{ inputs.version_to_bump_main }}"
           echo "Name of branch to cut:   ${{ inputs.new_branch_name }}"
 
-      - name: Audit New Version and Parse Into Parts
-        id: semver
-        uses: dbt-labs/actions/parse-semver@v1
-        with:
-          version: ${{ inputs.version_to_bump_main }}
-
   cut_new_branch:
     name: "Cut New Branch ${{ inputs.new_branch_name }}"
     needs: ['prep_work']
