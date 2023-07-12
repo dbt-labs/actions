@@ -6,6 +6,10 @@ def set_output(name, value):
     os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
 
 
+def get_next_minor_version(version: Version) -> Version:
+    next_minor = version.minor + 1
+    return Version(f"{version.major}.{next_minor}.0a1")
+
 def main():
     input_version = os.environ["INPUT_VERSION"]
     parsed_version = parse(input_version)
@@ -24,8 +28,11 @@ def main():
     is_pre_release = parsed_version.pre is not None
     is_pre_release_truthy = 1 if is_pre_release else 0
 
+    next_parsed_version = get_next_minor_version(parsed_version)
+
     print("::group::Parse Semver Outputs")
     print(f"version={parsed_version.public}")
+    print(f"next-minor-alpha-version={next_parsed_version.public}")
     print(f"base-version={parsed_version.base_version}")
     print(f"major={parsed_version.major}")
     print(f"minor={parsed_version.minor}")
@@ -37,6 +44,7 @@ def main():
     print("::endgroup::")
 
     set_output("version", parsed_version.public)
+    set_output("next-minor-version", next_parsed_version.public)
     set_output("base-version", parsed_version.base_version)
     set_output("major", parsed_version.major)
     set_output("minor", parsed_version.minor)
