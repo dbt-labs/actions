@@ -21,10 +21,6 @@ on:
         description: 'A list of workflow(s) to run against ex: ["main.yml, "integration.yml"]'
         required: true
         type: string
-      alerts:
-        description: 'Where to post alerts in slack. Choose either "adapters" or "core". Default=core'
-        required: false
-        type: string
 
 # no special access is needed
 permissions: read-all
@@ -39,16 +35,14 @@ jobs:
           echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
 
       - name: Set slack webhook
-        if: ${{ inputs.alerts == "adapters" }}
-        run: |
-          echo ${{ secrets.SLACK_DEV_ADAPTER_ALERTS }} >> $SLACK_WEBHOOK_URL
-        if: startsWith(github.ref, 'refs/tags/release-')
-
-      - name: Set slack webhook
-        if: ${{ inputs.alerts != "adapters" }}
+        if: ${{ github.event.repository.name == dbt-core }}
         run: |
           echo ${{ secrets.SLACK_DEV_CORE_ALERTS }} >> $SLACK_WEBHOOK_URL
-        if: startsWith(github.ref, 'refs/tags/release-')
+
+      - name: Set slack webhook
+        if: ${{ github.event.repository.name != dbt-core }}
+        run: |
+          echo ${{ secrets.SLACK_DEV_ADAPTER_ALERTS }} >> $SLACK_WEBHOOK_URL
 
   fetch-latest-branches:
     runs-on: ubuntu-latest
