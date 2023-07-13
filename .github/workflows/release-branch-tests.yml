@@ -21,9 +21,9 @@ on:
         description: 'A list of workflow(s) to run against ex: ["main.yml, "integration.yml"]'
         required: true
         type: string
-      alert_webhook:
-        description: 'Webhook url to post alerts to'
-        required: true
+      alerts:
+        description: 'Where to post alerts in slack. Choose either "adapters" or "core". Default=core'
+        required: false
         type: string
 
 # no special access is needed
@@ -37,6 +37,18 @@ jobs:
       - name: "[DEBUG] Print Inputs"
         run: |
           echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
+
+      - name: Set slack webhook
+        if: ${{ inputs.alerts == "adapters" }}
+        run: |
+          echo ${{ secrets.SLACK_DEV_ADAPTER_ALERTS }} >> $SLACK_WEBHOOK_URL
+        if: startsWith(github.ref, 'refs/tags/release-')
+
+      - name: Set slack webhook
+        if: ${{ inputs.alerts != "adapters" }}
+        run: |
+          echo ${{ secrets.SLACK_DEV_CORE_ALERTS }} >> $SLACK_WEBHOOK_URL
+        if: startsWith(github.ref, 'refs/tags/release-')
 
   fetch-latest-branches:
     runs-on: ubuntu-latest
@@ -163,4 +175,4 @@ jobs:
           message_format: ':x: CI on branch "${{ matrix.branch }}" ${{ steps.status-check.outputs.workflow-conclusion }}'
           footer: 'Linked failed CI run ${{ steps.status-check.outputs.workflow-url }}'
         env:
-          SLACK_WEBHOOK_URL: ${{ inputs.alert_webhook }}
+          SLACK_WEBHOOK_URL: $SLACK_WEBHOOK_URL
