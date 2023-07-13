@@ -35,14 +35,12 @@ jobs:
           echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
 
       - name: Set slack webhook
-        if: ${{ github.event.repository.name == dbt-core }}
         run: |
-          echo ${{ secrets.SLACK_DEV_CORE_ALERTS }} >> $SLACK_WEBHOOK_URL
-
-      - name: Set slack webhook
-        if: ${{ github.event.repository.name != dbt-core }}
-        run: |
-          echo ${{ secrets.SLACK_DEV_ADAPTER_ALERTS }} >> $SLACK_WEBHOOK_URL
+          if [[ ${{ github.event.repository.name }} == "dbt-core" ]]; then
+              echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_DEV_CORE_ALERTS }}" >> "$GITHUB_ENV"
+          else
+              echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_DEV_ADAPTER_ALERTS }}" >> "$GITHUB_ENV"
+          fi
 
   fetch-latest-branches:
     runs-on: ubuntu-latest
@@ -169,4 +167,4 @@ jobs:
           message_format: ':x: CI on branch "${{ matrix.branch }}" ${{ steps.status-check.outputs.workflow-conclusion }}'
           footer: 'Linked failed CI run ${{ steps.status-check.outputs.workflow-url }}'
         env:
-          SLACK_WEBHOOK_URL: $SLACK_WEBHOOK_URL
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
