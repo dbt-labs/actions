@@ -244,6 +244,18 @@ jobs:
         run: |
           changie merge
 
+      # this step will fail on whitespace errors but also correct them, so add || true to prevent actual failures
+      - name: "Remove Trailing Whitespace Via Pre-commit"
+        run: |
+          pre-commit run trailing-whitespace --files CHANGELOG.md .changes/* || true
+          git status
+
+      # this step will fail on newline errors but also correct them, so add || true to prevent actual failures
+      - name: "Removing Extra Newlines Via Pre-commit"
+        run: |
+          pre-commit run end-of-file-fixer --files CHANGELOG.md .changes/* || true
+          git status
+
       - name: "Commit Changelog Cleanup to Branch"
         run: |
           user="Github Build Bot"
@@ -300,13 +312,13 @@ jobs:
       # this step will fail on whitespace errors but also correct them, so add || true to prevent actual failures
       - name: "Remove Trailing Whitespace Via Pre-commit"
         run: |
-          pre-commit run trailing-whitespace --files .bumpversion.cfg CHANGELOG.md .changes/* || true
+          pre-commit run trailing-whitespace --files .bumpversion.cfg || true
           git status
 
       # this step will fail on newline errors but also correct them, so add || true to prevent actual failures
       - name: "Removing Extra Newlines Via Pre-commit"
         run: |
-          pre-commit run end-of-file-fixer --files .bumpversion.cfg CHANGELOG.md .changes/* || true
+          pre-commit run end-of-file-fixer --files .bumpversion.cfg || true
           git status
 
       - name: "Commit Version Bump to Branch"
