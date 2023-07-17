@@ -44,7 +44,7 @@ def main():
     print("::endgroup::")
 
     set_output("version", parsed_version.public)
-    set_output("next-minor-version", next_parsed_version.public)
+    set_output("next-minor-alpha-version", next_parsed_version.public)
     set_output("base-version", parsed_version.base_version)
     set_output("major", parsed_version.major)
     set_output("minor", parsed_version.minor)
