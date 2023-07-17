@@ -184,6 +184,8 @@ jobs:
     name: "Clean Up Changelog"
     needs: ['create_temp_branch']
     runs-on: ubuntu-latest
+    outputs:
+      next-version: ${{ steps.semver-current.outputs.next-minor-alpha-version }}
 
     steps:
 
@@ -220,9 +222,10 @@ jobs:
         with:
           version: ${{ steps.determine_version.outputs.current_version }}
 
-      - name: "Add Semver Outputs to Github Output"
+      - name: "[Notification] Next Alpha Version"
         run: |
-          echo "next-version=${{ steps.semver-current.outputs.next-minor-alpha-version }}" >> $GITHUB_OUTPUT
+          message="The next alpha version is ${{ steps.determine_version.outputs.current_version }}"
+          echo "::notice title="Version Bump Check": $title::$message"
 
       - name: "Delete Unreleased Changelog YAMLs"
         # removal fails if no files exist. OK to continue since we're just cleaning up the files.
