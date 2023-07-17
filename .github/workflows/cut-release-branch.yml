@@ -308,6 +308,7 @@ jobs:
           python -m pip install -r dev-requirements.txt
           env/bin/bumpversion --allow-dirty --new-version ${{ needs.cleanup_changelog.outputs.next-version }} major
           git status
+          git add .
 
       # this step will fail on whitespace errors but also correct them, so add || true to prevent actual failures
       - name: "Remove Trailing Whitespace Via Pre-commit"
