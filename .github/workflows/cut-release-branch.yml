@@ -293,7 +293,7 @@ jobs:
         run: |
           source env/bin/activate
           python -m pip install -r dev-requirements.txt
-          env/bin/bumpversion --allow-dirty --new-version ${{ needs.cleanup_changlog.outputs.next-version }} major
+          env/bin/bumpversion --allow-dirty --new-version ${{ needs.cleanup_changelog.outputs.next-version }} major
           git status
 
       - name: "Commit Version Bump to Branch"
