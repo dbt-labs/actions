@@ -20,7 +20,6 @@
 #   changelog:
 #     uses: dbt-labs/actions/.github/workflows/cut-release-branch.yml@main
 #    with:
-#      version_to_bump_main: 1.3.0a1
 #      new_branch_name: 1.2.latest
 #    secrets:
 #      FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
@@ -73,7 +72,6 @@ jobs:
     steps:
       - name: "[DEBUG] Print Inputs"
         run: |
-          echo "Version to bump main:    ${{ inputs.version_to_bump_main }}"
           echo "Name of branch to cut:   ${{ inputs.new_branch_name }}"
 
   cut_new_branch:
@@ -186,6 +184,8 @@ jobs:
     name: "Clean Up Changelog"
     needs: ['create_temp_branch']
     runs-on: ubuntu-latest
+    outputs:
+      next-version: ${{ steps.semver-current.outputs.next-minor-alpha-version }}
 
     steps:
 
@@ -222,9 +222,10 @@ jobs:
         with:
           version: ${{ steps.determine_version.outputs.current_version }}
 
-      - name: "Add Semver Outputs to Github Output"
+      - name: "[Notification] Next Alpha Version"
         run: |
-          echo "next-version=${{ steps.semver-current.outputs.next-minor-alpha-version }}" >> $GITHUB_OUTPUT
+          message="The next alpha version is ${{ steps.semver-current.outputs.next-minor-alpha-version }}"
+          echo "::notice title="Version Bump Check": $title::$message"
 
       - name: "Delete Unreleased Changelog YAMLs"
         # removal fails if no files exist. OK to continue since we're just cleaning up the files.
@@ -289,7 +290,7 @@ jobs:
           source env/bin/activate
           python -m pip install --upgrade pip
 
-      - name: "Bump Version To ${{ inputs.version_to_bump_main }}"
+      - name: "Bump Version To ${{ needs.cleanup_changelog.outputs.next-version }}"
         run: |
           source env/bin/activate
           python -m pip install -r dev-requirements.txt
@@ -304,17 +305,17 @@ jobs:
           git config user.email "$email"
           git status
           git add .
-          git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
+          git commit -m "Bumping version to ${{ needs.cleanup_changelog.outputs.next-version }}"
           git push
 
       - name: "[Notification] Version Bump completed"
         run: |
-          message="Version on ${{ needs.create_temp_branch.outputs.temp_branch_name }} bumped to ${{ inputs.version_to_bump_main }}"
+          message="Version on ${{ needs.create_temp_branch.outputs.temp_branch_name }} bumped to ${{ needs.cleanup_changelog.outputs.next-version }}"
           echo "::notice title="Version Bump Completed": $title::$message"
 
   open_pr:
     name: "Open PR Against main"
-    needs: ['cleanup_changelog', 'create_temp_branch']
+    needs: ['cleanup_changelog', 'create_temp_branch', 'bump_version']
     runs-on: ubuntu-latest
     outputs:
       pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
@@ -332,7 +333,7 @@ jobs:
         run: |
           echo "pr_title=${{ inputs.PR_title }}" >> $GITHUB_OUTPUT
           if [${{ inputs.PR_title }} == ""]; then
-            echo "pr_title='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
+            echo "pr_title='Clean up changelogs and bump to version ${{ needs.cleanup_changelog.outputs.next-version }}'" >> $GITHUB_OUTPUT
           fi
 
       - name: "Determine PR Body"
@@ -340,7 +341,7 @@ jobs:
         run: |
           echo "pr_body=${{ inputs.PR_body }}" >> $GITHUB_OUTPUT
           if [${{ inputs.PR_body }} == ""]; then
-            echo "pr_body='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
+            echo "pr_body='Clean up changelogs and bump to version ${{ needs.cleanup_changelog.outputs.next-version }}'" >> $GITHUB_OUTPUT
           fi
 
       - name: "Add Branch Details"
