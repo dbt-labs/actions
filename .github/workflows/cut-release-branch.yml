@@ -224,7 +224,7 @@ jobs:
 
       - name: "[Notification] Next Alpha Version"
         run: |
-          message="The next alpha version is ${{ steps.determine_version.outputs.current_version }}"
+          message="The next alpha version is ${{ steps.semver-current.outputs.next-minor-alpha-version }}"
           echo "::notice title="Version Bump Check": $title::$message"
 
       - name: "Delete Unreleased Changelog YAMLs"
