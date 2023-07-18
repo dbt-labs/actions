@@ -34,14 +34,6 @@ jobs:
         run: |
           echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
 
-      - name: Set slack webhook
-        run: |
-          if [[ ${{ github.event.repository.name }} == "dbt-core" ]]; then
-              echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_DEV_CORE_ALERTS }}" >> "$GITHUB_ENV"
-          else
-              echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_DEV_ADAPTER_ALERTS }}" >> "$GITHUB_ENV"
-          fi
-
   fetch-latest-branches:
     runs-on: ubuntu-latest
 
@@ -157,6 +149,14 @@ jobs:
           echo "workflow-conclusion=$conclusion" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set slack webhook
+        run: |
+          if [[ ${{ github.event.repository.name }} == "dbt-core" ]]; then
+              echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_DEV_CORE_ALERTS }}" >> "$GITHUB_ENV"
+          else
+              echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_DEV_ADAPTER_ALERTS }}" >> "$GITHUB_ENV"
+          fi
 
       - name: Post failure to Slack
         uses: ravsamhq/notify-slack-action@v2
