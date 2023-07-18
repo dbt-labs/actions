@@ -2,7 +2,7 @@
 # Will remove one label in favor of another
 #
 # **why?**
-# When the we triage issues, we sometimes need more information from the issue creator.  In
+# When we triage issues, we sometimes need more information from the issue creator.  In
 # those cases we remove the `triage` label and add the `awaiting_response` label.  Once we
 # receive a response in the form of a comment, we want the `awaiting_response` label removed
 # in favor of the `triage` label so we are aware that the issue needs action.
