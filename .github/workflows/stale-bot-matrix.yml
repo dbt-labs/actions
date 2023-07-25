@@ -1,5 +1,5 @@
 # **what?**
-# For issues that have been open for awhile without activity, label
+# For issues that have been open for a while without activity, label
 # them as stale with a warning that they will be closed out. If
 # anyone comments to keep the issue open, it will automatically
 # remove the stale label and keep it open.
@@ -83,3 +83,14 @@ jobs:
           close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 180
           exempt-issue-labels: 'tech_debt,good_first_issue,help_wanted'
+
+  mark-as-draft:
+    name: Mark stale PRs as Draft status
+    if: ${{ (github.event.pull_request.draft == false) && contains(github.event.pull_request.labels.*.name, 'stale') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark as Draft
+        # https://github.com/voiceflow/draft-pr
+        uses: voiceflow/draft-pr@v1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
