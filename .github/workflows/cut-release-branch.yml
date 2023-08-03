@@ -20,7 +20,6 @@
 #   changelog:
 #     uses: dbt-labs/actions/.github/workflows/cut-release-branch.yml@main
 #    with:
-#      version_to_bump_main: 1.3.0a1
 #      new_branch_name: 1.2.latest
 #    secrets:
 #      FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
@@ -34,7 +33,8 @@ on:
   workflow_call:
     inputs:
       version_to_bump_main:
-        required: true
+        description: "DEPRECATED: The version to bump main to.  This is no longer used."
+        required: false
         type: string
       new_branch_name:
         description: 'The full name of the new branch (ex. 1.5.latest)'
@@ -72,14 +72,7 @@ jobs:
     steps:
       - name: "[DEBUG] Print Inputs"
         run: |
-          echo "Version to bump main:    ${{ inputs.version_to_bump_main }}"
           echo "Name of branch to cut:   ${{ inputs.new_branch_name }}"
-
-      - name: Audit New Version and Parse Into Parts
-        id: semver
-        uses: dbt-labs/actions/parse-semver@v1
-        with:
-          version: ${{ inputs.version_to_bump_main }}
 
   cut_new_branch:
     name: "Cut New Branch ${{ inputs.new_branch_name }}"
@@ -187,63 +180,12 @@ jobs:
           message="Temp branch ${{ steps.variables.outputs.BRANCH_NAME }} created"
           echo "::notice title="Temporary branch created": $title::$message"
 
-  bump_version:
-    name: "Bump to version ${{ inputs.version_to_bump_main }}"
-    needs: ['create_temp_branch']
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: "Checkout ${{ github.repository }}"
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
-          token: ${{ secrets.FISHTOWN_BOT_PAT }}
-
-      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_TARGET_VERSION }}
-
-      - name: "Install Spark Dependencies"
-        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install libsasl2-dev
-
-      - name: "Install Python Dependencies"
-        run: |
-          python -m venv env
-          source env/bin/activate
-          python -m pip install --upgrade pip
-
-      - name: "Bump Version To ${{ inputs.version_to_bump_main }}"
-        run: |
-          source env/bin/activate
-          python -m pip install -r dev-requirements.txt
-          env/bin/bumpversion --allow-dirty --new-version ${{ inputs.version_to_bump_main }} major
-          git status
-
-      - name: "Commit Version Bump to Branch"
-        run: |
-          user="Github Build Bot"
-          email="buildbot@fishtownanalytics.com"
-          git config user.name "$user"
-          git config user.email "$email"
-          git status
-          git add .
-          git commit -m "Bumping version to ${{ inputs.version_to_bump_main }}"
-          git push
-
-      - name: "[Notification] Version Bump completed"
-        run: |
-          message="Version on ${{ needs.create_temp_branch.outputs.temp_branch_name }} bumped to ${{ inputs.version_to_bump_main }}"
-          echo "::notice title="Version Bump Completed": $title::$message"
-
   cleanup_changelog:
     name: "Clean Up Changelog"
-    needs: ['bump_version', 'create_temp_branch']
+    needs: ['create_temp_branch']
     runs-on: ubuntu-latest
+    outputs:
+      next-version: ${{ steps.semver-current.outputs.next-minor-alpha-version }}
 
     steps:
 
@@ -276,9 +218,14 @@ jobs:
 
       - name: "Parse Current Version Into Parts for Changelog Directories"
         id: semver-current
-        uses: dbt-labs/actions/parse-semver@v1
+        uses: dbt-labs/actions/parse-semver@main
         with:
           version: ${{ steps.determine_version.outputs.current_version }}
+
+      - name: "[Notification] Next Alpha Version"
+        run: |
+          message="The next alpha version is ${{ steps.semver-current.outputs.next-minor-alpha-version }}"
+          echo "::notice title="Version Bump Check": $title::$message"
 
       - name: "Delete Unreleased Changelog YAMLs"
         # removal fails if no files exist. OK to continue since we're just cleaning up the files.
@@ -313,9 +260,62 @@ jobs:
           message="Changelog on ${{ needs.create_temp_branch.outputs.temp_branch_name }} cleaned up"
           echo "::notice title="Changelog cleaned up": $title::$message"
 
+  bump_version:
+    name: "Bump to next minor version"
+    needs: ['cleanup_changelog', 'create_temp_branch']
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_TARGET_VERSION }}
+
+      - name: "Install Spark Dependencies"
+        if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install libsasl2-dev
+
+      - name: "Install Python Dependencies"
+        run: |
+          python -m venv env
+          source env/bin/activate
+          python -m pip install --upgrade pip
+
+      - name: "Bump Version To ${{ needs.cleanup_changelog.outputs.next-version }}"
+        run: |
+          source env/bin/activate
+          python -m pip install -r dev-requirements.txt
+          env/bin/bumpversion --allow-dirty --new-version ${{ needs.cleanup_changelog.outputs.next-version }} major
+          git status
+
+      - name: "Commit Version Bump to Branch"
+        run: |
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          git config user.name "$user"
+          git config user.email "$email"
+          git status
+          git add .
+          git commit -m "Bumping version to ${{ needs.cleanup_changelog.outputs.next-version }}"
+          git push
+
+      - name: "[Notification] Version Bump completed"
+        run: |
+          message="Version on ${{ needs.create_temp_branch.outputs.temp_branch_name }} bumped to ${{ needs.cleanup_changelog.outputs.next-version }}"
+          echo "::notice title="Version Bump Completed": $title::$message"
+
   open_pr:
     name: "Open PR Against main"
-    needs: ['cleanup_changelog', 'create_temp_branch']
+    needs: ['cleanup_changelog', 'create_temp_branch', 'bump_version']
     runs-on: ubuntu-latest
     outputs:
       pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
@@ -333,7 +333,7 @@ jobs:
         run: |
           echo "pr_title=${{ inputs.PR_title }}" >> $GITHUB_OUTPUT
           if [${{ inputs.PR_title }} == ""]; then
-            echo "pr_title='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
+            echo "pr_title='Clean up changelogs and bump to version ${{ needs.cleanup_changelog.outputs.next-version }}'" >> $GITHUB_OUTPUT
           fi
 
       - name: "Determine PR Body"
@@ -341,7 +341,7 @@ jobs:
         run: |
           echo "pr_body=${{ inputs.PR_body }}" >> $GITHUB_OUTPUT
           if [${{ inputs.PR_body }} == ""]; then
-            echo "pr_body='Clean up changelogs and bump to version ${{ inputs.version_to_bump_main }}'" >> $GITHUB_OUTPUT
+            echo "pr_body='Clean up changelogs and bump to version ${{ needs.cleanup_changelog.outputs.next-version }}'" >> $GITHUB_OUTPUT
           fi
 
       - name: "Add Branch Details"
