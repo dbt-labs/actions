@@ -152,7 +152,7 @@ jobs:
 
       - name: Post failure to core Slack
         uses: ravsamhq/notify-slack-action@v2
-        if: ${{ always() && steps.monitor-run.outcome != 'success' && github.event.repository.name == "dbt-core" }}
+        if: ${{ always() && steps.monitor-run.outcome != 'success' && github.event.repository.name == 'dbt-core' }}
         with:
           status: ${{ job.status }}
           notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
@@ -163,7 +163,7 @@ jobs:
 
       - name: Post failure to adapter Slack
         uses: ravsamhq/notify-slack-action@v2
-        if: ${{ always() && steps.monitor-run.outcome != 'success' && github.event.repository.name != "dbt-core" }}
+        if: ${{ always() && steps.monitor-run.outcome != 'success' && github.event.repository.name != 'dbt-core' }}
         with:
           status: ${{ job.status }}
           notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
