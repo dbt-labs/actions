@@ -150,9 +150,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Post failure to Slack
+      - name: Post failure to core Slack
         uses: ravsamhq/notify-slack-action@v2
-        if: ${{ always() && steps.monitor-run.outcome != 'success' }}
+        if: ${{ always() && steps.monitor-run.outcome != 'success' && github.event.repository.name == 'dbt-core' }}
         with:
           status: ${{ job.status }}
           notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
@@ -160,3 +160,14 @@ jobs:
           footer: 'Linked failed CI run ${{ steps.status-check.outputs.workflow-url }}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
+
+      - name: Post failure to adapter Slack
+        uses: ravsamhq/notify-slack-action@v2
+        if: ${{ always() && steps.monitor-run.outcome != 'success' && github.event.repository.name != 'dbt-core' }}
+        with:
+          status: ${{ job.status }}
+          notification_title: '${{ github.event.repository.name }} scheduled run of "${{ matrix.branch }}" branch not successful'
+          message_format: ':x: CI on branch "${{ matrix.branch }}" ${{ steps.status-check.outputs.workflow-conclusion }}'
+          footer: 'Linked failed CI run ${{ steps.status-check.outputs.workflow-url }}'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_ADAPTER_ALERTS }}
