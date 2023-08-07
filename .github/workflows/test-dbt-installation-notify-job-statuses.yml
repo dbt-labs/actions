@@ -113,7 +113,7 @@ jobs:
       notification_title: "${{ inputs.installation_method }} nightly installation test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-statuses.outputs.jobs-statuses }}"
 
     secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
 
   slack-notification-adapters:
     name: "Post Scheduled Run Failures - Adapters"
