@@ -170,5 +170,4 @@ jobs:
       installation_method: "Source"
       package_name: ${{ inputs.package_name }}
 
-    secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    secrets: inherit
