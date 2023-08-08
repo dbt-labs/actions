@@ -100,8 +100,8 @@ jobs:
         id: open_issue
         run: |
           issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
-            --title ${{ inputs.issue_title }} \
-            --body ${{ inputs.issue_body }} \
+            --title "${{ inputs.issue_title }} "\
+            --body "${{ inputs.issue_body }}" \
             --assignee ${{ github.actor }} ${{ steps.template.outputs.template}} )
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
