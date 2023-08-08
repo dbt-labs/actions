@@ -91,11 +91,10 @@ jobs:
           # token: ${{ github.token }}
  
       - name: "Set template"
+        if: inputs.issue_template != ''
         id: template
         run: |
-          if [[ ${{ inputs.issue_template }} ]]; then
-            echo "template='--template ${{ inputs.issue_template }}'" >> $GITHUB_OUTPUT
-          fi
+          echo "template='--template ${{ inputs.issue_template }}'" >> $GITHUB_OUTPUT
 
       - name: Open Issue
         id: open_issue
