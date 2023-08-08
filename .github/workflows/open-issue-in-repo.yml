@@ -29,6 +29,10 @@ on:
         description: 'Optional template to use for the issue'
         required: false
         type: string
+    secrets:
+      FISHTOWN_BOT_PAT:
+        description: 'PAT to use for authentication'
+        required: true
 
 defaults:
   run:
@@ -88,7 +92,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: ${{ inputs.issue_repository }}
-          # token: ${{ github.token }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
  
       - name: "Set template"
         if: inputs.issue_template != ''
@@ -100,12 +104,12 @@ jobs:
         id: open_issue
         run: |
           issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
-            --title "${{ inputs.issue_title }} "\
+            --title "${{ inputs.issue_title }}" \
             --body "${{ inputs.issue_body }}" \
             --assignee ${{ github.actor }} ${{ steps.template.outputs.template}} )
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
 
   post_comment:
     needs: [open_new_issue]
