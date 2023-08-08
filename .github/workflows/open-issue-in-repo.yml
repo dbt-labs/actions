@@ -88,7 +88,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: ${{ inputs.issue_repository }}
-          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+          # token: ${{ github.token }}
  
       - name: "Set template"
         id: template
@@ -106,7 +106,7 @@ jobs:
             --assignee ${{ github.actor }} ${{ steps.template.outputs.template}} )
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
-          GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
 
   post_comment:
     needs: [open_new_issue]
