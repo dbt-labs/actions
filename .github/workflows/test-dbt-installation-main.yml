@@ -119,4 +119,4 @@ jobs:
     with:
       package_name: ${{ matrix.package }}
     secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_ADAPTER_ALERTS }}
