@@ -105,7 +105,7 @@ jobs:
   slack-notification-core:
     name: "Post Scheduled Run Failures - Core"
     needs: get-jobs-statuses
-    if: ${{ always() && inputs.package_name == 'dbt-core' }}
+    if: ${{ always() && package_name == 'dbt-core' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
@@ -118,7 +118,7 @@ jobs:
   slack-notification-adapters:
     name: "Post Scheduled Run Failures - Adapters"
     needs: get-jobs-statuses
-    if: ${{ always() && inputs.package_name != 'dbt-core' }}
+    if: ${{ always() && package_name != 'dbt-core' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
