@@ -119,4 +119,5 @@ jobs:
       installation_method: "Homebrew"
       package_name: ${{ inputs.package_name }}
 
-    secrets: inherit
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
