@@ -24,12 +24,8 @@ on:
         required: true
         type: string
       issue_body:
-        description: 'Optional body of the issue'
-        required: false
-        type: string
-      issue_template:
-        description: 'Optional template for the issue'
-        required: false
+        description: 'The body of the issue'
+        required: true
         type: string
     secrets:
       FISHTOWN_BOT_PAT:
@@ -95,24 +91,14 @@ jobs:
         with:
           repository: ${{ inputs.issue_repository }}
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
- 
-      - name: "Set template"
-        if: inputs.issue_template != ''
-        id: template
-        run: |
-          echo "template='--template ${{ inputs.issue_template }}'" >> $GITHUB_OUTPUT
- 
-      - name: "Set body"
-        if: inputs.issue_body != ''
-        id: body
-        run: |
-          echo "body='--body ${{ inputs.issue_body }}'" >> $GITHUB_OUTPUT
 
       - name: Open Issue
         id: open_issue
         run: |
-          issue=$(gh issue create --repo ${{ inputs.issue_repository }} --title "${{ inputs.issue_title }}" \
-            --assignee ${{ github.actor }} ${{ steps.body.outputs.body}} ${{ steps.template.outputs.template}} )
+          issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
+            --title "${{ inputs.issue_title }}" \
+            --body "${{ inputs.issue_body }}" \
+            --assignee ${{ github.actor }})
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
