@@ -1,5 +1,6 @@
 # **what?**
-# Open an issue in a specified repository with a specified title and body.  If the issue already exists, do nothing.  The calling workflow should be connected to a PR.
+# Open an issue in a specified repository with a specified title and body.  If the issue already exists, do nothing.
+# The calling workflow should be triggered off a PR.
 
 # **why?**
 # To be able to trigger issues to open in other repositories from a workflow in a different repository.
@@ -8,7 +9,8 @@
 # This will be triggered from another workflow on a PR.  This could be triggered when a label is added to a PR.
 
 
-name: Generate Updated Docs for dbt-core
+name: Open Issue in Another Repository
+run-name: Open an issue in  ${{ inputs.issue_repository }}
 
 on:
   workflow_call:
@@ -22,11 +24,11 @@ on:
         required: true
         type: string
       issue_body:
-        description: 'Body of the issue'
-        required: true
+        description: 'Optional body of the issue'
+        required: false
         type: string
       issue_template:
-        description: 'Optional template to use for the issue'
+        description: 'Optional template for the issue'
         required: false
         type: string
     secrets:
@@ -99,14 +101,18 @@ jobs:
         id: template
         run: |
           echo "template='--template ${{ inputs.issue_template }}'" >> $GITHUB_OUTPUT
+ 
+      - name: "Set body"
+        if: inputs.issue_body != ''
+        id: body
+        run: |
+          echo "body='--body ${{ inputs.issue_body }}'" >> $GITHUB_OUTPUT
 
       - name: Open Issue
         id: open_issue
         run: |
-          issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
-            --title "${{ inputs.issue_title }}" \
-            --body "${{ inputs.issue_body }}" \
-            --assignee ${{ github.actor }} ${{ steps.template.outputs.template}} )
+          issue=$(gh issue create --repo ${{ inputs.issue_repository }} --title "${{ inputs.issue_title }}" \
+            --assignee ${{ github.actor }} ${{ steps.body.outputs.body}} ${{ steps.template.outputs.template}} )
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
