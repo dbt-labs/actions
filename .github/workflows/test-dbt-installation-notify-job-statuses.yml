@@ -102,10 +102,9 @@ jobs:
 
             return job_statistics;
 
-  slack-notification-core:
-    name: "Post Scheduled Run Failures - Core"
+  slack-notification:
+    name: "Post Scheduled Run Failures"
     needs: get-jobs-statuses
-    if: ${{ always() && package_name == 'dbt-core' }}
 
     uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
     with:
@@ -113,17 +112,4 @@ jobs:
       notification_title: "${{ inputs.installation_method }} nightly installation test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-statuses.outputs.jobs-statuses }}"
 
     secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
-
-  slack-notification-adapters:
-    name: "Post Scheduled Run Failures - Adapters"
-    needs: get-jobs-statuses
-    if: ${{ always() && package_name != 'dbt-core' }}
-
-    uses: dbt-labs/dbt-release/.github/workflows/slack-post-notification.yml@main
-    with:
-      status: "failure"
-      notification_title: "${{ inputs.installation_method }} nightly installation test failed for - ${{ inputs.package_name }}. ${{ needs.get-jobs-statuses.outputs.jobs-statuses }}"
-
-    secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_ADAPTER_ALERTS }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -49,7 +49,8 @@ jobs:
     uses: ./.github/workflows/test-dbt-installation-homebrew.yml
     with:
       package_name: ${{ matrix.package }}
-    secrets: inherit
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
 
   dbt-installation-pip:
     if: >-
@@ -71,7 +72,8 @@ jobs:
     uses: ./.github/workflows/test-dbt-installation-pip.yml
     with:
       package_name: ${{ matrix.package }}
-    secrets: inherit
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
 
   dbt-installation-docker:
     if: >-
@@ -93,7 +95,8 @@ jobs:
     uses: ./.github/workflows/test-dbt-installation-docker.yml
     with:
       package_name: ${{ matrix.package }}
-    secrets: inherit
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
 
   dbt-installation-source:
     if: >-
