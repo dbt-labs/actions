@@ -10,7 +10,6 @@
 
 
 name: Open Issue in Another Repository
-run-name: Open an issue in  ${{ inputs.issue_repository }}
 
 on:
   workflow_call:
@@ -100,7 +99,7 @@ jobs:
         id: labels
         run: |
           if [ '${{ inputs.issue_labels }}' != '' ]; then
-            echo "labels=--label ${{ inputs.issue_labels }}" >> $GITHUB_OUTPUT
+            echo "labels=--label '${{ inputs.issue_labels }}'" >> $GITHUB_OUTPUT
           fi
 
       - name: Open Issue
