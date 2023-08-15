@@ -1,0 +1,136 @@
+# **what?**
+# Open an issue in a specified repository with a specified title and body.  If the issue already exists, do nothing.
+# The calling workflow should be triggered off a PR.
+
+# **why?**
+# To be able to trigger issues to open in other repositories from a workflow in a different repository.
+
+# **when?**
+# This will be triggered from another workflow on a PR.  This could be triggered when a label is added to a PR.
+
+
+name: Open Issue in Another Repository
+
+on:
+  workflow_call:
+    inputs:
+      issue_repository:
+        description: 'Repository to open the issue in'
+        required: true
+        type: string
+      issue_labels:
+        description: 'Labels to add to the issue'
+        required: false
+        type: string
+      issue_title:
+        description: 'Title of the issue'
+        required: true
+        type: string
+      issue_body:
+        description: 'The body of the issue'
+        required: true
+        type: string
+    secrets:
+      FISHTOWN_BOT_PAT:
+        description: 'PAT to use for authentication'
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  issues: write # opens new issues
+  pull-requests: write # comments on PRs
+
+jobs:
+  prep:
+    runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.comment_check.outputs.exists }}
+
+    steps:
+
+      - name: "[DEBUG] Print variables"
+        id: print_variables
+        run: |
+          echo "inputs.issue_repository:      ${{ inputs.issue_repository }}"
+          echo "inputs.issue_labels:          ${{ inputs.issue_labels }}"
+          echo "inputs.issue_title:           ${{ inputs.issue_title}}"
+          echo "inputs.issue_body:            ${{ inputs.issue_body }}"
+      
+      # this step uses the read permission from the GITHUB_TOKEN it inherits
+      - name: "Check for comment"
+        uses: peter-evans/find-comment@v2
+        id: pr_comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "Opened a new issue in ${{ inputs.issue_repository }}:"
+
+      - name: "Set if comment already exists"
+        id: comment_check
+        run: |
+          if [ '${{ steps.pr_comment.outputs.comment-body }}' = '' ]; then
+            echo "exists=false" >> $GITHUB_OUTPUT
+            title="Comment does not exist for this PR."
+            message="Opening a new issue in ${{ inputs.issue_repository }}."
+          else
+            echo "exists=true" >> $GITHUB_OUTPUT
+            title="Comment already exists for this PR indicating associated issue."
+            message="New issue will not be opened."
+          fi
+          echo "::notice $title::$message"
+
+  open_new_issue:
+    needs: [prep]
+    if: ${{ needs.prep.outputs.exists == 'false' }}
+    runs-on: ubuntu-latest
+    outputs:
+      issue_url: ${{ steps.open_issue.outputs.issue_url }}
+
+    steps:
+      - name: Check out ${{ inputs.issue_repository }}
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.issue_repository }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+      
+      - name: "Set labels"
+        if: ${{ inputs.issue_labels }}
+        id: labels
+        run: |
+          echo "labels=--label '${{ inputs.issue_labels }}'" >> $GITHUB_OUTPUT
+
+      - name: Open Issue
+        id: open_issue
+        run: |
+          issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
+            --title "${{ inputs.issue_title }}" \
+            --body "${{ inputs.issue_body }}" \
+            --assignee ${{ github.actor }} ${{ steps.labels.outputs.labels }})
+          echo "issue_url=$issue" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+  post_comment:
+    needs: [open_new_issue]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout ${{ github.repository }} repo"
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository }}
+
+      - name: "Set PR Comment"
+        id: set_pr_comment
+        run: |
+          pr_comment="Opened a new issue in ${{ inputs.issue_repository }}: ${{ needs.open_new_issue.outputs.issue_url }}"
+          echo "pr_comment=$pr_comment" >> $GITHUB_OUTPUT
+      
+      - name: Create PR comment if changelog entry is missing, required, and does not exist
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.set_pr_comment.outputs.pr_comment }}
