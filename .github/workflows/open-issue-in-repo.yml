@@ -54,9 +54,10 @@ jobs:
       - name: "[DEBUG] Print variables"
         id: print_variables
         run: |
-          echo "Repository name to open the issue:      ${{ inputs.issue_repository }}"
-          echo "issue_title:                            ${{ inputs.issue_title}}"
-          echo "issue_body:                             ${{ inputs.issue_body }}"
+          echo "inputs.issue_repository:      ${{ inputs.issue_repository }}"
+          echo "inputs.issue_labels:          ${{ inputs.issue_labels }}"
+          echo "inputs.issue_title:           ${{ inputs.issue_title}}"
+          echo "inputs.issue_body:            ${{ inputs.issue_body }}"
       
       # this step uses the read permission from the GITHUB_TOKEN it inherits
       - name: "Check for comment"
@@ -96,11 +97,10 @@ jobs:
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
       
       - name: "Set labels"
+        if: ${{ inputs.issue_labels }}
         id: labels
         run: |
-          if [ '${{ inputs.issue_labels }}' != '' ]; then
-            echo "labels=--label '${{ inputs.issue_labels }}'" >> $GITHUB_OUTPUT
-          fi
+          echo "labels=--label '${{ inputs.issue_labels }}'" >> $GITHUB_OUTPUT
 
       - name: Open Issue
         id: open_issue
