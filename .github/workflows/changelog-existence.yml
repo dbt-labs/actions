@@ -39,11 +39,15 @@ on:
         description: Label on the PR that indicates CHANGELOGs are not required.
         type: string
         required: true
+    secrets:
+      FISHTOWN_BOT_PAT:
+        description: "PAT that allows commits, creating branches and opening PRs"
+        required: true
 
 jobs:
   changelog_existence:
     name: Check if Changelog Exists
-    if: "!contains(github.event.pull_request.labels.*.name, inputs.skip_label)"
+    if: !contains(github.event.pull_request.labels.*.name, inputs.skip_label)
     runs-on: ubuntu-latest
 
     steps:
@@ -100,6 +104,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ inputs.changelog_comment }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
       - name: Fail job if changelog entry is missing and required
         if: steps.changelog_check.outputs.exists == 'false'
