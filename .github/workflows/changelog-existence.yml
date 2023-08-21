@@ -47,7 +47,7 @@ on:
 jobs:
   changelog_existence:
     name: Check if Changelog Exists
-    if: !contains(github.event.pull_request.labels.*.name, inputs.skip_label)
+    if: ${{ !contains(github.event.pull_request.labels.*.name, inputs.skip_label) }}
     runs-on: ubuntu-latest
 
     steps:
