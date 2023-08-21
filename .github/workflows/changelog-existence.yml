@@ -40,6 +40,10 @@ on:
         type: string
         required: true
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   changelog_existence:
     name: Check if Changelog Exists
@@ -52,8 +56,8 @@ jobs:
         id: echo_inputs
         run: |
           echo "all variables defined as inputs"
-          echo "Input Comment Text:        ${{ inputs.changelog_comment }}"
-          echo "Input Label for Skipping:  ${{ inputs.skip_label }}"
+          echo "inputs.changelog_comment:    ${{ inputs.changelog_comment }}"
+          echo "inputs.skip_label:           ${{ inputs.skip_label }}"
 
       - name: Check if changelog file was added
         # https://github.com/marketplace/actions/paths-changes-filter
@@ -99,18 +103,7 @@ jobs:
         run: |
           gh issue comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "${{ inputs.changelog_comment }}"
         env:
-          GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
-
-      # # this step uses the write permission on the PR from the GITHUB_TOKEN it inherits
-      # - name: Create PR comment if changelog entry is missing, required, and does not exist
-      #   if: |
-      #     steps.changelog_check.outputs.exists == 'false' &&
-      #     steps.comment_check.outputs.exists == 'false'
-      #   uses: peter-evans/create-or-update-comment@v3
-      #   with:
-      #     issue-number: ${{ github.event.pull_request.number }}
-      #     body: ${{ inputs.changelog_comment }}
-      #     token: ${{ secrets.FISHTOWN_BOT_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fail job if changelog entry is missing and required
         if: steps.changelog_check.outputs.exists == 'false'
