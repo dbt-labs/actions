@@ -100,11 +100,21 @@ jobs:
         if: |
           steps.changelog_check.outputs.exists == 'false' &&
           steps.comment_check.outputs.exists == 'false'
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ inputs.changelog_comment }}
+        run: |
+          gh issue comment ${{ github.event.pull_request.number }} --body ${{ inputs.changelog_comment }}
+        env:
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      # # this step uses the write permission on the PR from the GITHUB_TOKEN it inherits
+      # - name: Create PR comment if changelog entry is missing, required, and does not exist
+      #   if: |
+      #     steps.changelog_check.outputs.exists == 'false' &&
+      #     steps.comment_check.outputs.exists == 'false'
+      #   uses: peter-evans/create-or-update-comment@v3
+      #   with:
+      #     issue-number: ${{ github.event.pull_request.number }}
+      #     body: ${{ inputs.changelog_comment }}
+      #     token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
       - name: Fail job if changelog entry is missing and required
         if: steps.changelog_check.outputs.exists == 'false'
