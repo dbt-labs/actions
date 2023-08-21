@@ -97,7 +97,7 @@ jobs:
           steps.changelog_check.outputs.exists == 'false' &&
           steps.comment_check.outputs.exists == 'false'
         run: |
-          gh issue comment ${{ github.event.pull_request.number }} --body "${{ inputs.changelog_comment }}"
+          gh issue comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "${{ inputs.changelog_comment }}"
         env:
           GH_TOKEN: ${{ github.token }}
 
