@@ -12,6 +12,10 @@
 
 # Example Usage including required permissions
 
+# on:
+#   pull_request_target:
+#     types: [opened, reopened, labeled, unlabeled, synchronize]
+#
 # permissions:
 #   contents: read
 #   pull-requests: write
@@ -40,10 +44,14 @@ on:
         type: string
         required: true
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   changelog_existence:
     name: Check if Changelog Exists
-    if: "!contains(github.event.pull_request.labels.*.name, inputs.skip_label)"
+    if: ${{ !contains(github.event.pull_request.labels.*.name, inputs.skip_label) }}
     runs-on: ubuntu-latest
 
     steps:
@@ -52,8 +60,8 @@ jobs:
         id: echo_inputs
         run: |
           echo "all variables defined as inputs"
-          echo "Input Comment Text:        ${{ inputs.changelog_comment }}"
-          echo "Input Label for Skipping:  ${{ inputs.skip_label }}"
+          echo "inputs.changelog_comment:    ${{ inputs.changelog_comment }}"
+          echo "inputs.skip_label:           ${{ inputs.skip_label }}"
 
       - name: Check if changelog file was added
         # https://github.com/marketplace/actions/paths-changes-filter
@@ -96,10 +104,10 @@ jobs:
         if: |
           steps.changelog_check.outputs.exists == 'false' &&
           steps.comment_check.outputs.exists == 'false'
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ inputs.changelog_comment }}
+        run: |
+          gh issue comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "${{ inputs.changelog_comment }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fail job if changelog entry is missing and required
         if: steps.changelog_check.outputs.exists == 'false'
