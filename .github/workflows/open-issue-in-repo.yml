@@ -12,6 +12,29 @@
 name: Open Issue in Another Repository
 
 on:
+  workflow_dispatch:  # for testing
+    inputs:
+      issue_repository:
+        description: 'Repository to open the issue in'
+        required: true
+        type: string
+        default: dbt-docs
+      issue_labels:
+        description: 'Labels to add to the issue'
+        required: false
+        type: string
+        default: "content,improvement,dbt Core"
+      issue_title:
+        description: 'Title of the issue'
+        required: true
+        type: string
+        default: "Testing issue opening from another workflow"
+      issue_body:
+        description: 'The body of the issue'
+        required: true
+        type: string
+        default: "This is a test issue opened from another workflow."
+
   workflow_call:
     inputs:
       issue_repository:
@@ -86,15 +109,12 @@ jobs:
     needs: [prep]
     if: ${{ needs.prep.outputs.exists == 'false' }}
     runs-on: ubuntu-latest
-    outputs:
-      issue_url: ${{ steps.open_issue.outputs.issue_url }}
 
     steps:
-      - name: Check out ${{ inputs.issue_repository }}
+      - name: "Check out ${{ github.repository }}"
         uses: actions/checkout@v3
         with:
-          repository: ${{ inputs.issue_repository }}
-          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+          repository: ${{ github.repository }}
       
       - name: "Set labels"
         if: ${{ inputs.issue_labels }}
@@ -102,7 +122,7 @@ jobs:
         run: |
           echo "labels=--label '${{ inputs.issue_labels }}'" >> $GITHUB_OUTPUT
 
-      - name: Open Issue
+      - name: "Open Issue in ${{ inputs.issue_repository }}"
         id: open_issue
         run: |
           issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
@@ -113,24 +133,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-  post_comment:
-    needs: [open_new_issue]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: "Checkout ${{ github.repository }} repo"
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ github.repository }}
-
       - name: "Set PR Comment"
         id: set_pr_comment
         run: |
-          pr_comment="Opened a new issue in ${{ inputs.issue_repository }}: ${{ needs.open_new_issue.outputs.issue_url }}"
+          pr_comment="Opened a new issue in ${{ inputs.issue_repository }}: ${{ steps.open_issue.outputs.issue_url }}"
           echo "pr_comment=$pr_comment" >> $GITHUB_OUTPUT
-      
-      - name: Create PR comment if changelog entry is missing, required, and does not exist
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ steps.set_pr_comment.outputs.pr_comment }}
+
+      - name: "Leave PR Comment Linking to Opened Issue"
+        id: pr_comment
+        run: |
+          gh pr comment --repo ${{ github.repository }} \
+            ${{ github.event.pull_request.number }} \
+            --body "${{ steps.set_pr_comment.outputs.pr_comment }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
