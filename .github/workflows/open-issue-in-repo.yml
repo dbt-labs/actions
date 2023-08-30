@@ -23,7 +23,7 @@ on:
         description: 'Labels to add to the issue'
         required: false
         type: string
-        default: "content,improvement,dbt Core"
+        default: "bug,enhancement"
       issue_title:
         description: 'Title of the issue'
         required: true
@@ -128,7 +128,7 @@ jobs:
           issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
             --title "${{ inputs.issue_title }}" \
             --body "${{ inputs.issue_body }}" \
-            --assignee ${{ github.event.pull_request.user.login }} ${{ steps.labels.outputs.labels }})
+            --assignee emmyoop ${{ steps.labels.outputs.labels }})
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
