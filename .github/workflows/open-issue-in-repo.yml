@@ -87,7 +87,7 @@ jobs:
         uses: peter-evans/find-comment@v2
         id: pr_comment
         with:
-          issue-number: ${{ github.event.pull_request.number }}
+          issue-number: 133
           comment-author: "github-actions[bot]"
           body-includes: "Opened a new issue in ${{ inputs.issue_repository }}:"
 
@@ -143,7 +143,7 @@ jobs:
         id: pr_comment
         run: |
           gh pr comment --repo ${{ github.repository }} \
-            ${{ github.event.pull_request.number }} \
+            133 \
             --body "${{ steps.set_pr_comment.outputs.pr_comment }}"
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
