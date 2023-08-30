@@ -123,12 +123,12 @@ jobs:
         run: |
           if [ '${{ steps.pr_comment.outputs.comment-body }}' = '' ]; then
             echo "exists=false" >> $GITHUB_OUTPUT
-            title="Comment does not exist for this PR."
+            title="Continue Processing."
             message="Opening a new issue in ${{ inputs.issue_repository }}."
           else
             echo "exists=true" >> $GITHUB_OUTPUT
-            title="Comment already exists for this PR indicating associated issue."
-            message="New issue will not be opened."
+            title="Stop processing."
+            message="Comment already exists for this PR indicating associated issue. New issue will not be opened."
           fi
           echo "::notice $title::$message"
 
@@ -157,6 +157,13 @@ jobs:
             --body "${{ inputs.issue_body }}" \
             --assignee ${{ needs.prep.outputs.assignee }} ${{ steps.labels.outputs.labels }})
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      - name: "Update Issue in ${{ inputs.issue_repository }}"
+        id: update_issue
+        run: |
+          gh issue edit ${{ steps.open_issue.outputs.issue_url }} --repo ${{ inputs.issue_repository }} --assignee ${{ needs.prep.outputs.assignee }}
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
 
