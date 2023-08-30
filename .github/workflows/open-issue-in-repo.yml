@@ -155,8 +155,7 @@ jobs:
         run: |
           issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
             --title "${{ inputs.issue_title }}" \
-            --body "${{ inputs.issue_body }}" \
-            --assignee ${{ needs.prep.outputs.assignee }} ${{ steps.labels.outputs.labels }})
+            --body "${{ inputs.issue_body }}" ${{ steps.labels.outputs.labels }})
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
