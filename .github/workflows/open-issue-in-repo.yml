@@ -138,10 +138,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Check out ${{ github.repository }}"
+      - name: "Check out ${{ inputs.issue_repository }}"
         uses: actions/checkout@v3
         with:
           repository: ${{ github.repository }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
       
       - name: "Set labels"
         if: ${{ inputs.issue_labels }}
@@ -152,29 +153,19 @@ jobs:
       - name: "Open Issue in ${{ inputs.issue_repository }}"
         id: open_issue
         run: |
-          gh issue create --repo ${{ inputs.issue_repository }} \
+          issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
             --title "${{ inputs.issue_title }}" \
             --body "${{ inputs.issue_body }}" \
-            --assignee ${{ needs.prep.outputs.assignee }} ${{ steps.labels.outputs.labels }}
+            --assignee ${{ needs.prep.outputs.assignee }} ${{ steps.labels.outputs.labels }})
+          echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-      # - name: "Open Issue in ${{ inputs.issue_repository }}"
-      #   id: open_issue
-      #   run: |
-      #     issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
-      #       --title "${{ inputs.issue_title }}" \
-      #       --body "${{ inputs.issue_body }}" \
-      #       --assignee ${{ needs.prep.outputs.assignee }} ${{ steps.labels.outputs.labels }})
-      #     echo "issue_url=$issue" >> $GITHUB_OUTPUT
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
-
-      # - name: "Leave PR Comment Linking to Opened Issue"
-      #   id: pr_comment
-      #   run: |
-      #     gh pr comment --repo ${{ github.repository }} \
-      #     ${{ needs.prep.outputs.pr_number }} \
-      #       --body "${{ env.BASE_COMMENT }} ${{ steps.open_issue.outputs.issue_url }}"
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+      - name: "Leave PR Comment Linking to Opened Issue"
+        id: pr_comment
+        run: |
+          gh pr comment --repo ${{ github.repository }} \
+          ${{ needs.prep.outputs.pr_number }} \
+            --body "${{ env.BASE_COMMENT }} ${{ steps.open_issue.outputs.issue_url }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
