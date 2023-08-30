@@ -97,7 +97,7 @@ jobs:
       - name: "Determine PR values"
         id: pr_values
         run: |
-          if [ "${{ github.event_name }} == "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
             echo "assignee=${{ inputs.issue_assignee }}" >> $GITHUB_OUTPUT
           else
