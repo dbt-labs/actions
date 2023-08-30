@@ -76,6 +76,9 @@ permissions:
   issues: write # opens new issues
   pull-requests: write # comments on PRs
 
+env:
+  BASE_COMMENT: "Opened a new issue in ${{ inputs.issue_repository }}:"
+
 jobs:
   prep:
     runs-on: ubuntu-latest
@@ -113,7 +116,7 @@ jobs:
         with:
           issue-number: ${{ steps.pr_values.outputs.pr_number }}
           comment-author: "github-actions[bot]"
-          body-includes: "Opened a new issue in ${{ inputs.issue_repository }}:"
+          body-includes: ${{ env.BASE_COMMENT }}
 
       - name: "Set if comment already exists"
         id: comment_check
@@ -157,17 +160,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-      - name: "Set PR Comment"
-        id: set_pr_comment
-        run: |
-          pr_comment="Opened a new issue in ${{ inputs.issue_repository }}: ${{ steps.open_issue.outputs.issue_url }}"
-          echo "pr_comment=$pr_comment" >> $GITHUB_OUTPUT
-
       - name: "Leave PR Comment Linking to Opened Issue"
         id: pr_comment
         run: |
           gh pr comment --repo ${{ github.repository }} \
           ${{ needs.prep.outputs.pr_number }} \
-            --body "${{ steps.set_pr_comment.outputs.pr_comment }}"
+            --body "${{ env.BASE_COMMENT }} ${{ steps.open_issue.outputs.issue_url }}"
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
