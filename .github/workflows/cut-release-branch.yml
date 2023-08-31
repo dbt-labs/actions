@@ -297,6 +297,20 @@ jobs:
           env/bin/bumpversion --allow-dirty --new-version ${{ needs.cleanup_changelog.outputs.next-version }} major
           git status
 
+      # this step will fail on whitespace errors but also correct them
+      - name: "Remove Trailing Whitespace Via Pre-commit"
+        continue-on-error: true
+        run: |
+          pre-commit run trailing-whitespace --files .bumpversion.cfg CHANGELOG.md .changes/*
+          git status
+
+      # this step will fail on newline errors but also correct them
+      - name: "Removing Extra Newlines Via Pre-commit"
+        continue-on-error: true
+        run: |
+          pre-commit run end-of-file-fixer --files .bumpversion.cfg CHANGELOG.md .changes/*
+          git status
+    
       - name: "Commit Version Bump to Branch"
         run: |
           user="Github Build Bot"
