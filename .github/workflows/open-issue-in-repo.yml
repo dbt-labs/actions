@@ -101,12 +101,12 @@ jobs:
         run: |
           if [ '${{ steps.pr_comment.outputs.comment-body }}' = '' ]; then
             echo "exists=false" >> $GITHUB_OUTPUT
-            title="Comment does not exist for this PR."
+            title="Continue Processing."
             message="Opening a new issue in ${{ inputs.issue_repository }}."
           else
             echo "exists=true" >> $GITHUB_OUTPUT
-            title="Comment already exists for this PR indicating associated issue."
-            message="New issue will not be opened."
+            title="Stop processing."
+            message="Comment already exists for this PR indicating associated issue. New issue will not be opened."
           fi
           echo "::notice $title::$message"
 
