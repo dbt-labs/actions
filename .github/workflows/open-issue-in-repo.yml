@@ -29,6 +29,11 @@ on:
         required: true
         type: string
         default: "This is a test issue opened from another workflow."
+      pr_number:
+        description: 'The PR to open the issue from'
+        required: true
+        type: string
+        default: "133"
 
   workflow_call:
     inputs:
@@ -62,6 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       exists: ${{ steps.comment_check.outputs.exists }}
+      pr_number: ${{ steps.pr_values.outputs.pr_number }}
 
     steps:
 
@@ -71,13 +77,22 @@ jobs:
           echo "inputs.issue_repository:      ${{ inputs.issue_repository }}"
           echo "inputs.issue_title:           ${{ inputs.issue_title}}"
           echo "inputs.issue_body:            ${{ inputs.issue_body }}"
+
+      - name: "Determine PR values"
+        id: pr_values
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          fi
       
       # this step uses the read permission from the GITHUB_TOKEN it inherits
       - name: "Check for comment"
         uses: peter-evans/find-comment@v2
         id: pr_comment
         with:
-          issue-number: ${{ github.event.pull_request.number }}
+          issue-number: ${{ steps.pr_values.outputs.pr_number }}
           comment-author: "FishtownBuildBot"
           body-includes: "Opened a new issue in ${{ inputs.issue_repository }}:"
 
@@ -126,7 +141,7 @@ jobs:
         id: pr_comment
         run: |
           gh pr comment --repo ${{ github.repository }} \
-            ${{ github.event.pull_request.number }} \
+            ${{ needs.prep.outputs.pr_number }} \
             --body "${{ steps.set_pr_comment.outputs.pr_comment }}"
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
