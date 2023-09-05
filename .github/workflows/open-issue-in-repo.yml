@@ -18,7 +18,7 @@ on:
         description: 'Repository to open the issue in'
         required: true
         type: string
-        default: dbt-docs
+        default: dbt-labs/dbt-docs
       issue_title:
         description: 'Title of the issue'
         required: true
