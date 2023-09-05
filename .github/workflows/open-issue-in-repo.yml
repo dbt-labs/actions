@@ -19,11 +19,6 @@ on:
         required: true
         type: string
         default: dbt-docs
-      issue_labels:
-        description: 'Labels to add to the issue'
-        required: false
-        type: string
-        default: "content,improvement,dbt Core"
       issue_title:
         description: 'Title of the issue'
         required: true
@@ -40,10 +35,6 @@ on:
       issue_repository:
         description: 'Repository to open the issue in'
         required: true
-        type: string
-      issue_labels:
-        description: 'Labels to add to the issue'
-        required: false
         type: string
       issue_title:
         description: 'Title of the issue'
@@ -78,7 +69,6 @@ jobs:
         id: print_variables
         run: |
           echo "inputs.issue_repository:      ${{ inputs.issue_repository }}"
-          echo "inputs.issue_labels:          ${{ inputs.issue_labels }}"
           echo "inputs.issue_title:           ${{ inputs.issue_title}}"
           echo "inputs.issue_body:            ${{ inputs.issue_body }}"
       
@@ -115,20 +105,13 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: ${{ github.repository }}
-      
-      - name: "Set labels"
-        if: ${{ inputs.issue_labels }}
-        id: labels
-        run: |
-          echo "labels=--label '${{ inputs.issue_labels }}'" >> $GITHUB_OUTPUT
 
       - name: "Open Issue in ${{ inputs.issue_repository }}"
         id: open_issue
         run: |
           issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
             --title "${{ inputs.issue_title }}" \
-            --body "${{ inputs.issue_body }}" \
-            --assignee ${{ github.event.pull_request.user.login }} ${{ steps.labels.outputs.labels }})
+            --body "${{ inputs.issue_body }}")
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
