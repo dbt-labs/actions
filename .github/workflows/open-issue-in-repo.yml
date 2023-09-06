@@ -18,12 +18,7 @@ on:
         description: 'Repository to open the issue in'
         required: true
         type: string
-        default: dbt-docs
-      issue_labels:
-        description: 'Labels to add to the issue'
-        required: false
-        type: string
-        default: "content,improvement,dbt Core"
+        default: dbt-labs/dbt-docs
       issue_title:
         description: 'Title of the issue'
         required: true
@@ -34,16 +29,17 @@ on:
         required: true
         type: string
         default: "This is a test issue opened from another workflow."
+      pr_number:
+        description: 'The PR to open the issue from'
+        required: true
+        type: string
+        default: "133"
 
   workflow_call:
     inputs:
       issue_repository:
         description: 'Repository to open the issue in'
         required: true
-        type: string
-      issue_labels:
-        description: 'Labels to add to the issue'
-        required: false
         type: string
       issue_title:
         description: 'Title of the issue'
@@ -71,6 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       exists: ${{ steps.comment_check.outputs.exists }}
+      pr_number: ${{ steps.pr_values.outputs.pr_number }}
 
     steps:
 
@@ -78,17 +75,25 @@ jobs:
         id: print_variables
         run: |
           echo "inputs.issue_repository:      ${{ inputs.issue_repository }}"
-          echo "inputs.issue_labels:          ${{ inputs.issue_labels }}"
           echo "inputs.issue_title:           ${{ inputs.issue_title}}"
           echo "inputs.issue_body:            ${{ inputs.issue_body }}"
+
+      - name: "Determine PR values"
+        id: pr_values
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          fi
       
       # this step uses the read permission from the GITHUB_TOKEN it inherits
       - name: "Check for comment"
         uses: peter-evans/find-comment@v2
         id: pr_comment
         with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
+          issue-number: ${{ steps.pr_values.outputs.pr_number }}
+          comment-author: "FishtownBuildBot"
           body-includes: "Opened a new issue in ${{ inputs.issue_repository }}:"
 
       - name: "Set if comment already exists"
@@ -96,12 +101,12 @@ jobs:
         run: |
           if [ '${{ steps.pr_comment.outputs.comment-body }}' = '' ]; then
             echo "exists=false" >> $GITHUB_OUTPUT
-            title="Comment does not exist for this PR."
+            title="Continue Processing."
             message="Opening a new issue in ${{ inputs.issue_repository }}."
           else
             echo "exists=true" >> $GITHUB_OUTPUT
-            title="Comment already exists for this PR indicating associated issue."
-            message="New issue will not be opened."
+            title="Stop processing."
+            message="Comment already exists for this PR indicating associated issue. New issue will not be opened."
           fi
           echo "::notice $title::$message"
 
@@ -115,20 +120,13 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: ${{ github.repository }}
-      
-      - name: "Set labels"
-        if: ${{ inputs.issue_labels }}
-        id: labels
-        run: |
-          echo "labels=--label '${{ inputs.issue_labels }}'" >> $GITHUB_OUTPUT
 
       - name: "Open Issue in ${{ inputs.issue_repository }}"
         id: open_issue
         run: |
           issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
             --title "${{ inputs.issue_title }}" \
-            --body "${{ inputs.issue_body }}" \
-            --assignee ${{ github.event.pull_request.user.login }} ${{ steps.labels.outputs.labels }})
+            --body "${{ inputs.issue_body }}")
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
@@ -143,7 +141,7 @@ jobs:
         id: pr_comment
         run: |
           gh pr comment --repo ${{ github.repository }} \
-            ${{ github.event.pull_request.number }} \
+            ${{ needs.prep.outputs.pr_number }} \
             --body "${{ steps.set_pr_comment.outputs.pr_comment }}"
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
