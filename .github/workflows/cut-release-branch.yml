@@ -28,6 +28,8 @@
 # add note to eventually commit changes directly and bypass checks - same as release - when we move to this model run test action after merge
 
 name: Cut new release branch
+run-name: "Cutting New Branch:  ${{ inputs.new_branch_name }}"
+
 
 on:
   workflow_call:
@@ -49,7 +51,7 @@ on:
     outputs:
       PR_number:
         description: "PR number for the opened PR"
-        value: ${{ jobs.cleanup_main.outputs.pr_number }}
+        value: ${{ jobs.open_pr.outputs.pr_number }}
     secrets:
       FISHTOWN_BOT_PAT:
         description: "PAT that allows commits, creating branches and opening PRs"
