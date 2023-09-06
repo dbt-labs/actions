@@ -76,81 +76,8 @@ jobs:
         run: |
           echo "Name of branch to cut:   ${{ inputs.new_branch_name }}"
 
-  cut_new_branch:
-    name: "Cut New Branch ${{ inputs.new_branch_name }}"
-    needs: ['prep_work']
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: "Checkout ${{ github.repository }}"
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.FISHTOWN_BOT_PAT }}
-          fetch-depth: 0
-
-      - name: "Ensure New Branch Does Not Exist"
-        id: check_new_branch
-        run: |
-          title="Check New Branch Existence"
-          if git show-ref --quiet ${{ inputs.new_branch_name }}; then
-            message="Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
-            echo "::error $title::$message"
-            exit 1
-          fi
-
-      - name: "Create New Release Branch"
-        run: |
-          git checkout -b ${{ inputs.new_branch_name }}
-
-      - name: "Push up New Branch"
-        run: |
-          #Data for commit
-          user="Github Build Bot"
-          email="buildbot@fishtownanalytics.com"
-          git config user.name "$user"
-          git config user.email "$email"
-          git push --set-upstream origin ${{ inputs.new_branch_name }}
-
-      - name: "[Notification] New branch created"
-        run: |
-          message="New branch ${{ inputs.new_branch_name }} created"
-          echo "::notice title="New branch created": $title::$message"
-
-      - name: "Bump dependencies via script"
-        # This bumps the dependency on dbt-core in the adapters
-        if: ${{ !contains(github.repository, 'dbt-core') }}
-        run: |
-          echo ${{ github.repository }}
-          echo "running update_dependencies script"
-          bash ${GITHUB_WORKSPACE}/.github/scripts/update_dependencies.sh ${{ inputs.new_branch_name }}
-          commit_message="bumping .latest branch variable in update_dependencies.sh to ${{ inputs.new_branch_name }}"
-          git status
-          git add .
-          git commit -m "$commit_message"
-          git push
-
-      - name: "Bump env variable via script"
-        # bumps the RELEASE_BRANCH variable in nightly-release.yml in adapters
-        if: ${{ !contains(github.repository, 'dbt-core') }}
-        run: |
-          file="./.github/scripts/update_release_branch.sh"
-          if test -f "$file"; then
-            echo ${{ github.repository }}
-            echo "running some script yet to be written now"
-            bash $file ${{ inputs.new_branch_name }}
-            commit_message="updating env variable to ${{ inputs.new_branch_name }} in nightly-release.yml"
-            git status
-            git add .
-            git commit -m "$commit_message"
-            git push
-          else
-            echo "no $file seen skipping step"
-          fi
-
   create_temp_branch:
     name: "Create Temp branch off main"
-    needs: ['cut_new_branch']
     runs-on: ubuntu-latest
     outputs:
       temp_branch_name: ${{ steps.variables.outputs.BRANCH_NAME }}
@@ -317,13 +244,15 @@ jobs:
       - name: "Cleanup - Remove Trailing Whitespace Via Pre-commit"
         continue-on-error: true
         run: |
-          pre-commit run trailing-whitespace --files .bumpversion.cfg || true
+          python -m venv env
+          python -m pre-commit run trailing-whitespace --files .bumpversion.cfg || true
 
       # this step will fail on newline errors but also correct them
       - name: "Cleanup - Remove Extra Newlines Via Pre-commit"
         continue-on-error: true
         run: |
-          pre-commit run end-of-file-fixer --files .bumpversion.cfg || true
+          python -m venv env
+          python -m pre-commit run end-of-file-fixer --files .bumpversion.cfg || true
 
       - name: "Commit Version Bump to Branch"
         run: |
@@ -391,3 +320,76 @@ jobs:
         run: |
           message="PR opened at ${{ steps.create_pr.outputs.pr_url }}"
           echo "::notice title="Pull Request Opened": $title::$message"
+
+  cut_new_branch:
+    # don't cut the new branch until we're done openeing the PR against main
+    name: "Cut New Branch ${{ inputs.new_branch_name }}"
+    needs: [open_pr]
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+          fetch-depth: 0
+
+      - name: "Ensure New Branch Does Not Exist"
+        id: check_new_branch
+        run: |
+          title="Check New Branch Existence"
+          if git show-ref --quiet ${{ inputs.new_branch_name }}; then
+            message="Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
+            echo "::error $title::$message"
+            exit 1
+          fi
+
+      - name: "Create New Release Branch"
+        run: |
+          git checkout -b ${{ inputs.new_branch_name }}
+
+      - name: "Push up New Branch"
+        run: |
+          #Data for commit
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          git config user.name "$user"
+          git config user.email "$email"
+          git push --set-upstream origin ${{ inputs.new_branch_name }}
+
+      - name: "[Notification] New branch created"
+        run: |
+          message="New branch ${{ inputs.new_branch_name }} created"
+          echo "::notice title="New branch created": $title::$message"
+
+      - name: "Bump dependencies via script"
+        # This bumps the dependency on dbt-core in the adapters
+        if: ${{ !contains(github.repository, 'dbt-core') }}
+        run: |
+          echo ${{ github.repository }}
+          echo "running update_dependencies script"
+          bash ${GITHUB_WORKSPACE}/.github/scripts/update_dependencies.sh ${{ inputs.new_branch_name }}
+          commit_message="bumping .latest branch variable in update_dependencies.sh to ${{ inputs.new_branch_name }}"
+          git status
+          git add .
+          git commit -m "$commit_message"
+          git push
+
+      - name: "Bump env variable via script"
+        # bumps the RELEASE_BRANCH variable in nightly-release.yml in adapters
+        if: ${{ !contains(github.repository, 'dbt-core') }}
+        run: |
+          file="./.github/scripts/update_release_branch.sh"
+          if test -f "$file"; then
+            echo ${{ github.repository }}
+            echo "running some script yet to be written now"
+            bash $file ${{ inputs.new_branch_name }}
+            commit_message="updating env variable to ${{ inputs.new_branch_name }} in nightly-release.yml"
+            git status
+            git add .
+            git commit -m "$commit_message"
+            git push
+          else
+            echo "no $file seen skipping step"
+          fi
