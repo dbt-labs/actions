@@ -69,12 +69,15 @@ env:
 
 jobs:
   prep_work:
-    name: "Audit Inputs"
+    name: "Prep Work"
     runs-on: ubuntu-latest
     steps:
       - name: "[DEBUG] Print Inputs"
         run: |
-          echo "Name of branch to cut:   ${{ inputs.new_branch_name }}"
+          echo "version_to_bump_main:   ${{ inputs.version_to_bump_main }}"
+          echo "new_branch_name:        ${{ inputs.new_branch_name }}"
+          echo "PR_title:               ${{ inputs.PR_title }}"
+          echo "PR_body:                ${{ inputs.PR_body }}"
 
   create_temp_branch:
     name: "Create Temp branch off main"
@@ -160,14 +163,14 @@ jobs:
         # removal fails if no files exist. OK to continue since we're just cleaning up the files.
         continue-on-error: true
         run: |
-          rm .changes/unreleased/*.yaml
+          rm .changes/unreleased/*.yaml || true
 
       - name: "Delete Pre Release Changelogs and YAMLs"
         # removal fails if no files exist. OK to continue since we're just cleaning up the files.
         continue-on-error: true
         run: |
-          rm .changes/${{ steps.semver-current.outputs.base-version }}/*.yaml
-          rm .changes/${{ steps.semver-current.outputs.major }}.${{ steps.semver-current.outputs.minor }}.*.md
+          rm .changes/${{ steps.semver-current.outputs.base-version }}/*.yaml || true
+          rm .changes/${{ steps.semver-current.outputs.major }}.${{ steps.semver-current.outputs.minor }}.*.md || true
 
       - name: "Cleanup CHANGELOG.md"
         run: |
@@ -245,6 +248,8 @@ jobs:
         continue-on-error: true
         run: |
           python -m venv env
+          python -m pre-commit --version
+          python -m pip freeze
           python -m pre-commit run trailing-whitespace --files .bumpversion.cfg || true
 
       # this step will fail on newline errors but also correct them
@@ -252,6 +257,7 @@ jobs:
         continue-on-error: true
         run: |
           python -m venv env
+          python -m pre-commit --version
           python -m pre-commit run end-of-file-fixer --files .bumpversion.cfg || true
 
       - name: "Commit Version Bump to Branch"
