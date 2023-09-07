@@ -293,7 +293,7 @@ jobs:
 
   open_pr:
     name: "Open PR Against main"
-    needs: ['cleanup_changelog', 'create_temp_branch', 'bump_version']
+    needs: ['cleanup_changelog', 'create_temp_branch', 'cleanup']
     runs-on: ubuntu-latest
     outputs:
       pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
