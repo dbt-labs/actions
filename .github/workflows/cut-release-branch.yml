@@ -176,20 +176,6 @@ jobs:
         run: |
           changie merge
 
-      # this step will fail on whitespace errors but also correct them
-      - name: "Cleanup - Remove Trailing Whitespace Via Pre-commit"
-        continue-on-error: true
-        run: |
-          pre-commit run trailing-whitespace --files CHANGELOG.md || true
-          pre-commit run trailing-whitespace --files changes/* || true
-
-      # this step will fail on newline errors but also correct them
-      - name: "Cleanup - Remove Extra Newlines Via Pre-commit"
-        continue-on-error: true
-        run: |
-          pre-commit run end-of-file-fixer --files CHANGELOG.md || true
-          pre-commit run end-of-file-fixer --files .changes/* || true
-
       - name: "Commit Changelog Cleanup to Branch"
         run: |
           user="Github Build Bot"
@@ -243,20 +229,6 @@ jobs:
           env/bin/bumpversion --allow-dirty --new-version ${{ needs.cleanup_changelog.outputs.next-version }} major
           git status
 
-      # this step will fail on whitespace errors but also correct them
-      - name: "Cleanup - Remove Trailing Whitespace Via Pre-commit"
-        continue-on-error: true
-        run: |
-          python -m pip freeze
-          pre-commit run trailing-whitespace --files .bumpversion.cfg
-
-      # this step will fail on newline errors but also correct them
-      - name: "Cleanup - Remove Extra Newlines Via Pre-commit"
-        continue-on-error: true
-        run: |
-          python -m pip freeze
-          python -m pre-commit run end-of-file-fixer --files .bumpversion.cfg || true
-
       - name: "Commit Version Bump to Branch"
         run: |
           user="Github Build Bot"
@@ -273,6 +245,47 @@ jobs:
           message="Version on ${{ needs.create_temp_branch.outputs.temp_branch_name }} bumped to ${{ needs.cleanup_changelog.outputs.next-version }}"
           echo "::notice title="Version Bump Completed": $title::$message"
 
+  cleanup:
+    name: "Cleanup Code Quality"
+    needs: ['create_temp_branch', 'bump_version']
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+      - name: "Add Homebrew To PATH"
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+
+      - name: "brew install pre-commit"
+        run: |
+          brew install pre-commit
+      
+      # this step will fail on whitespace errors but also correct them
+      - name: "Cleanup - Remove Trailing Whitespace Via Pre-commit"
+        continue-on-error: true
+        run: |
+          pre-commit run trailing-whitespace --files .bumpversion.cfg CHANGELOG.md .changes/* || true
+
+      # this step will fail on newline errors but also correct them
+      - name: "Cleanup - Remove Extra Newlines Via Pre-commit"
+        continue-on-error: true
+        run: |
+          pre-commit run end-of-file-fixer --files .bumpversion.cfg CHANGELOG.md .changes/* || true
+
+      - name: "Commit Version Bump to Branch"
+        run: |
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          git config user.name "$user"
+          git config user.email "$email"
+          git status
+          git add .
+          git commit -m "Code quality cleanup"
+          git push
   # open_pr:
   #   name: "Open PR Against main"
   #   needs: ['cleanup_changelog', 'create_temp_branch', 'bump_version']
