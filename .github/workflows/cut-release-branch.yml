@@ -247,8 +247,6 @@ jobs:
       - name: "Cleanup - Remove Trailing Whitespace Via Pre-commit"
         continue-on-error: true
         run: |
-          python -m pip install pre-commit
-          python -m pre-commit --version
           python -m pip freeze
           python -m pre-commit run trailing-whitespace --files .bumpversion.cfg || true
 
