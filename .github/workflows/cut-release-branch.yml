@@ -19,10 +19,14 @@
 # jobs:
 #   changelog:
 #     uses: dbt-labs/actions/.github/workflows/cut-release-branch.yml@main
-#    with:
-#      new_branch_name: 1.2.latest
-#    secrets:
-#      FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
+#     with:
+#       version_to_bump_main: ${{ inputs.version_to_bump_main }}
+#       new_branch_name: ${{ inputs.new_branch_name }}
+#       PR_title: "Cleanup main after cutting new ${{ inputs.new_branch_name }} branch"
+#       PR_body: "All adapter PRs will fail CI until the dbt-core PR has been merged due to release version conflicts."
+#     secrets:
+#       FISHTOWN_BOT_PAT: ${{ secrets.FISHTOWN_BOT_PAT }}
+
 
 # TODOs
 # add note to eventually commit changes directly and bypass checks - same as release - when we move to this model run test action after merge
@@ -286,126 +290,127 @@ jobs:
           git add .
           git commit -m "Code quality cleanup"
           git push
-  # open_pr:
-  #   name: "Open PR Against main"
-  #   needs: ['cleanup_changelog', 'create_temp_branch', 'bump_version']
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
 
-  #   steps:
+  open_pr:
+    name: "Open PR Against main"
+    needs: ['cleanup_changelog', 'create_temp_branch', 'bump_version']
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
 
-  #     - name: "Checkout ${{ github.repository }}"
-  #       uses: actions/checkout@v3
-  #       with:
-  #         ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
-  #         token: ${{ secrets.FISHTOWN_BOT_PAT }}
+    steps:
 
-  #     - name: "Determine PR Title"
-  #       id: pr_title
-  #       run: |
-  #         echo "pr_title=${{ inputs.PR_title }}" >> $GITHUB_OUTPUT
-  #         if [${{ inputs.PR_title }} == ""]; then
-  #           echo "pr_title='Clean up changelogs and bump to version ${{ needs.cleanup_changelog.outputs.next-version }}'" >> $GITHUB_OUTPUT
-  #         fi
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-  #     - name: "Determine PR Body"
-  #       id: pr_body
-  #       run: |
-  #         echo "pr_body=${{ inputs.PR_body }}" >> $GITHUB_OUTPUT
-  #         if [${{ inputs.PR_body }} == ""]; then
-  #           echo "pr_body='Clean up changelogs and bump to version ${{ needs.cleanup_changelog.outputs.next-version }}'" >> $GITHUB_OUTPUT
-  #         fi
+      - name: "Determine PR Title"
+        id: pr_title
+        run: |
+          echo "pr_title=${{ inputs.PR_title }}" >> $GITHUB_OUTPUT
+          if [${{ inputs.PR_title }} == ""]; then
+            echo "pr_title='Clean up changelogs and bump to version ${{ needs.cleanup_changelog.outputs.next-version }}'" >> $GITHUB_OUTPUT
+          fi
 
-  #     - name: "Add Branch Details"
-  #       id: pr_body_branch
-  #       run: |
-  #         branch_details="The workflow that generated this PR also created a new branch: ${{ inputs.new_branch_name }}"
-  #         full_body="${{ steps.pr_body.outputs.pr_body }} $branch_details"
-  #         echo "pr_full_body=$full_body" >> $GITHUB_OUTPUT
+      - name: "Determine PR Body"
+        id: pr_body
+        run: |
+          echo "pr_body=${{ inputs.PR_body }}" >> $GITHUB_OUTPUT
+          if [${{ inputs.PR_body }} == ""]; then
+            echo "pr_body='Clean up changelogs and bump to version ${{ needs.cleanup_changelog.outputs.next-version }}'" >> $GITHUB_OUTPUT
+          fi
 
-  #     - name: "Open Pull Request"
-  #       id: create_pr
-  #       run: |
-  #         pr_url=$(gh pr create -B main -H ${{ needs.create_temp_branch.outputs.temp_branch_name }} -l "Skip Changelog" -t "${{ steps.pr_title.outputs.pr_title }}" -b "${{ steps.pr_body_branch.outputs.pr_full_body }}")
-  #         echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
-  #       env:
-  #         GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+      - name: "Add Branch Details"
+        id: pr_body_branch
+        run: |
+          branch_details="The workflow that generated this PR also created a new branch: ${{ inputs.new_branch_name }}"
+          full_body="${{ steps.pr_body.outputs.pr_body }} $branch_details"
+          echo "pr_full_body=$full_body" >> $GITHUB_OUTPUT
 
-  #     - name: "[Notification] Pull Request Opened"
-  #       run: |
-  #         message="PR opened at ${{ steps.create_pr.outputs.pr_url }}"
-  #         echo "::notice title="Pull Request Opened": $title::$message"
+      - name: "Open Pull Request"
+        id: create_pr
+        run: |
+          pr_url=$(gh pr create -B main -H ${{ needs.create_temp_branch.outputs.temp_branch_name }} -l "Skip Changelog" -t "${{ steps.pr_title.outputs.pr_title }}" -b "${{ steps.pr_body_branch.outputs.pr_full_body }}")
+          echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-  # cut_new_branch:
-  #   # don't cut the new branch until we're done openeing the PR against main
-  #   name: "Cut New Branch ${{ inputs.new_branch_name }}"
-  #   needs: [open_pr]
-  #   runs-on: ubuntu-latest
+      - name: "[Notification] Pull Request Opened"
+        run: |
+          message="PR opened at ${{ steps.create_pr.outputs.pr_url }}"
+          echo "::notice title="Pull Request Opened": $title::$message"
 
-  #   steps:
+  cut_new_branch:
+    # don't cut the new branch until we're done openeing the PR against main
+    name: "Cut New Branch ${{ inputs.new_branch_name }}"
+    needs: [open_pr]
+    runs-on: ubuntu-latest
 
-  #     - name: "Checkout ${{ github.repository }}"
-  #       uses: actions/checkout@v3
-  #       with:
-  #         token: ${{ secrets.FISHTOWN_BOT_PAT }}
-  #         fetch-depth: 0
+    steps:
 
-  #     - name: "Ensure New Branch Does Not Exist"
-  #       id: check_new_branch
-  #       run: |
-  #         title="Check New Branch Existence"
-  #         if git show-ref --quiet ${{ inputs.new_branch_name }}; then
-  #           message="Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
-  #           echo "::error $title::$message"
-  #           exit 1
-  #         fi
+      - name: "Checkout ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.FISHTOWN_BOT_PAT }}
+          fetch-depth: 0
 
-  #     - name: "Create New Release Branch"
-  #       run: |
-  #         git checkout -b ${{ inputs.new_branch_name }}
+      - name: "Ensure New Branch Does Not Exist"
+        id: check_new_branch
+        run: |
+          title="Check New Branch Existence"
+          if git show-ref --quiet ${{ inputs.new_branch_name }}; then
+            message="Branch ${{ inputs.new_branch_name }} already exists.  Exiting."
+            echo "::error $title::$message"
+            exit 1
+          fi
 
-  #     - name: "Push up New Branch"
-  #       run: |
-  #         #Data for commit
-  #         user="Github Build Bot"
-  #         email="buildbot@fishtownanalytics.com"
-  #         git config user.name "$user"
-  #         git config user.email "$email"
-  #         git push --set-upstream origin ${{ inputs.new_branch_name }}
+      - name: "Create New Release Branch"
+        run: |
+          git checkout -b ${{ inputs.new_branch_name }}
 
-  #     - name: "[Notification] New branch created"
-  #       run: |
-  #         message="New branch ${{ inputs.new_branch_name }} created"
-  #         echo "::notice title="New branch created": $title::$message"
+      - name: "Push up New Branch"
+        run: |
+          #Data for commit
+          user="Github Build Bot"
+          email="buildbot@fishtownanalytics.com"
+          git config user.name "$user"
+          git config user.email "$email"
+          git push --set-upstream origin ${{ inputs.new_branch_name }}
 
-  #     - name: "Bump dependencies via script"
-  #       # This bumps the dependency on dbt-core in the adapters
-  #       if: ${{ !contains(github.repository, 'dbt-core') }}
-  #       run: |
-  #         echo ${{ github.repository }}
-  #         echo "running update_dependencies script"
-  #         bash ${GITHUB_WORKSPACE}/.github/scripts/update_dependencies.sh ${{ inputs.new_branch_name }}
-  #         commit_message="bumping .latest branch variable in update_dependencies.sh to ${{ inputs.new_branch_name }}"
-  #         git status
-  #         git add .
-  #         git commit -m "$commit_message"
-  #         git push
+      - name: "[Notification] New branch created"
+        run: |
+          message="New branch ${{ inputs.new_branch_name }} created"
+          echo "::notice title="New branch created": $title::$message"
 
-  #     - name: "Bump env variable via script"
-  #       # bumps the RELEASE_BRANCH variable in nightly-release.yml in adapters
-  #       if: ${{ !contains(github.repository, 'dbt-core') }}
-  #       run: |
-  #         file="./.github/scripts/update_release_branch.sh"
-  #         if test -f "$file"; then
-  #           echo ${{ github.repository }}
-  #           echo "running some script yet to be written now"
-  #           bash $file ${{ inputs.new_branch_name }}
-  #           commit_message="updating env variable to ${{ inputs.new_branch_name }} in nightly-release.yml"
-  #           git status
-  #           git add .
-  #           git commit -m "$commit_message"
-  #           git push
-  #         else
-  #           echo "no $file seen skipping step"
-  #         fi
+      - name: "Bump dependencies via script"
+        # This bumps the dependency on dbt-core in the adapters
+        if: ${{ !contains(github.repository, 'dbt-core') }}
+        run: |
+          echo ${{ github.repository }}
+          echo "running update_dependencies script"
+          bash ${GITHUB_WORKSPACE}/.github/scripts/update_dependencies.sh ${{ inputs.new_branch_name }}
+          commit_message="bumping .latest branch variable in update_dependencies.sh to ${{ inputs.new_branch_name }}"
+          git status
+          git add .
+          git commit -m "$commit_message"
+          git push
+
+      - name: "Bump env variable via script"
+        # bumps the RELEASE_BRANCH variable in nightly-release.yml in adapters
+        if: ${{ !contains(github.repository, 'dbt-core') }}
+        run: |
+          file="./.github/scripts/update_release_branch.sh"
+          if test -f "$file"; then
+            echo ${{ github.repository }}
+            echo "running some script yet to be written now"
+            bash $file ${{ inputs.new_branch_name }}
+            commit_message="updating env variable to ${{ inputs.new_branch_name }} in nightly-release.yml"
+            git status
+            git add .
+            git commit -m "$commit_message"
+            git push
+          else
+            echo "no $file seen skipping step"
+          fi
