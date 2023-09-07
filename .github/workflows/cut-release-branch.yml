@@ -247,7 +247,7 @@ jobs:
       - name: "Cleanup - Remove Trailing Whitespace Via Pre-commit"
         continue-on-error: true
         run: |
-          python -m venv env
+          source env/bin/activate
           python -m pre-commit --version
           python -m pip freeze
           python -m pre-commit run trailing-whitespace --files .bumpversion.cfg || true
@@ -256,7 +256,7 @@ jobs:
       - name: "Cleanup - Remove Extra Newlines Via Pre-commit"
         continue-on-error: true
         run: |
-          python -m venv env
+          source env/bin/activate
           python -m pre-commit --version
           python -m pre-commit run end-of-file-fixer --files .bumpversion.cfg || true
 
