@@ -341,7 +341,7 @@ jobs:
           echo "::notice title="Pull Request Opened": $title::$message"
 
   cut_new_branch:
-    # don't cut the new branch until we're done openeing the PR against main
+    # don't cut the new branch until we're done opening the PR against main
     name: "Cut New Branch ${{ inputs.new_branch_name }}"
     needs: [open_pr]
     runs-on: ubuntu-latest
