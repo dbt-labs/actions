@@ -20,7 +20,6 @@
 #   changelog:
 #     uses: dbt-labs/actions/.github/workflows/cut-release-branch.yml@main
 #     with:
-#       version_to_bump_main: 1.8.0a1
 #       new_branch_name: 1.7.latest
 #       PR_title: "Cleanup main after cutting new 1.7.latest branch"
 #       PR_body: "All adapter PRs will fail CI until the dbt-core PR has been merged due to release version conflicts."
@@ -78,7 +77,6 @@ jobs:
     steps:
       - name: "[DEBUG] Print Inputs"
         run: |
-          echo "version_to_bump_main:   ${{ inputs.version_to_bump_main }}"
           echo "new_branch_name:        ${{ inputs.new_branch_name }}"
           echo "PR_title:               ${{ inputs.PR_title }}"
           echo "PR_body:                ${{ inputs.PR_body }}"
