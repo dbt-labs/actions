@@ -1,0 +1,52 @@
+# **what?**
+# Release cleanup.
+# Cleans up both branches and draft releases left over from test and pre releases.
+#
+# **why?**
+# Our release process leaves behind branches and draft releases that are cluttering up the repo.
+
+# **when?**
+# As scheduled by calling workflow_dispatch.
+
+name: Release Cleanup
+
+on:
+  workflow_dispatch:
+
+# TODO: this is a guess
+permissions:
+  contents: write
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[DEBUG] Inputs"
+        run: |
+          echo 
+
+  delete-branches:
+    name: "Delete ${{ matrix.branch }} Branches"
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        branch: ["cutting_release_branch/*", "prep-release/*"]
+
+    steps:
+      - name: "Check out ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository }}
+
+      - name: "Deal with Branches Matching ${{ matrix.branch }}"
+        run: |
+          echo ${{ matrix.branch }}
+
+  delete-draft-releases:
+    name: "Delete Draft Releases"
+    runs-on: ubuntu-latest
+    steps:
+    - name: "Deal with draft releases"
+      run: |
+        echo "TODO"
