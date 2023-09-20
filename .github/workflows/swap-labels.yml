@@ -30,6 +30,10 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: ${{ github.repository }}
+          fetch-depth: 0
+      
+      - name: "Check status"
+        run: git status
 
       - name: "List Branch to be Deleted for: ${{ matrix.branch }}"
         run: |
