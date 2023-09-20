@@ -10,20 +10,12 @@
 
 name: Release Cleanup
 
-on:
-  workflow_dispatch:
+on: workflow_call
 
-# TODO: this is a guess
 permissions:
   contents: write
 
 jobs:
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-      - name: "[DEBUG] Inputs"
-        run: |
-          echo 
 
   delete-branches:
     name: "Delete ${{ matrix.branch }} Branches"
@@ -39,14 +31,42 @@ jobs:
         with:
           repository: ${{ github.repository }}
 
-      - name: "Deal with Branches Matching ${{ matrix.branch }}"
+      - name: "List Branch to be Deleted for: ${{ matrix.branch }}"
         run: |
-          echo ${{ matrix.branch }}
+          git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'
+
+      - name: "Delete Prerelease Branches: ${{ matrix.branch }}"
+        run: |
+          for b in $(git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'); do
+            git push origin --delete $b
+          done
+
+      - name: "[Sanity Check] List Branch matching: ${{ matrix.branch }}"
+        run: |
+          git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'
 
   delete-draft-releases:
     name: "Delete Draft Releases"
     runs-on: ubuntu-latest
     steps:
-    - name: "Deal with draft releases"
-      run: |
-        echo "TODO"
+      
+      - name: "List Draft Releases"
+        run: |
+          gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Delete Draft Releases in ${{ github.repository }}"
+        run: |
+          for release in $(gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'); do
+            echo "Deleting Draft Release: $release"
+            gh release --repo ${{ github.repository }} delete --yes $release
+          done
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: "[Sanity Check] List Draft Releases"
+        run: |
+          gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
