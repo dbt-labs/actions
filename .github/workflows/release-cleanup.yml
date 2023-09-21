@@ -6,7 +6,7 @@
 # Our release process leaves behind branches and draft releases that are cluttering up the repo.
 
 # **when?**
-# As scheduled by calling workflow_dispatch.
+# As scheduled by calling workflow_call.
 
 name: Release Cleanup
 
@@ -31,9 +31,6 @@ jobs:
         with:
           repository: ${{ github.repository }}
           fetch-depth: 0
-      
-      - name: "Check status"
-        run: git status
 
       - name: "List Branch to be Deleted for: ${{ matrix.branch }}"
         run: |
@@ -45,12 +42,12 @@ jobs:
             git push origin --delete $b
           done
 
-      - name: "[Sanity Check] List Branch matching: ${{ matrix.branch }}"
+      - name: "[Expect None] List Branch matching: ${{ matrix.branch }}"
         run: |
           git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'
 
   delete-draft-releases:
-    name: "Delete Draft Releases"
+    name: "Delete Draft Releases in ${{ github.repository }}"
     runs-on: ubuntu-latest
     steps:
       
@@ -69,7 +66,7 @@ jobs:
         env: 
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: "[Sanity Check] List Draft Releases"
+      - name: "[Expect None] List Draft Releases"
         run: |
           gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'
         env: 
