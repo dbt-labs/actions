@@ -1,73 +1,61 @@
 # **what?**
-# Release cleanup.
-# Cleans up both branches and draft releases left over from test and pre releases.
+# Will remove one label in favor of another
 #
 # **why?**
-# Our release process leaves behind branches and draft releases that are cluttering up the repo.
+# When we triage issues, we sometimes need more information from the issue creator.  In
+# those cases we remove the `triage` label and add the `awaiting_response` label.  Once we
+# receive a response in the form of a comment, we want the `awaiting_response` label removed
+# in favor of the `triage` label so we are aware that the issue needs action.
 
 # **when?**
-# As scheduled by calling workflow_dispatch.
+# This will run when called by another workflow
 
-name: Release Cleanup
+name: Swap Issue Labels
 
-on: workflow_call
+on:
+  workflow_call:
+    inputs:
+      add_label:
+        description: The label to add
+        type: string
+        required: true
+      remove_label:
+        description: The label to remove
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
 
 permissions:
-  contents: write
+  issues: write
 
 jobs:
-
-  delete-branches:
-    name: "Delete ${{ matrix.branch }} Branches"
+  triage_label:
+    # only swap the labels if the label to remove exists
+    if: contains(github.event.issue.labels.*.name, '${{ inputs.remove_label }}')
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        branch: ["cutting_release_branch/*", "prep-release/*"]
-
     steps:
-      - name: "Check out ${{ github.repository }}"
-        uses: actions/checkout@v3
+      - name: "Add ${{ inputs.add_label }} label"
+        uses: actions/github-script@v6
         with:
-          repository: ${{ github.repository }}
-          fetch-depth: 0
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["${{ inputs.add_label }}"]
+            })
 
-      - name: "List Branch to be Deleted for: ${{ matrix.branch }}"
-        run: |
-          git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'
-
-      - name: "Delete Prerelease Branches: ${{ matrix.branch }}"
-        run: |
-          for b in $(git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'); do
-            git push origin --delete $b
-          done
-
-      - name: "[Expect None] List Branch matching: ${{ matrix.branch }}"
-        run: |
-          git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'
-
-  delete-draft-releases:
-    name: "Delete Draft Releases in ${{ github.repository }}"
-    runs-on: ubuntu-latest
-    steps:
-      
-      - name: "List Draft Releases"
-        run: |
-          gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: "Delete Draft Releases in ${{ github.repository }}"
-        run: |
-          for release in $(gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'); do
-            echo "Deleting Draft Release: $release"
-            gh release --repo ${{ github.repository }} delete --yes $release
-          done
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: "[Expect None] List Draft Releases"
-        run: |
-          gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Remove ${{ inputs.remove_label }} label"
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: ["${{ inputs.remove_label }}"]
+            })
