@@ -1,14 +1,14 @@
 # **what?**
-# Release cleanup.
-# Cleans up both branches and draft releases left over from test and pre releases.
+# Repository cleanup.
+# Cleans up both branches and draft releases left over from test and pre release automations.
 #
 # **why?**
-# Our release process leaves behind branches and draft releases that are cluttering up the repo.
+# Our automated processes leave behind branches and draft releases that are cluttering up the repo.
 
 # **when?**
 # As scheduled by calling workflow_call.
 
-name: Release Cleanup
+name: Repository Cleanup
 
 on: workflow_call
 
