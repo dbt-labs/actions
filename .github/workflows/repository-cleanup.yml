@@ -1,0 +1,73 @@
+# **what?**
+# Repository cleanup.
+# Cleans up both branches and draft releases left over from test and pre release automations.
+#
+# **why?**
+# Our automated processes leave behind branches and draft releases that are cluttering up the repo.
+
+# **when?**
+# As scheduled by calling workflow_call.
+
+name: Repository Cleanup
+
+on: workflow_call
+
+permissions:
+  contents: write
+
+jobs:
+
+  delete-branches:
+    name: "Delete ${{ matrix.branch }} Branches"
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        branch: ["cutting_release_branch/*", "prep-release/*"]
+
+    steps:
+      - name: "Check out ${{ github.repository }}"
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository }}
+          fetch-depth: 0
+
+      - name: "List Branch to be Deleted for: ${{ matrix.branch }}"
+        run: |
+          git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'
+
+      - name: "Delete Prerelease Branches: ${{ matrix.branch }}"
+        run: |
+          for b in $(git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'); do
+            git push origin --delete $b
+          done
+
+      - name: "[Expect None] List Branch matching: ${{ matrix.branch }}"
+        run: |
+          git branch -a --list "origin/${{ matrix.branch }}" | sed 's|.*remotes/origin/||'
+
+  delete-draft-releases:
+    name: "Delete Draft Releases in ${{ github.repository }}"
+    runs-on: ubuntu-latest
+    steps:
+      
+      - name: "List Draft Releases"
+        run: |
+          gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Delete Draft Releases in ${{ github.repository }}"
+        run: |
+          for release in $(gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'); do
+            echo "Deleting Draft Release: $release"
+            gh release --repo ${{ github.repository }} delete --yes $release
+          done
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: "[Expect None] List Draft Releases"
+        run: |
+          gh release --repo ${{ github.repository }} list --limit 100 | awk -F '\t' '$2 == "Draft" {print $3}'
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
