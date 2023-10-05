@@ -95,7 +95,7 @@ jobs:
           echo "BRANCH_NAME=cutting_release_branch/main_cleanup_$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
       - name: "Checkout ${{ github.repository }}"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: "main"
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
@@ -124,7 +124,7 @@ jobs:
     steps:
 
       - name: "Checkout ${{ github.repository }}"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
@@ -202,7 +202,7 @@ jobs:
     steps:
 
       - name: "Checkout ${{ github.repository }}"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
@@ -253,7 +253,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout ${{ github.repository }}"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
@@ -299,7 +299,7 @@ jobs:
     steps:
 
       - name: "Checkout ${{ github.repository }}"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.create_temp_branch.outputs.temp_branch_name }}
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
@@ -349,7 +349,7 @@ jobs:
     steps:
 
       - name: "Checkout ${{ github.repository }}"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.FISHTOWN_BOT_PAT }}
           fetch-depth: 0
