@@ -54,7 +54,7 @@ jobs:
           echo "name=$name" >> $GITHUB_OUTPUT
 
   homebrew-installation-test:
-    runs-on: macos-11
+    runs-on: macos-12
     needs: generate-artifact-name
 
     steps:
