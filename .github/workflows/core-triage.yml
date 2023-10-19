@@ -137,13 +137,13 @@ jobs:
       # this is special because we pull in all the beta changelogs that were previously created and then 
       # generate the changelogs for the rc1 to include those
       - name: "rc1 release"
-        if: needs.parse-version.outputs.is_prerelease == 1 && needs.parse-version.outputs.prerelease == "rc1"
+        if: needs.parse-version.outputs.is_prerelease == 1 && ${{ needs.parse-version.outputs.prerelease }} == "rc1"
         id: rc1
         run: |
           changelogs=$(changie batch ${{ needs.parse-version.outputs.base_version }} --include ${{ needs.parse-version.outputs.zero_base_version }} --prerelease ${{ needs.parse-version.outputs.prerelease }} --dry-run)
 
       - name: "Prereleases other than an rc1"
-        if: needs.parse-version.outputs.is_prerelease == 1 && needs.parse-version.outputs.prerelease != "rc1"
+        if: needs.parse-version.outputs.is_prerelease == 1 && ${{ needs.parse-version.outputs.prerelease }} != "rc1"
         id: other_prerelease
         run: |
           changelogs=$(changie batch ${{ needs.parse-version.outputs.base_version }} --prerelease ${{ needs.parse-version.outputs.prerelease }} --dry-run)
