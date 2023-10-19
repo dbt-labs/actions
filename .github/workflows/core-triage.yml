@@ -103,7 +103,7 @@ jobs:
       - name: "Set partial Core Team Membership for Changie Contributors exclusion"
         id: set_team_membership
         run: |
-          team_list_single=emmyoop gshank qmalcolm aranke peterallenwebb
+          team_list_single="emmyoop gshank qmalcolm aranke peterallenwebb"
           echo "CHANGIE_CORE_TEAM=$team_list_single" >> $GITHUB_ENV
 
   generate-changelogs:
