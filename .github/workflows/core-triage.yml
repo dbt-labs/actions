@@ -1,50 +1,166 @@
 # **what?**
-# Automates adding issues and PRs from Core repositories
-# to the "Core triage" project in GitHub.
+# Generate output of upcomming changes with changie without
+# actually creating any code changes
 #
-# Inputs:
-#   GH_TOKEN: GitHub authorization token with sufficient scope
-#      - needed (I think): org:read, org:write, project:read, project:write
 
 # **why?**
-# Unfortunately, GitHub projects don't support this easily.
-# We could add a workflow in each new project, or just run
-# this on a schedule.
+# Internal reporting of upcoming changes and on the fly
+# checking of upcoming changes
 
 # **when?**
-# Every ~hour, on PR, or manually.
+# This will run manually.
+#
 
-name: core-triage
+name: Dry Run of Changelogs
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 * * * *"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - .github/workflows/core-triage.yml
-      - scripts/core-triage/**
+    inputs:
+      repository:
+        description: "The repository to generate changelogs for (ex: dbt-core)"
+        type: choice
+        options:
+          - dbt-labs/dbt-core
+          - dbt-labs/dbt-snowflake
+          - dbt-labs/dbt-redshift
+          - dbt-labs/dbt-bigquery
+          - dbt-labs/dbt-spark
+      branch:
+        description: "Branch to run off of (ex: 1.5.latest, main, etc)"
+        type: string
+        required: true
+      version_number:
+        description: "Version (ex: 1.5.4 or 1.5.4rc2)"
+        type: string
+        required: true
+
+permissions:
+  contents: read
 
 jobs:
-  add-items-to-project:
+  parse-version:
+    name: Parse Version into Parts
     runs-on: ubuntu-latest
+    outputs:
+      base_version: ${{ steps.semver.outputs.base-version }}
+      zero_base_version: ${{ steps.zero_based.outputs.zero-based-version }}
+      prerelease: ${{ steps.semver.outputs.pre-release }}
+      is_prerelease: ${{ steps.semver.outputs.is-pre-release }}
+      folder_exists: ${{ steps.set_existence.outputs.exists }}
+
     steps:
-      - name: check out repo
+      - name: "[DEBUG] - Print Inputs"
+        shell: bash
+        id: echo_inputs
+        run: |
+          echo "all variables defined as inputs"
+          echo "inputs.repository:    ${{ inputs.repository }}"
+          echo "inputs.branch:        ${{ inputs.branch }}"
+          echo "inputs.version:       ${{ inputs.version_number }}"
+      
+
+      - name: "Checkout ${{ inputs.repository }} Branch ${{ inputs.branch }}"
         uses: actions/checkout@v3
-
-      - name: setup python
-        uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.branch }}
 
-      - name: pip installs
-        run: pip install -r requirements.txt
-        working-directory: scripts/core-triage
+      - name: "Audit Version And Parse Into Parts"
+        id: semver
+        uses: dbt-labs/actions/parse-semver@v1.1.0
+        with:
+            version: ${{ inputs.version_number }}
 
-      - name: run script
-        run: python project.py
-        working-directory: scripts/core-triage
+      - name: "Set Zero Based Version"
+        id: zero_based
+        run: |
+          echo "zero-based-version=${{ steps.semver.outputs.major }}.${{ steps.semver.outputs.minor }}.0" >> $GITHUB_ENV
+
+      - name: "Check if Changelogs were generated for previous releases"
+        id: set_existence
+        run: |
+          does_exist=false
+          if test -f .changes/${{ steps.zero_based.outputs.zero-based-version }}.md
+          then
+            does_exist=true
+          fi
+          echo "exists=$does_exist">> $GITHUB_OUTPUT
+
+      - name: "[DEBUG] Print Outputs"
+        run: |
+            echo base_version:           ${{ steps.semver.outputs.base-version }}
+            echo prerelease:             ${{ steps.semver.outputs.pre-release }}
+            echo is_prerelease:          ${{ steps.semver.outputs.is-pre-release }}
+            echo zero-based-version:     ${{ steps.zero_based.outputs.zero-based-version }}
+            echo folder_exists:          ${{ steps.set_existence.outputs.exists }}
+
+  set-core-membership:
+    name: Set the Core Team Membership
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Set json File Name"
+        id: json_file
+        run: |
+          echo "name=output_$GITHUB_RUN_ID.json" >> $GITHUB_OUTPUT
+
+      - name: "Get Core Team Membership"
+        run: |
+          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/core-group/members > ${{ steps.json_file.outputs.name }}
         env:
-          GH_TOKEN: ${{ secrets.VARIABLE_CORE_TRIAGE_ONLY }}
+          GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
+
+      - name: "Set Core Team Membership for Changie Contributors exclusion"
+        id: set_team_membership
+        run: |
+          team_list=$(jq -r '.[].login' ${{ steps.json_file.outputs.name }})
+          echo $team_list
+          team_list_single=$(echo $team_list | tr '\n' ' ')
+          echo "CHANGIE_CORE_TEAM=$team_list_single" >> $GITHUB_ENV
+      
+      - name: "Delete the json File"
+        run: |
+          rm ${{ steps.json_file.outputs.name }}
+
+  generate-changelogs:
+    name: dry run of changelog generation
+    needs: parse-version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout ${{ inputs.repository }} Branch ${{ inputs.branch }}"
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.branch }}
+
+      # this is special because we pull in all the beta changelogs that were previously created and then 
+      # generate the changelogs for the rc1 to include those
+      - name: "rc1 release"
+        if: needs.parse-version.outputs.is_prerelease == 1 && needs.parse-version.outputs.prerelease == "rc1"
+        id: rc1
+        run: |
+          changelogs=$(changie batch ${{ needs.parse-version.outputs.base_version }} --include ${{ needs.parse-version.outputs.zero_base_version }} --prerelease ${{ needs.parse-version.outputs.prerelease }} --dry-run)
+
+      - name: "Prereleases other than an rc1"
+        if: needs.parse-version.outputs.is_prerelease == 1 && needs.parse-version.outputs.prerelease != "rc1"
+        id: other_prerelease
+        run: |
+          changelogs=$(changie batch ${{ needs.parse-version.outputs.base_version }} --prerelease ${{ needs.parse-version.outputs.prerelease }} --dry-run)
+
+      # when there's been a prerelease before the final release we need to pull in all the changelogs from the previous prerelease
+      - name: "Final releases with a previous prerelease"
+        if: needs.parse-version.outputs.is_prerelease == 0 && needs.parse-version.outputs.folder_exists == true
+        id: final_with_prerelease
+        run: |
+          changelogs=$(changie batch ${{ needs.parse-version.outputs.base_version }} --include ${{ needs.parse-version.outputs.zero_base_version }} --dry-run)
+
+      - name: "Final releases without any previous prereleases"
+        if: needs.parse-version.outputs.is_prerelease == 0 && needs.parse-version.outputs.folder_exists != true
+        id: final_without_prerelease
+        run: |
+          changelogs=$(changie batch ${{ needs.parse-version.outputs.base_version }} --dry-run)
+
+      - name: "Print Changelogs"
+        run: |
+          echo "::notice title=Changelog for ${{ inputs.version_number }}: $title::$changelogs"

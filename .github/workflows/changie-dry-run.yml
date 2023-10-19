@@ -18,10 +18,15 @@ on:
     inputs:
       repository:
         description: "The repository to generate changelogs for (ex: dbt-core)"
-        type: string
-        required: true
+        type: choice
+        options:
+          - dbt-labs/dbt-core
+          - dbt-labs/dbt-snowflake
+          - dbt-labs/dbt-redshift
+          - dbt-labs/dbt-bigquery
+          - dbt-labs/dbt-spark
       branch:
-        description: "Branch to run off of (ex: 1.5.latest)"
+        description: "Branch to run off of (ex: 1.5.latest, main, etc)"
         type: string
         required: true
       version_number:
@@ -57,7 +62,7 @@ jobs:
       - name: "Checkout ${{ inputs.repository }} Branch ${{ inputs.branch }}"
         uses: actions/checkout@v3
         with:
-          repository: dbt-labs/${{ inputs.repository }}
+          repository: ${{ inputs.repository }}
           ref: ${{ inputs.branch }}
 
       - name: "Audit Version And Parse Into Parts"
@@ -126,7 +131,7 @@ jobs:
       - name: "Checkout ${{ inputs.repository }} Branch ${{ inputs.branch }}"
         uses: actions/checkout@v3
         with:
-          repository: dbt-labs/${{ inputs.repository }}
+          repository: ${{ inputs.repository }}
           ref: ${{ inputs.branch }}
 
       # this is special because we pull in all the beta changelogs that were previously created and then 
