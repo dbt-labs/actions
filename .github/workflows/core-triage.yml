@@ -80,7 +80,7 @@ jobs:
         id: set_existence
         run: |
           does_exist=false
-          if test -f .changes/${{ steps.zero_based.outputs.zero-based-version }}.md
+          if [ -d .changes/${{ steps.zero_based.outputs.zero-based-version }} ]
           then
             does_exist=true
           fi
@@ -108,7 +108,7 @@ jobs:
         run: |
           gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/core-group/members > ${{ steps.json_file.outputs.name }}
         env:
-          GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
+          GH_TOKEN: ${{ github.token }}
 
       - name: "Set Core Team Membership for Changie Contributors exclusion"
         id: set_team_membership
@@ -124,7 +124,7 @@ jobs:
 
   generate-changelogs:
     name: dry run of changelog generation
-    needs: parse-version
+    needs: [parse-version, set-core-membership]
     runs-on: ubuntu-latest
 
     steps:
