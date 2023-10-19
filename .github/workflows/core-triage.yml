@@ -99,28 +99,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Set json File Name"
-        id: json_file
-        run: |
-          echo "name=output_$GITHUB_RUN_ID.json" >> $GITHUB_OUTPUT
 
-      - name: "Get Core Team Membership"
-        run: |
-          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/core-group/members > ${{ steps.json_file.outputs.name }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: "Set Core Team Membership for Changie Contributors exclusion"
+      - name: "Set partial Core Team Membership for Changie Contributors exclusion"
         id: set_team_membership
         run: |
-          team_list=$(jq -r '.[].login' ${{ steps.json_file.outputs.name }})
-          echo $team_list
-          team_list_single=$(echo $team_list | tr '\n' ' ')
+          team_list_single=emmyoop gshank qmalcolm aranke peterallenwebb
           echo "CHANGIE_CORE_TEAM=$team_list_single" >> $GITHUB_ENV
-      
-      - name: "Delete the json File"
-        run: |
-          rm ${{ steps.json_file.outputs.name }}
 
   generate-changelogs:
     name: dry run of changelog generation
