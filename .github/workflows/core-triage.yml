@@ -27,6 +27,11 @@ on:
       - .github/workflows/core-triage.yml
       - scripts/core-triage/**
 
+# will cancel previous workflows triggered by the same event and for the same ref for PRs or same SHA otherwise
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ contains(github.event_name, 'pull_request') && github.event.pull_request.head.ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   add-items-to-project:
     runs-on: ubuntu-latest
@@ -56,8 +61,8 @@ jobs:
         with:
           status: ${{ job.status }}
           notification_title: 'core-triage action failed'
-          message_format: ':x: Core Triage Project Automation ${{ steps.run-script.outputs.workflow-conclusion }}.  Needs attention but not an incident.'
-          footer: 'Linked failed run ${{ steps.run-script.outputs.workflow-url }}'
+          message_format: ':x: Core Triage Project Automation ${{ steps.run-script.outcome }}.  Needs attention but not an incident.'
+          footer: 'Linked failed run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
 
