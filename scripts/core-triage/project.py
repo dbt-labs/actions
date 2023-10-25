@@ -14,9 +14,9 @@ PROJECT_NUM = 22
 # core team name
 CORE_TEAM = "core-group"
 # repos determined by querying the team
-# exclude some repos (generally internal) that will cause failure
+# exclude some repos (generally internal/private) that will cause failure
 # include some extra repos not in the team
-EXCLUDE_REPOS = ["core-team", "schemas.getdbt.com"]
+EXCLUDE_REPOS = ["core-team", "schemas.getdbt.com", "clabot-config", "always-sunny"]
 EXTRA_REPOS = ["dbt-starter-project", "jaffle_shop", "dbt-server"]
 # issues added by label individually; lots of duplication here
 ISSUE_LABELS = [
