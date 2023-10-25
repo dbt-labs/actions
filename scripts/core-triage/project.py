@@ -1,6 +1,7 @@
 # imports
 import os
 import requests
+from typing import List
 
 # TODO: improve
 from graphql_queries import *
@@ -14,9 +15,7 @@ PROJECT_NUM = 22
 # core team name
 CORE_TEAM = "core-group"
 # repos determined by querying the team
-# exclude some repos (generally internal/private) that will cause failure
 # include some extra repos not in the team
-EXCLUDE_REPOS = ["core-team", "schemas.getdbt.com", "clabot-config", "always-sunny"]
 EXTRA_REPOS = ["dbt-starter-project", "jaffle_shop", "dbt-server"]
 # issues added by label individually; lots of duplication here
 ISSUE_LABELS = [
@@ -76,7 +75,7 @@ def get_core_repos(team: str) -> list:
     # add the repos names owned by the team
     team_repos_url = f"{gh_api_url}/orgs/{ORG}/teams/{team}/repos"
     r = process_request(team_repos_url, headers=headers)
-    core_repos = [repo["name"] for repo in r if repo["name"] not in EXCLUDE_REPOS]
+    core_repos = [repo["name"] for repo in r if not repo["private"]]
     core_repos.extend(EXTRA_REPOS)
 
     return sorted(list(set(core_repos)))
@@ -116,7 +115,7 @@ def get_project_id(project_num: int) -> str:
     return project_id
 
 
-def get_issues(repo: str, label: str, num_items: int) -> list[dict]:
+def get_issues(repo: str, label: str, num_items: int) -> List[dict]:
     """
     Get a list of issues for the given repo and label.
     ---
@@ -137,7 +136,7 @@ def get_issues(repo: str, label: str, num_items: int) -> list[dict]:
     return issues
 
 
-def get_prs(repo: str, num_items: int) -> list[dict]:
+def get_prs(repo: str, num_items: int) -> List[dict]:
     """
     Get a list of prs for the given repo and label.
     ---
@@ -157,7 +156,7 @@ def get_prs(repo: str, num_items: int) -> list[dict]:
     return prs
 
 
-def add_items_to_project(project_id: str, items: list[dict]) -> None:
+def add_items_to_project(project_id: str, items: List[dict]) -> None:
     """
     Adds GitHub items (issues or PRs) to a project by project_id and a list of item edges.
     ---
@@ -180,8 +179,8 @@ def add_items_to_project(project_id: str, items: list[dict]) -> None:
 def main(
     project_num: int,
     core_team: str,
-    issue_labels: list[str],
-    pr_labels: list[str],
+    issue_labels: List[str],
+    pr_labels: List[str],
     num_items: int,
 ):
     """
@@ -191,28 +190,18 @@ def main(
     Inputs: project_num (int), core_teams (str), issue_labels (list of str), pr_labels (list of str), num_items (int)
     Outputs: None
     """
-    # get project id
+
     project_id = get_project_id(project_num)
     print(f"Project ID: {project_id}...\n")
-    # get core members
+
     core_members = get_core_members(core_team)
     print(f"Core members: {core_members}...\n")
-    # get core repos
+
     core_repos = get_core_repos(core_team)
     print(f"Core repos: {core_repos}...\n")
-    # for each repo
+
     for repo in core_repos:
         print(f"Processing repository: {repo}...\n")
-        # private repos can't be connected.  Instead of bombing out, just skip them
-        try:
-            # TODO: add back label filtering
-            # get the list of PRs for the repo and label
-            prs = get_prs(repo, num_items)
-            # add PRs to the project
-            add_items_to_project(project_id, prs)
-        except:
-            print(f"Failed to connect to repo: {repo}...\n")
-            continue
         # for each issue label
         for issue_label in issue_labels:
             print(f"Processing issue label: {issue_label}...\n")
@@ -220,6 +209,12 @@ def main(
             issues = get_issues(repo, issue_label, num_items)
             # add issues to the project
             add_items_to_project(project_id, issues)
+
+        # TODO: add back label filtering
+        # get the list of PRs for the repo and label
+        prs = get_prs(repo, num_items)
+        # add PRs to the project
+        add_items_to_project(project_id, prs)
 
 
 # run script
