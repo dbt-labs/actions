@@ -203,6 +203,16 @@ def main(
     # for each repo
     for repo in core_repos:
         print(f"Processing repository: {repo}...\n")
+        # private repos can't be connected.  Instead of bombing out, just skip them
+        try:
+            # TODO: add back label filtering
+            # get the list of PRs for the repo and label
+            prs = get_prs(repo, num_items)
+            # add PRs to the project
+            add_items_to_project(project_id, prs)
+        except:
+            print(f"Failed to connect to repo: {repo}...\n")
+            continue
         # for each issue label
         for issue_label in issue_labels:
             print(f"Processing issue label: {issue_label}...\n")
@@ -210,12 +220,6 @@ def main(
             issues = get_issues(repo, issue_label, num_items)
             # add issues to the project
             add_items_to_project(project_id, issues)
-
-        # TODO: add back label filtering
-        # get the list of PRs for the repo and label
-        prs = get_prs(repo, num_items)
-        # add PRs to the project
-        add_items_to_project(project_id, prs)
 
 
 # run script
