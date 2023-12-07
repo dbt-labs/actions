@@ -62,7 +62,7 @@ None
 
 ### Running `actions`
 
-- Each workflow can be run indepndently, depending on its trigger
+- Each workflow can be run independently, depending on its trigger
 - See list of trigger in the [GitHub docs](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request)
 - It can be helpful to create a dummy repository to trigger actions and workflow
 
@@ -89,10 +89,10 @@ You can enable debug logging for GHA by setting secret values for your repositor
 
 ## Submitting a Pull Request
 
-Code can be merged into the current development branch `main` by opening a pull request. A `actions` maintainer will review your PR. They may suggest code revision for style or clarity, or request that you add unit or integration test(s). These are good things! We believe that, with a little bit of help, anyone can contribute high-quality code.
+Code can be merged into the current development branch `main` by opening a pull request. An `actions` maintainer will review your PR. They may suggest code revision for style or clarity, or request that you add unit or integration test(s). These are good things! We believe that, with a little bit of help, anyone can contribute high-quality code.
 
 Automated tests run via GitHub Actions. If you're a first-time contributor, all tests (including code checks and unit tests) will require a maintainer to approve. Changes in the `actions` repository trigger integration tests against Postgres. dbt Labs also provides CI environments in which to test changes to other adapters, triggered by PRs in those adapters' repositories, as well as periodic maintenance checks of each adapter in concert with the latest `actions` code changes.
 
-Once all tests are passing and your PR has been approved, a `actions` maintainer will merge your changes into the active development branch. And that's it! Happy developing :tada:
+Once all tests are passing and your PR has been approved, an `actions` maintainer will merge your changes into the active development branch. And that's it! Happy developing :tada:
 
 Sometimes, the content license agreement auto-check bot doesn't find a user's entry in its roster. If you need to force a rerun, add `@cla-bot check` in a comment on the pull request.
