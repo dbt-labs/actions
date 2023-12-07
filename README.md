@@ -1,6 +1,8 @@
-# GitHub Actions and Workflows for maintaining dbt
+## Understanding actions
 
 A set of GitHub [Actions](https://docs.github.com/en/actions/creating-actions/about-custom-actions) and [Reusable Workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows) for automating common tasks related to developing, maintaining, and testing dbt-core, database adapter plugins, and other dbt-labs open source projects. 
+
+## Getting started
 
 Actions and workflows should be self documented.  See individual actions for more info and instructions on how to use.
 
@@ -13,28 +15,43 @@ Actions and workflows should be self documented.  See individual actions for mor
 
 ### Workflows
 
-- [Jira Issue Transition](.github/workflows/jira-transition.yml)
-- [Jira Label Mirroring](.github/workflows/jira-label.yml)
-- [Jira Issue Creation](.github/workflows/jira-creation.yml)
-- [Changelog Existence Check](.github/workflows/changelog-existence.yml)
-- [Generic Label Swapping](.github/workflows/swap-labels.yml)
-- [Scheduled Installation Tests](.github/workflows/test-dbt-installation-main.yml)
+- Changelog Handling
+    - [Changelog Existence Check](.github/workflows/changelog-existence.yml)
+- Scheduled Installation Tests
+    - [Installation Tests](.github/workflows/test-dbt-installation-main.yml)
+        - .github/workflows/test-dbt-installation-docker.yml
+        - .github/workflows/test-dbt-installation-homebrew.yml
+        - .github/workflows/test-dbt-installation-notify-job-statuses.yml
+        - .github/workflows/test-dbt-installation-pip.yml
+        - .github/workflows/test-dbt-installation-source.yml
+    - [Release Branch Tests](.github/workflows/release-branch-tests.yml)
 - [Cut the `.latest` Branch for an rc1](.github/workflows/cut-release-branch.yml)
+- Generic Shared Workflows
+    - [Label Swapping](.github/workflows/swap-labels.yml)
+    - [Open Issue in Another repo](.github/workflows/open-issue-in-repo.yml )
+    - [Scheduled Repository Cleanup After Releases](.github/workflows/repository-cleanup.yml )
+    - [Stale Bot Matrix](.github/workflows/stale-bot-matrix.yml )
 
-## Releasing
+- Jira Issue Syncing <deprecated>
+    - .github/workflows/core-triage.yml
+    - .github/workflows/cut-release-branch.yml
+    - .github/workflows/jira-creation-actions.yml
+    - .github/workflows/jira-creation.yml
+    - .github/workflows/jira-label-actions.yml
+    - .github/workflows/jira-label.yml
+    - .github/workflows/jira-transition-actions.yml
+    - .github/workflows/jira-transition.yml
+- Version Bump <deprecated once `dbt-spark` moves off CircleCI>
+    - .github/workflows/version-bump.yml
+- Releasing <deprecated for [dbt-labs/dbt-release](https://github.com/dbt-labs/dbt-release/)>
+    - .github/workflows/release.yml 
 
-See each repository.  Parent workflows live in [dbt-labs/dbt-release](https://github.com/dbt-labs/dbt-release/)
+## Reporting bugs and contributing code
 
-## Development
+- Want to report a bug or request a feature? Let us know and open [an issue](https://github.com/dbt-labs/actions/issues/new)
+- Want to help us build oss actions? Check out the [Contributing Guide](https://github.com/dbt-labs/actions/blob/HEAD/CONTRIBUTING.md)
 
-- Each Action will have instructions for development.
-- It is recommended to use [act](https://github.com/nektos/act) for testing locally where possible.
-- Actions have a cooresponding workflow for automated testing.
-- Here is [documentation](https://docs.github.com/en/actions/creating-actions) for creating custom actions.
+## Code of Conduct
 
-## Debugging
+Everyone interacting in the project's codebases, issue trackers, chat rooms, and mailing lists is expected to follow the [dbt Code of Conduct](https://community.getdbt.com/code-of-conduct).
 
-You can enable debug logging for GHA by setting secret values for your repository. See [docs](https://docs.github.com/en/github-ae@latest/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging) for more info.
-
-- Set `ACTIONS_RUNNER_DEBUG` to `true` to enable runner diagnostic logging.
-- Set `ACTIONS_STEP_DEBUG` to `true` to enable run step debug logging.
