@@ -61,7 +61,7 @@ jobs:
         with:
           status: ${{ job.status }}
           notification_title: 'core-triage action failed'
-          message_format: ':x: Core Triage Project Automation ${{ steps.run-script.outcome }}.  Needs attention but not an incident.'
+          message_format: ':x: Core Triage Project Automation ${{ steps.run-script.outcome }}.  Needs attention if it fails multiple times in a row, but this is not an incident.'
           footer: 'Linked failed run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
