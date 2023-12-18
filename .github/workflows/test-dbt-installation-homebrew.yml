@@ -103,7 +103,7 @@ jobs:
 
       - name: "Upload Job Status For Slack Notification"
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
           path: ${{ steps.job-status.outputs.path }}
