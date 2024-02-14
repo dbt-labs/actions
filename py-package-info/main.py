@@ -38,7 +38,8 @@ class PackageInfo:
 
 
 def set_output(name, value):
-    os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
+    with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+        print(f'{name}={value}', file=fh)
 
 
 def get_exponential_backoff_in_seconds(attempt_number: int) -> int:
