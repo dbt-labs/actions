@@ -111,6 +111,6 @@ jobs:
 
       - name: Fail job if changelog entry is missing and required
         if: steps.changelog_check.outputs.exists == 'false'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: core.setFailed('Changelog entry required to merge.')
