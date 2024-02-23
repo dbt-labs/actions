@@ -64,7 +64,7 @@ jobs:
 
     steps:
       - name: "Set up Python - ${{ matrix.python-version }}"
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -108,7 +108,7 @@ jobs:
 
       - name: "Upload Job Status For Slack Notification"
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
           path: ${{ steps.job-status.outputs.path }}
