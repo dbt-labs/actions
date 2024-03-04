@@ -1,0 +1,74 @@
+# **what?**
+# Will label a newly opened PR as a community cobtribution
+#
+# **why?**
+# To make triaging easier and faster
+
+# **when?**
+# This will run when called by another workflow
+
+## Important: Your repository will need to be added to the included repositories for IT_TEAM_MEMBERSHIP
+
+name: Label Community PR
+
+on:
+  workflow_call:
+    inputs:
+      github_team:
+        description: The team to exclude
+        type: string
+        required: true
+        default: 'core-group'
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  issues: write
+
+jobs:
+  determine-team-membership:
+    name: "Determine team membership"
+    uses: dbt-labs/actions/.github/workflows/determine-team-membership.yml@main
+    with:
+      github_team: ${{ inputs.github_team }}
+
+    secrets: inherit
+
+  community_label:
+    runs-on: ubuntu-latest
+    needs: [determine-team-membership]
+
+    steps:
+      - name: "View ${{ inputs.github_team}} Membership"
+        run: |
+          echo ${{ inputs.github_team}} membership: ${{ needs.determine-team-membership.outputs.members }}
+        
+      - name: "Get PR Author"
+        id: pr
+        run: |
+          echo "author=$pr_author" >> $GITHUB_OUTPUT
+      
+      - name: "Determine if Community PR"
+        id: community
+        run: |
+          if [[ " ${{ needs.determine-team-membership.outputs.membership_list }} " =~ " ${{ steps.pr.outputs.author }} " ]]; then
+              echo "Author of the PR is in the list."
+              echo "category='internal'" >> $GITHUB_OUTPUT
+          else
+              echo "Author of the PR is not in the list."
+              echo "category='external'" >> $GITHUB_OUTPUT
+          fi
+
+      - name: "Add community label"
+        if: ${{ steps.community.outputs.category == 'external' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["community"]
+            })
