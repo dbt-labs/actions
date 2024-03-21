@@ -1,0 +1,61 @@
+# **what?**
+# Given a GitHub team handle, output the list of github handles on that team within dbt-labs
+#
+# **why?**
+# This is useful for general processing.  Currently it is used for Changelog 
+# contributions and community PR labels.
+
+# **when?**
+# This will run when called by another workflow
+
+## Important: Your repository will need to be added to the included repositories for org level IT_TEAM_MEMBERSHIP
+
+
+on:
+  workflow_call:
+    inputs:
+      github_team:
+        description: "The team to get membership for"
+        type: string
+        required: true
+        default: 'core-group'
+    outputs:
+      membership_list:
+        description: "Space delimited list of GitHub handles"
+        value: ${{ jobs.team-membership.outputs.team_membership }}
+
+defaults:
+  run:
+    shell: bash
+
+permissions:  read-all
+
+jobs:
+  team-membership:
+    runs-on: ubuntu-latest
+    outputs:
+      team_membership: ${{ steps.set_team_membership.outputs.team_membership }}
+    steps:
+      - name: "Set json File Name"
+        id: json_file
+        run: |
+          echo "name=output_$GITHUB_RUN_ID.json" >> $GITHUB_OUTPUT
+
+      - name: "Get Team Membership"
+        run: |
+          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/${{ inputs.github_team }}/members > ${{ steps.json_file.outputs.name }}
+        env:
+          GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
+
+      - name: "Convert file to space delimited list"
+        id: set_team_membership
+        run: |
+          team_list=$(jq -r '.[].login' ${{ steps.json_file.outputs.name }})
+          echo $team_list
+          team_list_single=$(echo $team_list | tr '\n' ' ')
+          echo $team_list_single
+          echo "team_membership=$team_list_single" >> $GITHUB_OUTPUT
+
+      - name: "Delete the json File"
+        run: |
+          rm ${{ steps.json_file.outputs.name }}
