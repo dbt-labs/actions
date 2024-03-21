@@ -19,6 +19,11 @@ on:
         type: string
         required: true
         default: 'core-group'
+      label:
+        description: The label to add to the PR
+        type: string
+        required: true
+        default: 'community'
 
 defaults:
   run:
@@ -61,7 +66,7 @@ jobs:
               echo "category='external'" >> $GITHUB_OUTPUT
           fi
 
-      - name: "Add community label"
+      - name: "Add ${{ inputs.label }} label"
         if: ${{ steps.community.outputs.category == 'external' }}
         uses: actions/github-script@v7
         with:
@@ -70,5 +75,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: ["community"]
+              labels: ["${{ inputs.label }}"]
             })
