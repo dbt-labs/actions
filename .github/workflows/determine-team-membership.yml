@@ -1,5 +1,5 @@
 # **what?**
-# Given a GitHub team handle, output the list of github handles on that team
+# Given a GitHub team handle, output the list of github handles on that team within dbt-labs
 #
 # **why?**
 # This is useful for general processing.  Currently it is used for Changelog 
@@ -8,7 +8,7 @@
 # **when?**
 # This will run when called by another workflow
 
-## Important: Your repository will need to be added to the included repositories for IT_TEAM_MEMBERSHIP
+## Important: Your repository will need to be added to the included repositories for org level IT_TEAM_MEMBERSHIP
 
 
 on:
@@ -43,7 +43,7 @@ jobs:
 
       - name: "Get Team Membership"
         run: |
-          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/${{ inputs.github-team }}/members > ${{ steps.json_file.outputs.name }}
+          gh api -H "Accept: application/vnd.github+json" orgs/dbt-labs/teams/${{ inputs.github_team }}/members > ${{ steps.json_file.outputs.name }}
         env:
           GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
 

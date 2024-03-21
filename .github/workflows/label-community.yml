@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: "View ${{ inputs.github_team}} Membership"
         run: |
-          echo ${{ inputs.github_team}} membership: ${{ needs.determine-team-membership.outputs.members }}
+          echo ${{ inputs.github_team}} membership: ${{ needs.determine-team-membership.outputs.membership_list }}
         
       - name: "Get PR Author"
         id: pr
