@@ -1,12 +1,12 @@
 # **what?**
 # Open an issue in a specified repository with a specified title and body.  If the issue already exists, do nothing.
-# The calling workflow should be triggered off a PR.
+# The calling workflow should be triggered off an issue.
 
 # **why?**
 # To be able to trigger issues to open in other repositories from a workflow in a different repository.
 
 # **when?**
-# This will be triggered from another workflow on a PR.  This could be triggered when a label is added to a PR.
+# This will be triggered from another workflow on a issue.  This could be triggered when a label is added to an issue.
 
 
 name: Open Issue in Another Repository
@@ -29,8 +29,8 @@ on:
         required: true
         type: string
         default: "This is a test issue opened from another workflow."
-      pr_number:
-        description: 'The PR to open the issue from'
+      issue_number:
+        description: 'The issue to open the new issue from'
         required: true
         type: string
         default: "133"
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       exists: ${{ steps.comment_check.outputs.exists }}
-      pr_number: ${{ steps.pr_values.outputs.pr_number }}
+      issue_number: ${{ steps.issue_values.outputs.issue_number }}
 
     steps:
 
@@ -78,28 +78,28 @@ jobs:
           echo "inputs.issue_title:           ${{ inputs.issue_title}}"
           echo "inputs.issue_body:            ${{ inputs.issue_body }}"
 
-      - name: "Determine PR values"
-        id: pr_values
+      - name: "Determine Issue Values"
+        id: issue_values
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ inputs.issue_number }}" >> $GITHUB_OUTPUT
           else
-            echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
           fi
       
       # this step uses the read permission from the GITHUB_TOKEN it inherits
       - name: "Check for comment"
         uses: peter-evans/find-comment@v3
-        id: pr_comment
+        id: issue_comment
         with:
-          issue-number: ${{ steps.pr_values.outputs.pr_number }}
+          issue-number: ${{ steps.issue_values.outputs.issue_number }}
           comment-author: "FishtownBuildBot"
           body-includes: "Opened a new issue in ${{ inputs.issue_repository }}:"
 
       - name: "Set if comment already exists"
         id: comment_check
         run: |
-          if [ '${{ steps.pr_comment.outputs.comment-body }}' = '' ]; then
+          if [ '${{ steps.issue_comment.outputs.comment-body }}' = '' ]; then
             echo "exists=false" >> $GITHUB_OUTPUT
             title="Continue Processing."
             message="Opening a new issue in ${{ inputs.issue_repository }}."
@@ -131,17 +131,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
 
-      - name: "Set PR Comment"
-        id: set_pr_comment
+      - name: "Set Issue Comment"
+        id: set_issue_comment
         run: |
-          pr_comment="Opened a new issue in ${{ inputs.issue_repository }}: ${{ steps.open_issue.outputs.issue_url }}"
-          echo "pr_comment=$pr_comment" >> $GITHUB_OUTPUT
+          issue_comment="Opened a new issue in ${{ inputs.issue_repository }}: ${{ steps.open_issue.outputs.issue_url }}"
+          echo "issue_comment=$issue_comment" >> $GITHUB_OUTPUT
 
-      - name: "Leave PR Comment Linking to Opened Issue"
-        id: pr_comment
+      - name: "Leave Issue Comment Linking to Opened Issue"
+        id: issue_comment
         run: |
-          gh pr comment --repo ${{ github.repository }} \
-            ${{ needs.prep.outputs.pr_number }} \
-            --body "${{ steps.set_pr_comment.outputs.pr_comment }}"
+          gh issue comment --repo ${{ github.repository }} \
+            ${{ needs.prep.outputs.issue_number }} \
+            --body "${{ steps.set_issue_comment.outputs.issue_comment }}"
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
