@@ -60,7 +60,6 @@ defaults:
 
 permissions:
   issues: write # opens new issues
-  pull-requests: write # comments on PRs
 
 jobs:
   prep:
