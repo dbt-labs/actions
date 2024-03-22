@@ -30,7 +30,7 @@ defaults:
     shell: bash
 
 permissions:
-  issues: write
+  pull-requests: write # labels PRs
 
 jobs:
   determine-team-membership:
@@ -49,21 +49,16 @@ jobs:
       - name: "View ${{ inputs.github_team}} Membership"
         run: |
           echo ${{ inputs.github_team}} membership: ${{ needs.determine-team-membership.outputs.membership_list }}
-        
-      - name: "Get PR Author"
-        id: pr
-        run: |
-          echo "author=$pr_author" >> $GITHUB_OUTPUT
       
       - name: "Determine if Community PR"
         id: community
         run: |
-          if [[ " ${{ needs.determine-team-membership.outputs.membership_list }} " =~ " ${{ steps.pr.outputs.author }} " ]]; then
+          if [[ " ${{ needs.determine-team-membership.outputs.membership_list }} " =~ " ${{ github.event.pull_request.user.login }} " ]]; then
               echo "Author of the PR is in the list."
-              echo "category='internal'" >> $GITHUB_OUTPUT
+              echo "category=internal" >> $GITHUB_OUTPUT
           else
               echo "Author of the PR is not in the list."
-              echo "category='external'" >> $GITHUB_OUTPUT
+              echo "category=external" >> $GITHUB_OUTPUT
           fi
 
       - name: "Add ${{ inputs.label }} label"
