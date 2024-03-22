@@ -28,8 +28,8 @@ defaults:
   run:
     shell: bash
 
-# uses default permissions becuse the only permission it really needs is org:read which is set with the token
-# and not a permission that can be set at the workflow level
+permissions:
+  contents: read  #reads the team membership
 
 jobs:
   team-membership:
