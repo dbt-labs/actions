@@ -49,8 +49,8 @@ jobs:
       - name: "Generate Artifact Name"
         id: artifact-name
         run: |
-          date=$(date +'%m%d%Y')
-          name="${{ env.ARTIFACT_BASENAME }}-$date"
+          date=$(date +'%m%d%Y-%H%M%S')
+          name="${{ env.ARTIFACT_BASENAME }}-${{ inputs.package_name }}-$date"
           echo "name=$name" >> $GITHUB_OUTPUT
 
   homebrew-installation-test:
