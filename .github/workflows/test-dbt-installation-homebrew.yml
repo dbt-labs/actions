@@ -89,7 +89,7 @@ jobs:
 
       - name: "Verify ${{ inputs.package_name }} Version"
         run: |
-          PACKAGE = $(echo ${{ inputs.package_name }} | cut -c 5-)
+          PACKAGE=$(echo ${{ inputs.package_name }} | cut -c 5-)
           python -c "import dbt.adapters.$PACKAGE"
 
       - name: "Dump Job Status"
