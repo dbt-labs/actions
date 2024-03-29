@@ -138,7 +138,12 @@ jobs:
             python -m pip install .
           fi
 
+      - name: "Verify dbt-core Version"
+        if: ${{ inputs.package_name }} == "dbt_core"
+        run: dbt --version
+
       - name: "Verify ${{ inputs.package_name }} Version"
+        if: ${{ inputs.package_name }} != "dbt_core"
         run: |
           PACKAGE=$(echo ${{ inputs.package_name }} | cut -c 5-)
           python -c "import dbt.adapters.$PACKAGE"
