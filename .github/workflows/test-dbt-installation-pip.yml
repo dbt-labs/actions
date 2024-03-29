@@ -93,11 +93,11 @@ jobs:
           python -m pip show ${{ inputs.package_name }}
 
       - name: "Verify dbt-core Version"
-        if: ${{ inputs.package_name }} == "dbt_core"
+        if: ${{ inputs.package_name }} == "dbt-core"
         run: dbt --version
 
       - name: "Verify ${{ inputs.package_name }} Version"
-        if: ${{ inputs.package_name }} != "dbt_core"
+        if: ${{ inputs.package_name }} != "dbt-core"
         run: |
           PACKAGE=$(echo ${{ inputs.package_name }} | cut -c 5-)
           python -c "import dbt.adapters.$PACKAGE"

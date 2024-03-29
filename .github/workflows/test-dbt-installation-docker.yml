@@ -115,7 +115,7 @@ jobs:
           docker image ls --all
 
       - name: "Verify dbt-core Version"
-        if: ${{ inputs.package_name }} == "dbt_core"
+        if: ${{ inputs.package_name }} == "dbt-core"
         uses: addnab/docker-run-action@v3
         with:
           registry: ${{ env.GITHUB_PACKAGES_LINK }}
@@ -123,7 +123,7 @@ jobs:
           run: dbt --version
 
       - name: "Verify ${{ inputs.package_name }} Version"
-        if: ${{ inputs.package_name }} != "dbt_core"
+        if: ${{ inputs.package_name }} != "dbt-core"
         uses: addnab/docker-run-action@v3
         with:
           registry: ${{ env.GITHUB_PACKAGES_LINK }}
