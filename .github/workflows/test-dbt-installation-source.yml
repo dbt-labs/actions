@@ -50,8 +50,8 @@ jobs:
       - name: "Generate Artifact Name"
         id: artifact-name
         run: |
-          date=$(date +'%m%d%Y')
-          name="${{ env.ARTIFACT_BASENAME }}-$date"
+          date=$(date +'%m%d%Y-%H%M%S')
+          name="${{ env.ARTIFACT_BASENAME }}-${{ inputs.package_name }}-$date"
           echo "name=$name" >> $GITHUB_OUTPUT
 
   fetch-latest-branches:
@@ -136,13 +136,14 @@ jobs:
 
       - name: "Verify ${{ inputs.package_name }} Version"
         run: |
-          dbt --version
+          PACKAGE = $(echo ${{ inputs.package_name }} | cut -c 5-)
+          python -c "import dbt.adapters.$PACKAGE"
 
       - name: "Dump Job Status"
         if: ${{ always() }}
         id: job-status
         run: |
-          file="test-${{ inputs.package_name }}-${{ strategy.job-index }}-branch-${{ matrix.branch }}-python-v${{ matrix.python-version }}.json"
+          file="test-${{ inputs.package_name }}-${{ strategy.job-index }}-${{ matrix.branch }}-py${{ matrix.python-version }}.json"
           # Create file
           touch $file
           # Write job status to file
@@ -156,7 +157,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}-${{ matrix.branch }}-py${{ matrix.python-version }}
           path: ${{ steps.job-status.outputs.path }}
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
