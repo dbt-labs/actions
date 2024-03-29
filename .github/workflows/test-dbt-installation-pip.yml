@@ -38,6 +38,10 @@ env:
   ARTIFACT_BASENAME: "pip-installation-test"
   ARTIFACT_RETENTION_DAYS: 1
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   generate-artifact-name:
     runs-on: ubuntu-latest
