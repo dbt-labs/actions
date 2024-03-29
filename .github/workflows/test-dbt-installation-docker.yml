@@ -115,7 +115,9 @@ jobs:
         with:
           registry: ${{ env.GITHUB_PACKAGES_LINK }}
           image: ${{ steps.image-info.outputs.ref }}
-          run: dbt --version
+          run: |
+            PACKAGE = $(echo ${{ inputs.package_name }} | cut -c 5-)
+            python -c "import dbt.adapters.$PACKAGE"
 
       - name: "Dump Job Status"
         if: ${{ always() }}
