@@ -123,7 +123,7 @@ jobs:
         if: ${{ always() }}
         id: job-status
         run: |
-          file="test-${{ inputs.package_name }}-${{ strategy.job-index }}-tag-${{ matrix.tag }}.json"
+          file="test-${{ inputs.package_name }}-${{ strategy.job-index }}-${{ matrix.tag }}.json"
           # Create file
           touch $file 
           # Write job status to file
@@ -137,7 +137,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
+          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}-${{ matrix.tag }}
           path: ${{ steps.job-status.outputs.path }}
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
