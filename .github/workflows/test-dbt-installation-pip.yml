@@ -38,6 +38,10 @@ env:
   ARTIFACT_BASENAME: "pip-installation-test"
   ARTIFACT_RETENTION_DAYS: 1
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   generate-artifact-name:
     runs-on: ubuntu-latest
@@ -88,9 +92,14 @@ jobs:
         run: |
           python -m pip show ${{ inputs.package_name }}
 
+      - name: "Verify dbt-core Version"
+        if: ${{ inputs.package_name == 'dbt-core' }}
+        run: dbt --version
+
       - name: "Verify ${{ inputs.package_name }} Version"
+        if: ${{ inputs.package_name != 'dbt-core' }}
         run: |
-          PACKAGE = $(echo ${{ inputs.package_name }} | cut -c 5-)
+          PACKAGE=$(echo ${{ inputs.package_name }} | cut -c 5-)
           python -c "import dbt.adapters.$PACKAGE"
 
       - name: "Dump Job Status"

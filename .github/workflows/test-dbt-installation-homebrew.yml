@@ -38,6 +38,10 @@ env:
   ARTIFACT_BASENAME: "homebrew-installation-test"
   ARTIFACT_RETENTION_DAYS: 1
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   generate-artifact-name:
     runs-on: ubuntu-latest
@@ -84,9 +88,7 @@ jobs:
           brew install --verbose ${{ inputs.package_name }}
 
       - name: "Verify ${{ inputs.package_name }} Version"
-        run: |
-          PACKAGE = $(echo ${{ inputs.package_name }} | cut -c 5-)
-          python -c "import dbt.adapters.$PACKAGE"
+        run: dbt --version
 
       - name: "Dump Job Status"
         if: ${{ always() }}
