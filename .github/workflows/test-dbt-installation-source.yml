@@ -136,7 +136,7 @@ jobs:
         if: ${{ always() && steps.installation-test.outcome != 'success' }}
         run: |
           title="Source installation test failure"
-          message="Source nightly installation test failed for ${{ inputs.package_name }}@${{ matrix.branch }} on Python ${{ maxtrix.python-version }}"
+          message="Source nightly installation test failed for ${{ inputs.package_name }}@${{ matrix.branch }} on Python ${{ matrix.python-version }}"
           echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
 
       - name: "[INFO] Source installation test failure - Slack"
@@ -144,7 +144,7 @@ jobs:
         if: ${{ always() && steps.installation-test.outcome != 'success' && github.event_name == 'schedule' }}
         with:
           status: ${{ job.status }}
-          notification_title: "Source nightly installation test failed for ${{ inputs.package_name }}@${{ matrix.branch }} on Python ${{ maxtrix.python-version }}"
+          notification_title: "Source nightly installation test failed for ${{ inputs.package_name }}@${{ matrix.branch }} on Python ${{ matrix.python-version }}"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}@{branch}> on <{commit_url}|{commit_sha}>"
           footer: "<{run_url}|View Run>"
         env:
