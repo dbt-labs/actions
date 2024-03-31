@@ -140,7 +140,6 @@ jobs:
 
       - name: "Verify ${{ inputs.package_name }} Version"
         id: installation-test
-        if: ${{ inputs.package_name != 'dbt-core' }}
         run: |
           if [[ ${{ inputs.package_name == 'dbt-core' }} ]];
           else
