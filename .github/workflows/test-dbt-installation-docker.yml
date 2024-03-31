@@ -114,7 +114,6 @@ jobs:
 
       - name: "[INFO] Docker installation test failure - GHA"
         if: ${{ always() && steps.installation-test.outcome != 'success' }}
-        shell: bash
         run: |
           title="Docker installation test failure"
           message="Docker nightly installation test failed for ${{ inputs.package_name }}@${{ matrix.tag }}"

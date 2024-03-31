@@ -71,7 +71,6 @@ jobs:
 
       - name: "[INFO] Homebrew installation test failure - GHA"
         if: ${{ always() && steps.installation-test.outcome != 'success' }}
-        shell: bash
         run: |
           title="Homebrew installation test failure"
           message="Homebrew nightly installation test failed for ${{ inputs.package_name }}"

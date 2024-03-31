@@ -134,7 +134,6 @@ jobs:
 
       - name: "[INFO] Source installation test failure - GHA"
         if: ${{ always() && steps.installation-test.outcome != 'success' }}
-        shell: bash
         run: |
           title="Source installation test failure"
           message="Source nightly installation test failed for ${{ inputs.package_name }}@${{ matrix.branch }} on Python ${{ maxtrix.python-version }}"
