@@ -45,7 +45,6 @@ defaults:
 jobs:
   pip-installation-test:
     runs-on: ubuntu-latest
-    needs: generate-artifact-name
 
     strategy:
       fail-fast: false
