@@ -114,55 +114,36 @@ jobs:
         run: |
           docker image ls --all
 
-      - name: "Verify dbt-core Version"
-        if: ${{ inputs.package_name == 'dbt-core' }}
-        uses: addnab/docker-run-action@v3
-        with:
-          registry: ${{ env.GITHUB_PACKAGES_LINK }}
-          image: ${{ steps.image-info.outputs.ref }}
-          run: dbt --version
-
       - name: "Verify ${{ inputs.package_name }} Version"
-        if: ${{ inputs.package_name != 'dbt-core' }}
+        id: installation-test
         uses: addnab/docker-run-action@v3
         with:
           registry: ${{ env.GITHUB_PACKAGES_LINK }}
           image: ${{ steps.image-info.outputs.ref }}
           run: |
-            PACKAGE=$(echo ${{ inputs.package_name }} | cut -c 5-)
-            python -c "import dbt.adapters.$PACKAGE"
+            if [[ ${{ inputs.package_name == 'dbt-core' }} ]];
+            else
+              dbt --version
+            then
+              PACKAGE=$(echo ${{ inputs.package_name }} | cut -c 5-)
+              python -c "import dbt.adapters.$PACKAGE"
+            fi
 
-      - name: "Dump Job Status"
-        if: ${{ always() }}
-        id: job-status
+      - name: "[INFO] Docker installation test failure - GHA"
+        if: ${{ always() && steps.installation-test.outcome != 'success' }}
+        shell: bash
         run: |
-          file="test-${{ inputs.package_name }}-${{ strategy.job-index }}-${{ matrix.tag }}.json"
-          # Create file
-          touch $file 
-          # Write job status to file
-          echo $JOB_STATUS >> $file
-          # Set path to file for subsequent steps          
-          echo "path=$file" >> $GITHUB_OUTPUT
-        env:
-          JOB_STATUS: ${{ toJson(job.status) }}
+          title="Docker installation test failure"
+          message="Docker nightly installation test failed for ${{ inputs.package_name }}@${{ matrix.tag }}"
+          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
 
-      - name: "Upload Job Status For Slack Notification"
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+      - name: "[INFO] Docker installation test failure - Slack"
+        uses: ravsamhq/notify-slack-action@v2
+        if: ${{ always() && steps.installation-test.outcome != 'success' && github.event_name == 'schedule' }}
         with:
-          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}-${{ matrix.tag }}
-          path: ${{ steps.job-status.outputs.path }}
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-  send-slack-notification:
-    needs: [generate-artifact-name, docker-installation-test]
-    if: ${{ failure() && github.event_name == 'schedule' }}
-
-    uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
-    with:
-      artifact_name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
-      installation_method: "Docker"
-      package_name: ${{ inputs.package_name }}
-
-    secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          status: ${{ job.status }}
+          notification_title: "Docker nightly installation test failed for ${{ inputs.package_name }}@${{ matrix.tag }}"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}@{branch}> on <{commit_url}|{commit_sha}>"
+          footer: "<{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
