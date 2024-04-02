@@ -83,20 +83,9 @@ jobs:
             python -c "import dbt.adapters.$PACKAGE"
           fi
 
-      - name: "[INFO] pip installation test failure - GHA"
+      - name: "[INFO] pip installation test failure"
         if: ${{ always() && steps.installation-test.outcome != 'success' }}
-        run: |
-          title="pip installation test failure"
-          message="pip nightly installation test failed for ${{ inputs.package_name }} on Python ${{ matrix.python-version }}"
-          echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
-
-      - name: "[INFO] pip installation test failure - Slack"
-        uses: ravsamhq/notify-slack-action@v2
-        if: ${{ always() && steps.installation-test.outcome != 'success' && github.event_name == 'schedule' }}
+        uses: .github/actions/test-dbt-installation-notification
         with:
-          status: ${{ job.status }}
-          notification_title: "pip nightly installation test failed for ${{ inputs.package_name }} on Python ${{ matrix.python-version }}"
-          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}@{branch}> on <{commit_url}|{commit_sha}>"
-          footer: "<{run_url}|View Run>"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          method: "pip"
+          scenario: ${{ inputs.package_name }} on Python ${{ matrix.python-version }}
