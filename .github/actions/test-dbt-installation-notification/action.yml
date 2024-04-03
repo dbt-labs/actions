@@ -1,0 +1,39 @@
+name: "Installation tests notification"
+description: "Standardizes notifications for the installation test suite"
+
+inputs:
+  method:
+    description: "The installation type to be used in the notification"
+    required: true
+  scenario:
+    description: "The test scenario, e.g. dbt-postgres@main on Python 3.11"
+    required: true
+
+runs:
+  using: composite
+  steps:
+
+    - name: "Build the message"
+      id: message
+      shell: bash
+      run: |
+        message="${{ inputs.method }} nightly installation test failed for ${{ inputs.scenario }}"
+        echo "message=$message" >> $GITHUB_OUTPUT
+
+    - name: "[INFO] ${{ inputs.method }} installation test failure - GHA"
+      shell: bash
+      run: |
+        title="${{ inputs.method }} installation test failure"
+        message="${{ steps.message.outputs.message }}"
+        echo "::notice title=${{ env.NOTIFICATION_PREFIX }}: $title::$message"
+
+    - name: "[INFO] ${{ inputs.method }} installation test failure - Slack"
+      uses: ravsamhq/notify-slack-action@v2
+      if: ${{ github.event_name == 'schedule' }}
+      with:
+        status: ${{ job.status }}
+        notification_title: ${{ steps.message.outputs.message }}
+        message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}@{branch}> on <{commit_url}|{commit_sha}>"
+        footer: "<{run_url}|View Run>"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

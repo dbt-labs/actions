@@ -43,84 +43,35 @@ defaults:
     shell: bash
 
 jobs:
-  generate-artifact-name:
-    runs-on: ubuntu-latest
-
-    outputs:
-      artifact-name: ${{ steps.artifact-name.outputs.name }}
-
-    steps:
-      - name: "Generate Artifact Name"
-        id: artifact-name
-        run: |
-          date=$(date +'%m%d%Y-%H%M%S')
-          name="${{ env.ARTIFACT_BASENAME }}-${{ inputs.package_name }}-$date"
-          echo "name=$name" >> $GITHUB_OUTPUT
-
   homebrew-installation-test:
     runs-on: macos-12
-    needs: generate-artifact-name
-
     steps:
       - name: "Prepare Brew"
         # brew upgrade generates some symlink update warnings that cause failures without the || true.
         # They're just that the symlink wasn't updated which is okay to ignore.
         # This does cause other errors to be ignored but for this case that's safe since the brew install
         # step would likely fail at that point.
-        run: |
-          brew update
-          brew upgrade || true
+        run: brew update && brew upgrade || true
 
       - name: "[DEBUG] Show List Of Installed Homebrew Packages"
-        run: |
-          brew list
+        run: brew list
 
       - name: "Tap dbt-labs/dbt Repository To Homebrew Formulae"
-        run: |
-          brew tap dbt-labs/dbt
+        run: brew tap dbt-labs/dbt
 
       - name: "[DEBUG] Show List Of All Currently Tapped Repositories"
-        run: |
-          brew tap
+        run: brew tap
 
       - name: "Brew Install ${{ inputs.package_name }}"
-        run: |
-          brew install --verbose ${{ inputs.package_name }}
+        run: brew install --verbose ${{ inputs.package_name }}
 
       - name: "Verify ${{ inputs.package_name }} Version"
+        id: installation-test
         run: dbt --version
 
-      - name: "Dump Job Status"
-        if: ${{ always() }}
-        id: job-status
-        run: |
-          file="test-${{ inputs.package_name }}.json"
-          # Create file
-          touch $file 
-          # Write job status to file
-          echo $JOB_STATUS >> $file
-          # Set path to file for subsequent steps          
-          echo "path=$file" >> $GITHUB_OUTPUT
-        env:
-          JOB_STATUS: ${{ toJson(job.status) }}
-
-      - name: "Upload Job Status For Slack Notification"
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+      - name: "[INFO] Homebrew installation test failure"
+        if: ${{ always() && steps.installation-test.outcome != 'success' }}
+        uses: ./.github/actions/test-dbt-installation-notification
         with:
-          name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
-          path: ${{ steps.job-status.outputs.path }}
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-  send-slack-notification:
-    needs: [generate-artifact-name, homebrew-installation-test]
-    if: ${{ failure() && github.event_name == 'schedule' }}
-
-    uses: ./.github/workflows/test-dbt-installation-notify-job-statuses.yml
-    with:
-      artifact_name: ${{ needs.generate-artifact-name.outputs.artifact-name }}
-      installation_method: "Homebrew"
-      package_name: ${{ inputs.package_name }}
-
-    secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          method: "Homebrew"
+          scenario: ${{ inputs.package_name }}
