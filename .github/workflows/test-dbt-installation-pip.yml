@@ -85,7 +85,7 @@ jobs:
 
       - name: "[INFO] pip installation test failure"
         if: ${{ always() && steps.installation-test.outcome != 'success' }}
-        uses: .github/actions/test-dbt-installation-notification
+        uses: ./.github/actions/test-dbt-installation-notification
         with:
           method: "pip"
           scenario: ${{ inputs.package_name }} on Python ${{ matrix.python-version }}

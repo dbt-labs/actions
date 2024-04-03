@@ -114,7 +114,7 @@ jobs:
 
       - name: "[INFO] Docker installation test failure"
         if: ${{ always() && steps.installation-test.outcome != 'success' }}
-        uses: .github/actions/test-dbt-installation-notification
+        uses: ./.github/actions/test-dbt-installation-notification
         with:
           method: "Docker"
           scenario: ${{ inputs.package_name }}@${{ matrix.tag }}
