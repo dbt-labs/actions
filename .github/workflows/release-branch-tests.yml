@@ -136,7 +136,7 @@ jobs:
         id: monitor-run
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 30
+          timeout_minutes: 180
           max_attempts: 3
           command: gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
         env:
