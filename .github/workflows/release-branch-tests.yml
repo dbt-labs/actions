@@ -134,8 +134,11 @@ jobs:
 
       - name: Wait for run to complete
         id: monitor-run
-        run: |
-          gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 180
+          max_attempts: 3
+          command: gh run watch ${{ steps.workflow-id.outputs.id }} --interval 300 --exit-status
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
