@@ -1,20 +1,30 @@
 version: 2
 updates:
-  # python dependencies
   - package-ecosystem: "pip"
-    directory: "/"
+    directory: "/scripts/core-triage"
     schedule:
       interval: "daily"
     rebase-strategy: "disabled"
-
-  # docker dependencies
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/fetch-container-tags"
     schedule:
       interval: "weekly"
     rebase-strategy: "disabled"
-
-  # github dependencies
+  - package-ecosystem: "docker"
+    directory: "/fetch-repo-branches"
+    schedule:
+      interval: "weekly"
+    rebase-strategy: "disabled"
+  - package-ecosystem: "docker"
+    directory: "/parse-semver"
+    schedule:
+      interval: "weekly"
+    rebase-strategy: "disabled"
+  - package-ecosystem: "docker"
+    directory: "/py-package-info"
+    schedule:
+      interval: "weekly"
+    rebase-strategy: "disabled"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
