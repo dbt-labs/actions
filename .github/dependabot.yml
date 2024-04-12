@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: "daily"
     rebase-strategy: "disabled"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    rebase-strategy: "disabled"
   - package-ecosystem: "docker"
     directory: "/fetch-container-tags"
     schedule:
@@ -22,16 +27,6 @@ updates:
     rebase-strategy: "disabled"
   - package-ecosystem: "docker"
     directory: "/py-package-info"
-    schedule:
-      interval: "weekly"
-    rebase-strategy: "disabled"
-  - package-ecosystem: "github-actions"
-    directory: "/.github/workflows"
-    schedule:
-      interval: "weekly"
-    rebase-strategy: "disabled"
-  - package-ecosystem: "github-actions"
-    directory: "/.github/actions/test-dbt-installation-notification"
     schedule:
       interval: "weekly"
     rebase-strategy: "disabled"
