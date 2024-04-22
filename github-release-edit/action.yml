@@ -1,0 +1,56 @@
+name: "GitHub release edit"
+description: "Update a GitHub release with the provided attributes"
+
+inputs:
+    tag:
+        description: "The tag to publish (i.e. v1.0.0b1)"
+        required: true
+    is-draft:
+        description: "Indicates that this is a draft release"
+        default: ""
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo "==========INPUTS=========="
+            echo tag      : ${{ inputs.tag }}
+            echo is-draft : ${{ inputs.is-draft }}
+
+    -   name: "Set: draft"
+        if: ${{ inputs.is-draft != '' }}
+        id: draft
+        shell: bash
+        run: |
+            if $IS_DRAFT; then
+                flag="--draft=true"
+            else;
+                flag="--draft=false"
+            fi
+            echo "flag=$flag" >> $GITHUB_OUTPUT
+        env:
+            IS_DRAFT: ${{ fromJSON(inputs.is-draft) }}
+
+    -   name: "Update `${{ inputs.tag }}`"
+        shell: bash
+        run: gh release edit $TAG --repo $REPO $DRAFT
+        env:
+            TAG: ${{ inputs.tag }}
+            REPO: "https://github.com/dbt-labs/${{ github.repository }}"
+            DRAFT: ${{ steps.draft.outputs.flag }}
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo "N/A"
+
+    -   name: "[INFO] GitHub release edit"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: GitHub release edit"
+            MESSAGE: "tag: `${{ inputs.tag }}`"

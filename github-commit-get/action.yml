@@ -1,4 +1,4 @@
-name: "Audit GitHub commit"
+name: "GitHub commit get"
 description: "Get metadata about a GitHub commit"
 
 inputs:
@@ -29,6 +29,7 @@ runs:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
+            echo "==========INPUTS=========="
             echo sha : ${{ inputs.sha }}
 
     -   name: "Check if a release exists for `${{ inputs.sha }}`"
@@ -41,10 +42,10 @@ runs:
         env:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    -   name: "[DEBUG] Commit metadata"
+    -   name: "[DEBUG] Outputs"
         shell: bash
         run: |
-            echo sha         : ${{ inputs.sha }}
+            echo "==========OUTPUTS=========="
             echo tag         : ${{ steps.commit.outputs.tag_name }}
             echo release-id  : ${{ steps.commit.outputs.id }}
             echo pre-release : ${{ steps.commit.outputs.prerelease }}

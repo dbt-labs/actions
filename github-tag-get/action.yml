@@ -1,4 +1,4 @@
-name: "Audit GitHub tag"
+name: "GitHub tag get"
 description: "Get metadata about a GitHub tag"
 
 inputs:
@@ -23,6 +23,7 @@ runs:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
+            echo "==========INPUTS=========="
             echo tag : ${{ inputs.tag }}
 
     -   name: "Get tag metadata"
@@ -66,10 +67,10 @@ runs:
                 echo "is-draft=false" >> $GITHUB_OUTPUT
             fi
 
-    -   name: "[DEBUG] Tag metadata"
+    -   name: "[DEBUG] Outputs"
         shell: bash
         run: |
-            echo tag          : ${{ inputs.tag }}
-            echo exists:      : ${{ steps.release.outputs.exists }}
-            echo sha          : ${{ steps.commit.outputs.sha }}
-            echo is-draft     : ${{ steps.draft.outputs.is-draft }}
+            echo "==========OUTPUTS=========="
+            echo exists:  : ${{ steps.release.outputs.exists }}
+            echo sha      : ${{ steps.commit.outputs.sha }}
+            echo is-draft : ${{ steps.draft.outputs.is-draft }}

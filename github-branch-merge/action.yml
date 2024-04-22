@@ -1,4 +1,4 @@
-name: "Merge GitHub branch"
+name: "GitHub branch merge"
 description: "Merge a source branch into a target branch on GitHub and return the resulting SHA"
 
 inputs:
@@ -23,6 +23,15 @@ outputs:
 runs:
     using: composite
     steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo "==========INPUTS=========="
+            echo source-branch        : ${{ inputs.source-branch }}
+            echo target-branch        : ${{ inputs.target-branch }}
+            echo message              : ${{ inputs.message }}
+            echo delete-source-branch : ${{ inputs.delete-source-branch }}
+
         # TODO: are we comfortable passing our bot token to this third party action?
     -   name: "Merge `${{ inputs.source-branch }}` into `${{ inputs.target-branch }}`"
         uses: everlytic/branch-merge@1.1.5
@@ -51,10 +60,15 @@ runs:
         shell: bash
         run: git push origin -d ${{ inputs.source-branch }}
 
-    -   name: "[INFO] Merged changes"
+    -   name: "[DEBUG] Outputs"
         shell: bash
         run: |
-            echo "::notice title=$TITLE::$MESSAGE"
+            echo "==========OUTPUTS=========="
+            echo sha : ${{ steps.merge.outputs.sha }}
+
+    -   name: "[INFO] Github branch merge"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Merged changes"
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: GitHub branch merge"
             MESSAGE: "`${{ inputs.source-branch }}` was merged into `${{ inputs.target-branch }}` with SHA `${{ steps.merge.outputs.sha }}`"

@@ -1,5 +1,5 @@
-name: "Create unique branch"
-description: "Create a unique temporary branch for running CI workflows, primarily for release pipelines"
+name: "GitHub branch create"
+description: "Create a unique branch for running GHA workflows, primarily for release pipelines"
 
 inputs:
     branch-group:
@@ -17,6 +17,7 @@ runs:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
+            echo "==========INPUTS=========="
             echo branch-stub : ${{ inputs.branch-stub }}
 
     -   name: "Create a unique branch name"
@@ -36,10 +37,15 @@ runs:
         env:
             BRANCH: ${{ steps.branch.outputs.name }}
 
-    -   name: "[INFO] Created branch"
+    -   name: "[DEBUG] Outputs"
         shell: bash
         run: |
-            echo "::notice title=$TITLE::$MESSAGE"
+            echo "==========OUTPUTS=========="
+            echo branch : ${{ steps.branch.outputs.name }}
+
+    -   name: "[INFO] GitHub branch create"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Created branch"
-            MESSAGE: `${{ steps.branch.outputs.name }}`
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: GitHub branch create"
+            MESSAGE: "Created `${{ steps.branch.outputs.name }}`"

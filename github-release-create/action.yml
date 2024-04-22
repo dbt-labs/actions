@@ -1,4 +1,4 @@
-name: "Publish to GitHub release"
+name: "GitHub release create"
 description: "Publish release artifacts from an archive to GitHub"
 
 inputs:
@@ -24,6 +24,7 @@ runs:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
+            echo "==========INPUTS=========="
             echo tag            : ${{ inputs.tag }}
             echo sha            : ${{ inputs.sha }}
             echo archive-name   : ${{ inputs.archive-name }}
@@ -50,21 +51,16 @@ runs:
         env:
             IS_DRAFT: ${{ fromJSON(inputs.is-draft) }}
 
-    -   name: "Download artifacts from `${{ inputs.archive-name }}`"
+    -   name: "Download release artifacts from `${{ inputs.archive-name }}`"
         if: ${{ !(inputs.archive-name == '') }}
         uses: actions/download-artifact@v4
         with:
             name: ${{ inputs.archive-name }}
             path: dist/
 
-    -   name: "[INFO] Downloaded artifacts"
-        if: ${{ !(inputs.archive-name == '') }}
+    -   name: "[DEBUG] Release artifacts"
         shell: bash
-        run: |
-            echo "::notice title=$TITLE::$MESSAGE"
-        env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Downloaded artifacts"
-            MESSAGE: "`${{ inputs.archive-name }}` contained: $(ls ./dist)"
+        run: echo $(ls ./dist)
 
     -   name: "Publish artifacts to GitHub"
         shell: bash
@@ -80,11 +76,15 @@ runs:
             REPO: "https://github.com/dbt-labs/${{ github.repository }}"
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    -   name: "[INFO] Published artifacts to GitHub"
+    -   name: "[DEBUG] Outputs"
         shell: bash
         run: |
-            echo "::notice title=[$WORKFLOW]: $TITLE::$MESSAGE"
+            echo "==========OUTPUTS=========="
+            echo "N/A"
+
+    -   name: "[INFO] GitHub release create"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            WORKFLOW: ${{ env.NOTIFICATION_PREFIX }}
-            TITLE: "Published artifacts to GitHub"
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: GitHub release create"
             MESSAGE: "tag: `${{ inputs.tag }}` artifacts: `$(ls ./dist)`"

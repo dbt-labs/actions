@@ -1,4 +1,4 @@
-name: "Audit GitHub team"
+name: "GitHub team get"
 description: "Get metadata about a GitHub team"
 
 inputs:
@@ -17,6 +17,7 @@ runs:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
+            echo "==========INPUTS=========="
             echo team : ${{ inputs.team }}
 
     -   name: "Create output file name"
@@ -25,9 +26,9 @@ runs:
 
     -   name: "Get team membership"
         shell: bash
-        run: gh api -H "$HEADER" $URL > $OUTPUT_FILE
+        run: gh api $ENDPOINT -H "$HEADER" > $OUTPUT_FILE
         env:
-            URL: "orgs/dbt-labs/teams/${{ inputs.team }}/members"
+            ENDPOINT: "orgs/dbt-labs/teams/${{ inputs.team }}/members"
             HEADER: "Accept: application/vnd.github+json"
             GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
 
@@ -38,13 +39,10 @@ runs:
             team_list=$(jq -r '.[].login' $OUTPUT_FILE)
             team_list_single=$(echo $team_list | tr '\n' ' ')
             echo "members=$team_list_single" >> $GITHUB_OUTPUT
+            rm $OUTPUT_FILE
 
-    -   name: "Delete the output file"
-        shell: bash
-        run: rm $OUTPUT_FILE
-
-    -   name: "[DEBUG] Parse team membership"
+    -   name: "[DEBUG] Outputs"
         shell: bash
         run: |
-            echo team         : ${{ inputs.team }}
+            echo "==========OUTPUTS=========="
             echo members      : ${{ steps.members.outputs.members }}

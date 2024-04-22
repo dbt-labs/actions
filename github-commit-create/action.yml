@@ -1,5 +1,5 @@
-name: "Commit changes"
-description: "Commit changes and push back to the remote"
+name: "GitHub commit create"
+description: "Commit changes into the current branch, push back to the remote, and return the resulting SHA"
 
 inputs:
     message:
@@ -12,17 +12,24 @@ inputs:
         description: "The email for the commit"
         default: "buildbot@fishtownanalytics.com"
 
+outputs:
+    sha:
+        description: "The SHA for the commit"
+        value: ${{ steps.commit.outputs.sha }}
+
 runs:
     using: composite
     steps:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
+            echo "==========INPUTS=========="
             echo message : ${{ inputs.message }}
             echo user    : ${{ inputs.user }}
             echo email   : ${{ inputs.email }}
 
     -   name: "Commit and push changes"
+        id: commit
         shell: bash
         run: |
             git config user.name "$USER"
@@ -31,15 +38,21 @@ runs:
             git add .
             git commit -m "$MESSAGE"
             git push
+            echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
         env:
             USER: ${{ inputs.user }}
             EMAIL: ${{ inputs.email }}
             MESSAGE: [automated] ${{ inputs.message }}
 
-    -   name: "[INFO] Committed and pushed changes"
+    -   name: "[DEBUG] Outputs"
         shell: bash
         run: |
-            echo "::notice title=$TITLE::$MESSAGE"
+            echo "==========OUTPUTS=========="
+            echo sha : ${{ steps.commit.outputs.sha }}
+
+    -   name: "[INFO] GitHub commit create"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}] Commit"
-            MESSAGE: "Committed and pushed changes back to remote"
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}] GitHub commit create"
+            MESSAGE: "Committed and pushed changes back to the remote repository with SHA `${{ steps.commit.outputs.sha }}`"
