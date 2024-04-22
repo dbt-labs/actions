@@ -31,11 +31,10 @@ runs:
         run: |
             output=$((gh release view $TAG --json isDraft,targetCommitish --repo $REPO) 2>&1) || true
             echo "TAG_METADATA=$output" >> $GITHUB_ENV
-        with:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         env:
             TAG: ${{ inputs.tag }}
             REPO: "https://github.com/dbt-labs/${{ github.repository }}"
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     -   name: "Set: exists"
         id: tag
