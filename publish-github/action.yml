@@ -70,8 +70,7 @@ runs:
             TITLE: "${{ github.repository }} ${{ inputs.tag }}"
             RELEASE_NOTES: ${{ inputs.changelog-path }}
             COMMIT: ${{ inputs.sha }}
-        with:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     -   name: "[INFO] Published artifacts to GitHub"
         shell: bash
