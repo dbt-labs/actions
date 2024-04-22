@@ -1,0 +1,67 @@
+name: "Build release artifacts"
+description: "Build release artifacts using `hatch` as the default build frontend"
+
+inputs:
+    build-command:
+        description: "The command to build distributable artifacts"
+        required: true
+    check-command:
+        description: "The command to check built artifacts"
+        required: true
+    archive-name:
+        description: "Name for the GitHub archive for uploading built artifacts, leave blank for no upload"
+        default: ""
+    archive-retention:
+        description: "Duration in days to keep the GitHub archive, requires `archive-name`"
+        default: "3"
+    working-directory:
+        description: "Where to run commands from, primarily supports monorepo setups (e.g. <sub-package-dir>/"
+        default: "./"
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo build-command     : ${{ inputs.build-command }}
+            echo check-command     : ${{ inputs.check-command }}
+            echo archive-name      : ${{ inputs.archive-name }}
+            echo archive-retention : ${{ inputs.archive-retention }}
+            echo working-directory : ${{ inputs.working-directory }}
+
+    -   name: "Build artifacts"
+        shell: bash
+        run: ${{ inputs.build-command }}
+        working-directory: ${{ inputs.working-directory }}
+
+    -   name: "[INFO] Built artifacts"
+        shell: bash
+        run: |
+            echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Built artifacts"
+            MESSAGE: $(ls ./dist)
+        working-directory: ${{ inputs.working-directory }}
+
+    -   name: "Check artifacts"
+        shell: bash
+        working-directory: ${{ inputs.working-dir }}
+        run: ${{ inputs.check-command }}
+
+    -   name: "Upload artifacts"
+        if: ${{ !(inputs.archive-name == '') }}
+        uses: actions/upload-artifact@v4
+        with:
+            name: ${{ inputs.archive-name }}
+            path: ${{ inputs.working-directory }}dist/
+            retention-days: ${{ fromJSON(inputs.archive-retention) }}
+
+    -   name: "[INFO] Uploaded artifacts"
+        if: ${{ !(inputs.archive-name == '') }}
+        shell: bash
+        run: |
+            echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Uploaded artifacts"
+            MESSAGE: "Uploaded artifacts to ${{ inputs.archive-name }}"
