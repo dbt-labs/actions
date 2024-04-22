@@ -1,0 +1,90 @@
+name: "Build changelog"
+description: "Merge `changie` entries to build the changelog for ${{ inputs.version }}"
+
+
+inputs:
+    version:
+        description: "The version whose changelogs should be merged"
+        required: true
+
+outputs:
+    changelog-path:
+        description: "The path to the new, or existing, changelog for this version"
+        value: ${{ steps.audit-changelog.outputs.path }}
+    changelog-created:
+        description: "Identifies if this action created the changelog"
+        value: ${{ !steps.audit-changelog.outputs.exists }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "Audit changelog"
+        id: audit-changelog
+        uses: ./audit-changelog
+        with:
+            version: ${{ inputs.version }}
+
+    -   name: "[INFO] Generate changelog - SKIPPED"
+        if: ${{ steps.audit-changelog.outputs.exists }}
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE" && exit 0
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Generate changelog - SKIPPED"
+            MESSAGE: "The changelog already exists for version `${{ inputs.version }}`: `${{ steps.audit.changelog.outputs.path }}`"
+
+    -   name: "Parse `${{ inputs.version }}`"
+        id: semver
+        uses: ./parse-semver
+        with:
+            version: ${{ inputs.version }}
+
+    -   name: "Get Core team membership"
+        id: core-membership
+        uses: ./audit-github-team
+        with:
+            team: "core-group"
+
+    -   name: "Set Core team membership for `changie` contributors exclusion"
+        shell: bash
+        run: echo "CHANGIE_CORE_TEAM=$CORE_TEAM_MEMBERS" >> $GITHUB_ENV
+        env:
+            CORE_TEAM_MEMBERS: ${{ steps.core-membership.outputs.members }}
+
+    -   name: "Build changelog"
+        shell: bash
+        run: |
+            # this is a pre-release
+            if [[ $IS_PRE_RELEASE -eq 1 ]]; then
+                changie batch $BASE_VERSION --move-dir '$BASE_VERSION' --prerelease $PRE_RELEASE
+  
+            # this is a final release with associated pre-releases
+            elif [[ -d ".changes/$BASE_VERSION" ]]; then
+                changie batch $BASE_VERSION --include '$BASE_VERSION' --remove-prereleases
+  
+            # this is a final release with no associated pre-releases
+            else
+                changie batch $BASE_VERSION
+            fi
+  
+            changie merge
+        env:
+            BASE_VERSION: ${{ steps.semver.outputs.base_version }}
+            PRE_RELEASE: ${{ steps.semver.outputs.prerelease }}
+            IS_PRE_RELEASE: ${{ steps.semver.outputs.is_prerelease }}
+
+    -   name: "Remove trailing whitespace and extra newlines"
+        continue-on-error: true
+        shell: bash
+        run: pre-commit run --all-files
+
+    -   name: "Commit and push changes"
+        uses: ./github-commit
+        with:
+            message: "generate changelog for ${{ inputs.version }}"
+
+    -   name: "[INFO] Build changelog"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Build changelog"
+            MESSAGE: "The changelog has been built for `${{ inputs.version }}`: `${{ steps.audit.changelog.outputs.path }}`"
