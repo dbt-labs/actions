@@ -1,4 +1,4 @@
-name: "Version bump"
+name: "Bump version"
 run-name: "Bump branch `${{ inputs.branch }}` to `${{ inputs.version }}`"
 
 on:
