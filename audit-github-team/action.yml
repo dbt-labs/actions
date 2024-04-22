@@ -9,7 +9,7 @@ inputs:
 outputs:
     members:
         description: "A space delimited list of team members"
-        value: ${{ steps.members.outputs.membership }}
+        value: ${{ steps.members.outputs.members }}
 
 runs:
     using: composite
@@ -37,7 +37,7 @@ runs:
         run: |
             team_list=$(jq -r '.[].login' $OUTPUT_FILE)
             team_list_single=$(echo $team_list | tr '\n' ' ')
-            echo "membership=$team_list_single" >> $GITHUB_OUTPUT
+            echo "members=$team_list_single" >> $GITHUB_OUTPUT
 
     -   name: "Delete the output file"
         shell: bash
@@ -47,4 +47,4 @@ runs:
         shell: bash
         run: |
             echo team         : ${{ inputs.team }}
-            echo members      : ${{ steps.members.outputs.membership }}
+            echo members      : ${{ steps.members.outputs.members }}
