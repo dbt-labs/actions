@@ -33,13 +33,13 @@ runs:
 
     -   name: "Check if a release exists for `${{ inputs.sha }}`"
         id: commit
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: cardinalby/git-get-release-action@1.2.4
         with:
             commitSha: ${{ inputs.sha }}
             doNotFailIfNotFound: true  # return blank outputs when not found instead of error
             searchLimit: ${{ fromJSON(inputs.release-search-limit) }}
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     -   name: "[DEBUG] Commit metadata"
         shell: bash

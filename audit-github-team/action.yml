@@ -29,6 +29,7 @@ runs:
         env:
             URL: "orgs/dbt-labs/teams/${{ inputs.team }}/members"
             HEADER: "Accept: application/vnd.github+json"
+            GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
 
     -   name: "Parse team membership"
         id: members
