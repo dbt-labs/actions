@@ -1,0 +1,85 @@
+name: "Audit GitHub tag"
+description: "Get metadata about a GitHub tag"
+
+inputs:
+    tag:
+        description: "The tag to audit (e.g. v1.0.0b1)"
+        required: true
+    repo:
+        description: "The name of the repo (e.g. https://github.com/<repo-owner>/<repo>)"
+        required: true
+    repo-owner:
+        description: "The repo owner (e.g. https://github.com/<repo-owner>/<repo>)"
+        default: "dbt-labs"
+
+outputs:
+    exists:
+        description: "Indicates if the tag exists"
+        value: ${{ steps.tag.outputs.exists }}
+    sha:
+        description: "The commit associated with the tag if the tag exists"
+        value: ${{ steps.commit.outputs.sha }}
+    is-draft:
+        description: "If the tag exists, indicates if it is a draft"
+        value: ${{ steps.draft.outputs.is-draft }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo tag        : ${{ inputs.tag }}
+            echo repo       : ${{ inputs.repo }}
+            echo repo-owner : ${{ inputs.repo-owner }}
+
+    -   name: "Get tag metadata"
+        id: tag
+        shell: bash
+        run: |
+            output=$((gh release view $TAG --json isDraft,targetCommitish --repo $REPO) 2>&1) || true
+            echo "TAG_METADATA=$output" >> $GITHUB_ENV
+        with:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+            TAG: ${{ inputs.tag }}
+            REPO: "https://github.com/${{ inputs.repo-owner }}/${{ inputs.repo }}"
+
+    -   name: "Set: exists"
+        id: tag
+        shell: bash
+        run: |
+            if [[ "$TAG_METADATA" == "release not found" ]]; then
+                echo "exists=false" >> $GITHUB_OUTPUT
+            else
+                echo "exists=true" >> $GITHUB_OUTPUT
+            fi
+
+    -   name: "Set: sha"
+        id: commit
+        if: ${{ fromJSON(steps.tag.outputs.exists) == true }}
+        shell: bash
+        run: |
+            sha=$(jq -r '.targetCommitish' <<< "$TAG_METADATA")
+            echo "sha=$sha" >> $GITHUB_OUTPUT
+
+    -   name: "Set: is-draft"
+        id: draft
+        if: ${{ fromJSON(steps.tag.outputs.exists) == true }}
+        shell: bash
+        run: |
+            is-draft=$(jq -r '.isDraft' <<< "$TAG_METADATA")
+            if [[ $is-draft == true ]]; then
+                echo "is-draft=true" >> $GITHUB_OUTPUT
+            else
+                echo "is-draft=false" >> $GITHUB_OUTPUT
+            fi
+
+    -   name: "[DEBUG] Tag metadata"
+        shell: bash
+        run: |
+            echo tag       : ${{ inputs.tag }}
+            echo repo-url  : ${{ inputs.repo-url }}
+            echo exists:   : ${{ steps.release.outputs.exists }}
+            echo sha       : ${{ steps.commit.outputs.sha }}
+            echo is-draft  : ${{ steps.draft.outputs.is-draft }}
