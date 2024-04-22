@@ -30,19 +30,25 @@ runs:
             echo changelog-path : ${{ inputs.changelog-path }}
             echo is-draft       : ${{ inputs.is-draft }}
 
-    -   name: "Set: pre-release"
+    -   name: "Set: prerelease"
+        id: prerelease
         shell: bash
         run: |
-            if ${{ contains(inputs.tag, 'rc') || contains(inputs.tag, 'b') || contains(inputs.tag, 'a') || contains(inputs.tag, 'dev') }}; then
-                echo "PRE_RELEASE=--prerelease" >> $GITHUB_ENV
+            if $IS_PRE_RELEASE; then
+                echo "flag=--prerelease" >> $GITHUB_OUTPUT
             fi
+        env:
+            IS_PRE_RELEASE: ${{ contains(inputs.tag, 'rc') || contains(inputs.tag, 'b') || contains(inputs.tag, 'a') || contains(inputs.tag, 'dev') }}
 
     -   name: "Set: draft"
+        id: draft
         shell: bash
         run: |
-            if ${{ fromJSON(inputs.is-draft) }}; then
-                echo "DRAFT=--draft" >> $GITHUB_ENV
+            if $IS_DRAFT; then
+                echo "flag=--draft" >> $GITHUB_OUTPUT
             fi
+        env:
+            IS_DRAFT: ${{ fromJSON(inputs.is-draft) }}
 
     -   name: "Download artifacts from `${{ inputs.archive-name }}`"
         if: ${{ !(inputs.archive-name == '') }}
@@ -60,16 +66,18 @@ runs:
             TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Downloaded artifacts"
             MESSAGE: "`${{ inputs.archive-name }}` contained: $(ls ./dist)"
 
-    -   name: "Publish artifacts to GitHub as draft release"
+    -   name: "Publish artifacts to GitHub"
         shell: bash
-        run: gh release create $TAG $ARTIFACTS --repo $REPO --title "$TITLE" --notes-file $RELEASE_NOTES --target $COMMIT $PRE_RELEASE $DRAFT
+        run: gh release create $TAG $FILES $DRAFT --notes-file $NOTES_FILE $PRERELEASE --target $TARGET --title "$TITLE" --repo $REPO
         env:
             TAG: ${{ inputs.tag }}
-            ARTIFACTS: "./dist/*"
-            REPO: "https://github.com/dbt-labs/${{ github.repository }}"
+            FILES: "./dist/*"
+            DRAFT: ${{ steps.draft.output.flag }}
+            NOTES_FILE: ${{ inputs.changelog-path }}
+            PRERELEASE: ${{ steps.prerlease.output.flag }}
+            TARGET: ${{ inputs.sha }}
             TITLE: "${{ github.repository }} ${{ inputs.tag }}"
-            RELEASE_NOTES: ${{ inputs.changelog-path }}
-            COMMIT: ${{ inputs.sha }}
+            REPO: "https://github.com/dbt-labs/${{ github.repository }}"
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     -   name: "[INFO] Published artifacts to GitHub"
