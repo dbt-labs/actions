@@ -1,0 +1,45 @@
+name: "Create unique branch"
+description: "Create a unique temporary branch for running CI workflows, primarily for release pipelines"
+
+inputs:
+    branch-group:
+        description: "Group to use for naming the branch with format <branch-group>/<current-date>/<run-id> (e.g. prep-release, nightly-release, etc.)"
+        default: "temp"
+
+outputs:
+    branch:
+        description: "Name of the newly created branch"
+        value: ${{ steps.branch.outputs.name }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo branch-stub : ${{ inputs.branch-stub }}
+
+    -   name: "Create a unique branch name"
+        id: branch
+        shell: bash
+        run: |
+            name="$STUB/$(date +'%Y-%m-%d')/$GITHUB_RUN_ID"
+            echo "name=$name" >> $GITHUB_OUTPUT
+        env:
+            STUB: ${{ inputs.branch-group }}
+
+    -   name: "Create branch: `${{ steps.branch.outputs.name }}`"
+        shell: bash
+        run: |
+            git checkout -b $BRANCH
+            git push -u origin $BRANCH
+        env:
+            BRANCH: ${{ steps.branch.outputs.name }}
+
+    -   name: "[INFO] Created branch"
+        shell: bash
+        run: |
+            echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Created branch"
+            MESSAGE: `${{ steps.branch.outputs.name }}`
