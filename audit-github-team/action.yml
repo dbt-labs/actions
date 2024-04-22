@@ -5,9 +5,6 @@ inputs:
     team:
         description: "The name of the team"
         required: true
-    organization:
-        description: "The GitHub organization that owns the team"
-        default: "dbt-labs"
 
 outputs:
     members:
@@ -20,8 +17,7 @@ runs:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
-            echo team         : ${{ inputs.team }}
-            echo organization : ${{ inputs.organization }}
+            echo team : ${{ inputs.team }}
 
     -   name: "Create output file name"
         shell: bash
@@ -31,7 +27,7 @@ runs:
         shell: bash
         run: gh api -H "$HEADER" $URL > $OUTPUT_FILE
         env:
-            URL: "orgs/${{ inputs.organization }}/teams/${{ inputs.team }}/members"
+            URL: "orgs/dbt-labs/teams/${{ inputs.team }}/members"
             HEADER: "Accept: application/vnd.github+json"
 
     -   name: "Parse team membership"
@@ -49,6 +45,5 @@ runs:
     -   name: "[DEBUG] Parse team membership"
         shell: bash
         run: |
-            echo organization : ${{ inputs.organization }}
             echo team         : ${{ inputs.team }}
             echo members      : ${{ steps.members.outputs.membership }}
