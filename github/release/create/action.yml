@@ -2,15 +2,15 @@ name: "Create GitHub release"
 description: "Publish release artifacts from an archive to GitHub"
 
 inputs:
+    archive-name:
+        description: "Name of the archive containing the artifacts, leave blank if local"
+        default: ""
     tag:
         description: "The release tag to publish under"
         required: true
     sha:
         description: "Commit SHA being released"
         required: true
-    archive-name:
-        description: "Name of the archive containing the artifacts, leave blank if local"
-        default: ""
     changelog-path:
         description: "Path to the release notes from the repo root"
         required: true
@@ -25,9 +25,9 @@ runs:
         shell: bash
         run: |
             echo "==========INPUTS=========="
+            echo archive-name   : ${{ inputs.archive-name }}
             echo tag            : ${{ inputs.tag }}
             echo sha            : ${{ inputs.sha }}
-            echo archive-name   : ${{ inputs.archive-name }}
             echo changelog-path : ${{ inputs.changelog-path }}
             echo is-draft       : ${{ inputs.is-draft }}
 

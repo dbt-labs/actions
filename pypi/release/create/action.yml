@@ -1,5 +1,5 @@
-name: "Publish to PyPI"
-description: "Publish artifacts from an archive to PyPI"
+name: "Create PyPI release"
+description: "Publish release artifacts from an archive to PyPI"
 
 inputs:
     archive-name:
@@ -15,26 +15,18 @@ runs:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
+            echo "==========INPUTS=========="
             echo archive-name : ${{ inputs.archive-name }}
             echo index-url    : ${{ inputs.index-url }}
 
-    -   name: "Download artifacts from `${{ inputs.archive-name }}`"
+    -   name: "Download release artifacts from `${{ inputs.archive-name }}`"
         if: ${{ !(inputs.archive-name == '') }}
         uses: actions/download-artifact@v4
         with:
             name: ${{ inputs.archive-name }}
             path: dist/
 
-    -   name: "[INFO] Downloaded artifacts"
-        if: ${{ !(inputs.archive-name == '') }}
-        shell: bash
-        run: |
-            echo "::notice title=$TITLE::$MESSAGE"
-        env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Downloaded artifacts"
-            MESSAGE: "Downloaded artifacts from ${{ inputs.archive-name }}"
-
-    -   name: "[DEBUG] Found artifacts"
+    -   name: "[DEBUG] Release artifacts"
         shell: bash
         run: echo $(ls ./dist)
 
@@ -44,10 +36,15 @@ runs:
             repository-url: ${{ inputs.index-url }}
             packages-dir: dist/
 
-    -   name: "[INFO] Published artifacts to PyPI"
+    -   name: "[DEBUG] Outputs"
         shell: bash
         run: |
-            echo "::notice title=$TITLE::$MESSAGE"
+            echo "==========OUTPUTS=========="
+            echo "N/A"
+
+    -   name: "[INFO] Create PyPI release"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Published artifacts to PyPI"
-            MESSAGE: $(ls ./dist)
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Create PyPI release"
+            MESSAGE: "artifacts: `$(ls ./dist)`"
