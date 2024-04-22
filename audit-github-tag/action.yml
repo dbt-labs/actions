@@ -5,12 +5,6 @@ inputs:
     tag:
         description: "The tag to audit (e.g. v1.0.0b1)"
         required: true
-    repo:
-        description: "The name of the repo (e.g. https://github.com/<organization>/<repo>)"
-        required: true
-    organization:
-        description: "The repo owner (e.g. https://github.com/<organization>/<repo>)"
-        default: "dbt-labs"
 
 outputs:
     exists:
@@ -29,9 +23,7 @@ runs:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
-            echo tag          : ${{ inputs.tag }}
-            echo repo         : ${{ inputs.repo }}
-            echo organization : ${{ inputs.organization }}
+            echo tag : ${{ inputs.tag }}
 
     -   name: "Get tag metadata"
         id: tag
@@ -43,7 +35,7 @@ runs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         env:
             TAG: ${{ inputs.tag }}
-            REPO: "https://github.com/${{ inputs.organization }}/${{ inputs.repo }}"
+            REPO: "https://github.com/dbt-labs/${{ github.repository }}"
 
     -   name: "Set: exists"
         id: tag
@@ -79,8 +71,6 @@ runs:
         shell: bash
         run: |
             echo tag          : ${{ inputs.tag }}
-            echo repo         : ${{ inputs.repo }}
-            echo organization : ${{ inputs.organization }}
             echo exists:      : ${{ steps.release.outputs.exists }}
             echo sha          : ${{ steps.commit.outputs.sha }}
             echo is-draft     : ${{ steps.draft.outputs.is-draft }}
