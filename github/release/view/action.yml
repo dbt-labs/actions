@@ -1,4 +1,4 @@
-name: "GitHub tag get"
+name: "View GitHub release"
 description: "Get metadata about a GitHub tag"
 
 inputs:

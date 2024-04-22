@@ -1,4 +1,4 @@
-name: "GitHub release create"
+name: "Create GitHub release"
 description: "Publish release artifacts from an archive to GitHub"
 
 inputs:
@@ -82,9 +82,9 @@ runs:
             echo "==========OUTPUTS=========="
             echo "N/A"
 
-    -   name: "[INFO] GitHub release create"
+    -   name: "[INFO] Create GitHub release"
         shell: bash
         run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: GitHub release create"
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Create GitHub release"
             MESSAGE: "tag: `${{ inputs.tag }}` artifacts: `$(ls ./dist)`"

@@ -1,4 +1,4 @@
-name: "GitHub commit create"
+name: "Create GitHub commit"
 description: "Commit changes into the current branch, push back to the remote, and return the resulting SHA"
 
 inputs:
@@ -50,9 +50,9 @@ runs:
             echo "==========OUTPUTS=========="
             echo sha : ${{ steps.commit.outputs.sha }}
 
-    -   name: "[INFO] GitHub commit create"
+    -   name: "[INFO] Create GitHub commit"
         shell: bash
         run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}] GitHub commit create"
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}] Create GitHub commit"
             MESSAGE: "Committed and pushed changes back to the remote repository with SHA `${{ steps.commit.outputs.sha }}`"

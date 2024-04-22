@@ -1,4 +1,4 @@
-name: "GitHub branch merge"
+name: "Merge GitHub branch"
 description: "Merge a source branch into a target branch on GitHub and return the resulting SHA"
 
 inputs:
@@ -66,9 +66,9 @@ runs:
             echo "==========OUTPUTS=========="
             echo sha : ${{ steps.merge.outputs.sha }}
 
-    -   name: "[INFO] Github branch merge"
+    -   name: "[INFO] Merge Github branch"
         shell: bash
         run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: GitHub branch merge"
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Merge GitHub branch"
             MESSAGE: "`${{ inputs.source-branch }}` was merged into `${{ inputs.target-branch }}` with SHA `${{ steps.merge.outputs.sha }}`"

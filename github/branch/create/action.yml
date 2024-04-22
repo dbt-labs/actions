@@ -1,4 +1,4 @@
-name: "GitHub branch create"
+name: "Create GitHub branch"
 description: "Create a unique branch for running GHA workflows, primarily for release pipelines"
 
 inputs:
@@ -43,9 +43,9 @@ runs:
             echo "==========OUTPUTS=========="
             echo branch : ${{ steps.branch.outputs.name }}
 
-    -   name: "[INFO] GitHub branch create"
+    -   name: "[INFO] Create GitHub branch"
         shell: bash
         run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: GitHub branch create"
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Create GitHub branch"
             MESSAGE: "Created `${{ steps.branch.outputs.name }}`"

@@ -1,4 +1,4 @@
-name: "GitHub team get"
+name: "View GitHub team"
 description: "Get metadata about a GitHub team"
 
 inputs:

@@ -1,4 +1,4 @@
-name: "GitHub release edit"
+name: "Edit GitHub release"
 description: "Update a GitHub release with the provided attributes"
 
 inputs:
@@ -48,9 +48,9 @@ runs:
             echo "==========OUTPUTS=========="
             echo "N/A"
 
-    -   name: "[INFO] GitHub release edit"
+    -   name: "[INFO] Edit GitHub release"
         shell: bash
         run: echo "::notice title=$TITLE::$MESSAGE"
         env:
-            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: GitHub release edit"
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Edit GitHub release"
             MESSAGE: "tag: `${{ inputs.tag }}`"
