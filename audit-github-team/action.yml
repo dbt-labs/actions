@@ -1,0 +1,54 @@
+name: "Audit GitHub team"
+description: "Get metadata about a GitHub team"
+
+inputs:
+    team:
+        description: "The name of the team"
+        required: true
+    organization:
+        description: "The GitHub organization that owns the team"
+        default: "dbt-labs"
+
+outputs:
+    members:
+        description: "A space delimited list of team members"
+        value: ${{ steps.members.outputs.membership }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo team         : ${{ inputs.team }}
+            echo organization : ${{ inputs.organization }}
+
+    -   name: "Create output file name"
+        shell: bash
+        run: echo "OUTPUT_FILE=output_$GITHUB_RUN_ID.json" >> $GITHUB_ENV
+
+    -   name: "Get team membership"
+        shell: bash
+        run: gh api -H "$HEADER" $URL > $OUTPUT_FILE
+        env:
+            URL: "orgs/${{ inputs.organization }}/teams/${{ inputs.team }}/members"
+            HEADER: "Accept: application/vnd.github+json"
+
+    -   name: "Parse team membership"
+        id: members
+        shell: bash
+        run: |
+            team_list=$(jq -r '.[].login' $OUTPUT_FILE)
+            team_list_single=$(echo $team_list | tr '\n' ' ')
+            echo "membership=$team_list_single" >> $GITHUB_OUTPUT
+
+    -   name: "Delete the output file"
+        shell: bash
+        run: rm $OUTPUT_FILE
+
+    -   name: "[DEBUG] Parse team membership"
+        shell: bash
+        run: |
+            echo organization : ${{ inputs.organization }}
+            echo team         : ${{ inputs.team }}
+            echo members      : ${{ steps.members.outputs.membership }}
