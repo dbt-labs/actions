@@ -1,0 +1,45 @@
+name: "Commit changes"
+description: "Commit changes and push back to the remote"
+
+inputs:
+    message:
+        description: "The commit message"
+        required: true
+    user:
+        description: "The user for the commit"
+        default: "Github Build Bot"
+    email:
+        description: "The email for the commit"
+        default: "buildbot@fishtownanalytics.com"
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo message : ${{ inputs.message }}
+            echo user    : ${{ inputs.user }}
+            echo email   : ${{ inputs.email }}
+
+    -   name: "Commit and push changes"
+        shell: bash
+        run: |
+            git config user.name "$USER"
+            git config user.email "$EMAIL"
+            git pull
+            git add .
+            git commit -m "$MESSAGE"
+            git push
+        env:
+            USER: ${{ inputs.user }}
+            EMAIL: ${{ inputs.email }}
+            MESSAGE: [automated] ${{ inputs.message }}
+
+    -   name: "[INFO] Committed and pushed changes"
+        shell: bash
+        run: |
+            echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}] Commit"
+            MESSAGE: "Committed and pushed changes back to remote"
