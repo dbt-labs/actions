@@ -36,15 +36,15 @@ runs:
             repository-url: ${{ inputs.index-url }}
             packages-dir: dist/
 
-    -   name: "[DEBUG] Outputs"
-        shell: bash
-        run: |
-            echo "==========OUTPUTS=========="
-            echo "N/A"
-
     -   name: "[INFO] Create PyPI release"
         shell: bash
         run: echo "::notice title=$TITLE::$MESSAGE"
         env:
             TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Create PyPI release"
             MESSAGE: "artifacts: `$(ls ./dist)`"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo "N/A"
