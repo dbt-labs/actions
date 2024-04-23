@@ -1,0 +1,63 @@
+name: "Bump hatch version"
+description: "Bump version in a hatch based package"
+
+inputs:
+    version:
+        description: "The version to bump to"
+        required: true
+    working-directory:
+        description: "Where to run commands from, primarily supports monorepo setups (e.g. <sub-package-dir>/"
+        default: "./"
+
+outputs:
+    bumped:
+        description: "Indicates if the version was bumped, or if it was skipped because it was already the current version"
+        value: ${{ steps.current-version.outputs.version != inputs.version }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo "==========INPUTS=========="
+            echo version           : ${{ inputs.version }}
+            echo working-directory : ${{ inputs.working-directory }}
+
+    -   name: "Set: current-version"
+        id: current-version
+        shell: bash
+        run: echo "version=$(hatch version)" >> $GITHUB_OUTPUT
+        working-directory: ${{ inputs.working-directory }}
+
+    -   name: "[INFO] Bump hatch version SKIPPED"
+        if: ${{ steps.current-version.outputs.version == inputs.version }}
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE" && exit 0
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Bump hatch version SKIPPED"
+            MESSAGE: "Package is already at version `${{ inputs.version }}`"
+
+    -   name: "Bump version to `${{ inputs.version }}`"
+        shell: bash
+        run: hatch version ${{ inputs.version }}
+        working-directory: ${{ inputs.working-directory }}
+
+    -   name: "Commit and push changes"
+        id: commit
+        uses: ./github/commit/create
+        with:
+            message: "bump version to ${{ inputs.version }}"
+
+    -   name: "[INFO] Bump hatch version"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Bump hatch version"
+            MESSAGE: "Bumped from `${{ needs.current-version.outputs.version }}` to `${{ inputs.version }}`"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo bumped : ${{ steps.current-version.outputs.version != inputs.version }}
