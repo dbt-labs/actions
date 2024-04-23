@@ -1,0 +1,84 @@
+name: "Build changie changelog"
+description: "Merge changie entries to build the changelog for ${{ inputs.version }}"
+
+
+inputs:
+    version:
+        description: "The version whose changelogs should be merged"
+        required: true
+
+outputs:
+    path:
+        description: "The path to the new, or existing, changelog for this version"
+        value: ${{ steps.changelog.outputs.path }}
+    created:
+        description: "Identifies if this action created the changelog"
+        value: ${{ !steps.changelog.outputs.exists }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo "==========INPUTS=========="
+            echo version : ${{ inputs.version }}
+
+    -   name: "Get changelog"
+        id: changelog
+        uses: ./changie/changelog/view
+        with:
+            version: ${{ inputs.version }}
+
+    -   name: "[INFO] Build changie changelog - SKIPPED"
+        if: ${{ steps.changelog.outputs.exists }}
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE" && exit 0
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Generate changelog - SKIPPED"
+            MESSAGE: "The changelog already exists for version `${{ inputs.version }}`: `${{ steps.audit.changelog.outputs.path }}`"
+
+    -   name: "Parse `${{ inputs.version }}`"
+        id: version
+        uses: ./parse-semver
+        with:
+            version: ${{ inputs.version }}
+
+    -   name: "Get `core-group` members"
+        id: core-group
+        uses: ./github/team/view
+        with:
+            team: "core-group"
+
+    -   name: "Build changelog"
+        shell: bash
+        run: ./changie/changelog/create/build_changelog.sh
+        env:
+            BASE_VERSION: ${{ steps.version.outputs.base_version }}
+            PRE_RELEASE: ${{ steps.version.outputs.prerelease }}
+            IS_PRE_RELEASE: ${{ steps.version.outputs.is_prerelease }}
+            CORE_TEAM_MEMBERS: ${{ steps.core-group.outputs.members }}
+
+    -   name: "Remove trailing whitespace and extra newlines"
+        continue-on-error: true
+        shell: bash
+        run: pre-commit run --all-files
+
+    -   name: "Commit and push changes"
+        uses: ./github/commit/create
+        with:
+            message: "generate changelog for ${{ inputs.version }}"
+
+    -   name: "[INFO] Build changie changelog"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Build changie changelog"
+            MESSAGE: "The changelog has been built for `${{ inputs.version }}`: `${{ steps.changelog.outputs.path }}`"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo path    : ${{ steps.changelog.outputs.path }}
+            echo created : ${{ !steps.changelog.outputs.exists }}

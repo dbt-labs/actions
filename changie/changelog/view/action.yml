@@ -1,0 +1,46 @@
+name: "View changie changelog"
+description: "Get metadata about a changie changelog for a specified version"
+
+inputs:
+    version:
+        description: "The version whose changelog is being audited"
+        required: true
+
+outputs:
+    path:
+        description: "The expected file path to the change log, relative to the repo root"
+        value: ${{ steps.changelog.outputs.path }}
+    exists:
+        description: "Indicates if the changelog exists"
+        value: ${{ steps.changelog.outputs.exists }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo "==========INPUTS=========="
+            echo version : ${{ inputs.version }}
+
+    -   name: "Parse version: `${{ inputs.version }}`"
+        id: version
+        uses: ./parse-semver
+        with:
+            version: ${{ inputs.version }}
+
+    -   name: "Get changelog"
+        id: changelog
+        shell: bash
+        run: ./changie/changelog/view/get_changelog.sh
+        env:
+            BASE_VERSION: ${{ steps.version.outputs.base-version }}
+            PRE_RELEASE: ${{ steps.version.outputs.pre-release }}
+            IS_PRE_RELEASE: ${{ steps.version.outputs.is-pre-release }}
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo path    : ${{ steps.changelog.outputs.path }}
+            echo exists  : ${{ steps.changelog.outputs.exists }}

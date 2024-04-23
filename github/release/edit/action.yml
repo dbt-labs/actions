@@ -19,17 +19,11 @@ runs:
             echo tag      : ${{ inputs.tag }}
             echo is-draft : ${{ inputs.is-draft }}
 
-    -   name: "Set: draft"
+    -   name: "Set release inputs"
         if: ${{ inputs.is-draft != '' }}
-        id: draft
+        id: release
         shell: bash
-        run: |
-            if $IS_DRAFT; then
-                flag="--draft=true"
-            else;
-                flag="--draft=false"
-            fi
-            echo "flag=$flag" >> $GITHUB_OUTPUT
+        run: ./github/release/edit/set_release_inputs.sh
         env:
             IS_DRAFT: ${{ fromJSON(inputs.is-draft) }}
 
@@ -39,14 +33,8 @@ runs:
         env:
             TAG: ${{ inputs.tag }}
             REPO: "https://github.com/dbt-labs/${{ github.repository }}"
-            DRAFT: ${{ steps.draft.outputs.flag }}
+            DRAFT: ${{ steps.release.outputs.draft }}
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    -   name: "[DEBUG] Outputs"
-        shell: bash
-        run: |
-            echo "==========OUTPUTS=========="
-            echo "N/A"
 
     -   name: "[INFO] Edit GitHub release"
         shell: bash
@@ -54,3 +42,9 @@ runs:
         env:
             TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Edit GitHub release"
             MESSAGE: "tag: `${{ inputs.tag }}`"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo "N/A"

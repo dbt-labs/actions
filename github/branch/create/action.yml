@@ -20,28 +20,12 @@ runs:
             echo "==========INPUTS=========="
             echo branch-stub : ${{ inputs.branch-stub }}
 
-    -   name: "Create a unique branch name"
+    -   name: "Create branch"
         id: branch
         shell: bash
-        run: |
-            name="$STUB/$(date +'%Y-%m-%d')/$GITHUB_RUN_ID"
-            echo "name=$name" >> $GITHUB_OUTPUT
+        run: ./github/branch/create/create_branch.sh
         env:
             STUB: ${{ inputs.branch-group }}
-
-    -   name: "Create branch: `${{ steps.branch.outputs.name }}`"
-        shell: bash
-        run: |
-            git checkout -b $BRANCH
-            git push -u origin $BRANCH
-        env:
-            BRANCH: ${{ steps.branch.outputs.name }}
-
-    -   name: "[DEBUG] Outputs"
-        shell: bash
-        run: |
-            echo "==========OUTPUTS=========="
-            echo branch : ${{ steps.branch.outputs.name }}
 
     -   name: "[INFO] Create GitHub branch"
         shell: bash
@@ -49,3 +33,9 @@ runs:
         env:
             TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Create GitHub branch"
             MESSAGE: "Created `${{ steps.branch.outputs.name }}`"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo branch : ${{ steps.branch.outputs.name }}

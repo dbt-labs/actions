@@ -32,7 +32,6 @@ runs:
             echo message              : ${{ inputs.message }}
             echo delete-source-branch : ${{ inputs.delete-source-branch }}
 
-        # TODO: are we comfortable passing our bot token to this third party action?
     -   name: "Merge `${{ inputs.source-branch }}` into `${{ inputs.target-branch }}`"
         uses: everlytic/branch-merge@1.1.5
         with:
@@ -41,12 +40,22 @@ runs:
             commit_message_template: "[automated] ${{ inputs.message }}"
             github_token: ${{ secrets.FISHTOWN_BOT_PAT }}
 
+    -   name: "Checkout `${{ inputs.source-branch }}`"
+        if: ${{ fromJSON(inputs.delete-source-branch) }}
+        uses: actions/checkout@v3
+        with:
+            ref: ${{ inputs.target-branch }}
+
+    -   name: "Delete `${{ inputs.source-branch }}`"
+        if: ${{ fromJSON(inputs.delete-source-branch) }}
+        shell: bash
+        run: git push origin -d ${{ inputs.source-branch }}
+
     -   name: "Checkout `${{ inputs.target-branch }}`"
         uses: actions/checkout@v3
         with:
             ref: ${{ inputs.target-branch }}
 
-        # TODO: see if everlytic/branch-merge has outputs that have this information
     -   name: "Get commit SHA for the merge"
         id: merge
         shell: bash
@@ -54,21 +63,15 @@ runs:
             git pull
             echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
-        # TODO: see if everlytic/branch-merge has options to do this
-    -   name: "Delete `${{ inputs.source-branch }}`"
-        if: ${{ fromJSON(inputs.delete-source-branch) }}
-        shell: bash
-        run: git push origin -d ${{ inputs.source-branch }}
-
-    -   name: "[DEBUG] Outputs"
-        shell: bash
-        run: |
-            echo "==========OUTPUTS=========="
-            echo sha : ${{ steps.merge.outputs.sha }}
-
     -   name: "[INFO] Merge Github branch"
         shell: bash
         run: echo "::notice title=$TITLE::$MESSAGE"
         env:
             TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Merge GitHub branch"
             MESSAGE: "`${{ inputs.source-branch }}` was merged into `${{ inputs.target-branch }}` with SHA `${{ steps.merge.outputs.sha }}`"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo sha : ${{ steps.merge.outputs.sha }}

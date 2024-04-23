@@ -31,26 +31,6 @@ runs:
             echo changelog-path : ${{ inputs.changelog-path }}
             echo is-draft       : ${{ inputs.is-draft }}
 
-    -   name: "Set: prerelease"
-        id: prerelease
-        shell: bash
-        run: |
-            if $IS_PRE_RELEASE; then
-                echo "flag=--prerelease" >> $GITHUB_OUTPUT
-            fi
-        env:
-            IS_PRE_RELEASE: ${{ contains(inputs.tag, 'rc') || contains(inputs.tag, 'b') || contains(inputs.tag, 'a') || contains(inputs.tag, 'dev') }}
-
-    -   name: "Set: draft"
-        id: draft
-        shell: bash
-        run: |
-            if $IS_DRAFT; then
-                echo "flag=--draft" >> $GITHUB_OUTPUT
-            fi
-        env:
-            IS_DRAFT: ${{ fromJSON(inputs.is-draft) }}
-
     -   name: "Download release artifacts from `${{ inputs.archive-name }}`"
         if: ${{ !(inputs.archive-name == '') }}
         uses: actions/download-artifact@v4
@@ -62,25 +42,27 @@ runs:
         shell: bash
         run: echo $(ls ./dist)
 
+    -   name: "Set release inputs"
+        id: release
+        shell: bash
+        run: ./github/release/create/set_release_inputs.sh
+        env:
+            IS_PRE_RELEASE: ${{ contains(inputs.tag, 'rc') || contains(inputs.tag, 'b') || contains(inputs.tag, 'a') || contains(inputs.tag, 'dev') }}
+            IS_DRAFT: ${{ fromJSON(inputs.is-draft) }}
+
     -   name: "Publish artifacts to GitHub"
         shell: bash
         run: gh release create $TAG $FILES $DRAFT --notes-file $NOTES_FILE $PRERELEASE --target $TARGET --title "$TITLE" --repo $REPO
         env:
             TAG: ${{ inputs.tag }}
             FILES: "./dist/*"
-            DRAFT: ${{ steps.draft.output.flag }}
+            DRAFT: ${{ steps.release.output.draft }}
             NOTES_FILE: ${{ inputs.changelog-path }}
-            PRERELEASE: ${{ steps.prerlease.output.flag }}
+            PRERELEASE: ${{ steps.release.output.prerelease }}
             TARGET: ${{ inputs.sha }}
             TITLE: "${{ github.repository }} ${{ inputs.tag }}"
             REPO: "https://github.com/dbt-labs/${{ github.repository }}"
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    -   name: "[DEBUG] Outputs"
-        shell: bash
-        run: |
-            echo "==========OUTPUTS=========="
-            echo "N/A"
 
     -   name: "[INFO] Create GitHub release"
         shell: bash
@@ -88,3 +70,9 @@ runs:
         env:
             TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Create GitHub release"
             MESSAGE: "tag: `${{ inputs.tag }}` artifacts: `$(ls ./dist)`"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo "N/A"

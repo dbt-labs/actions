@@ -9,13 +9,13 @@ inputs:
 outputs:
     exists:
         description: "Indicates if the tag exists"
-        value: ${{ steps.tag.outputs.exists }}
+        value: ${{ steps.release.outputs.exists }}
     sha:
         description: "The commit associated with the tag if the tag exists"
-        value: ${{ steps.commit.outputs.sha }}
+        value: ${{ steps.release-exists.outputs.sha }}
     is-draft:
         description: "If the tag exists, indicates if it is a draft"
-        value: ${{ steps.draft.outputs.is-draft }}
+        value: ${{ steps.release-exists.outputs.is-draft }}
 
 runs:
     using: composite
@@ -26,51 +26,25 @@ runs:
             echo "==========INPUTS=========="
             echo tag : ${{ inputs.tag }}
 
-    -   name: "Get tag metadata"
-        id: tag
+    -   name: "Get release"
+        id: release
         shell: bash
-        run: |
-            output=$((gh release view $TAG --json isDraft,targetCommitish --repo $REPO) 2>&1) || true
-            echo "TAG_METADATA=$output" >> $GITHUB_ENV
+        run: ./github/release/view/get_release.sh
         env:
             TAG: ${{ inputs.tag }}
             REPO: "https://github.com/dbt-labs/${{ github.repository }}"
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    -   name: "Set: exists"
-        id: tag
+    -   name: "Get release metadata"
+        id: release-exists
+        if: ${{ fromJSON(steps.release.outputs.exists) == true }}
         shell: bash
-        run: |
-            if [[ "$TAG_METADATA" == "release not found" ]]; then
-                echo "exists=false" >> $GITHUB_OUTPUT
-            else
-                echo "exists=true" >> $GITHUB_OUTPUT
-            fi
-
-    -   name: "Set: sha"
-        id: commit
-        if: ${{ fromJSON(steps.tag.outputs.exists) == true }}
-        shell: bash
-        run: |
-            sha=$(jq -r '.targetCommitish' <<< "$TAG_METADATA")
-            echo "sha=$sha" >> $GITHUB_OUTPUT
-
-    -   name: "Set: is-draft"
-        id: draft
-        if: ${{ fromJSON(steps.tag.outputs.exists) == true }}
-        shell: bash
-        run: |
-            is-draft=$(jq -r '.isDraft' <<< "$TAG_METADATA")
-            if [[ $is-draft == true ]]; then
-                echo "is-draft=true" >> $GITHUB_OUTPUT
-            else
-                echo "is-draft=false" >> $GITHUB_OUTPUT
-            fi
+        run: ./github/release/view/get_release_metadata.sh
 
     -   name: "[DEBUG] Outputs"
         shell: bash
         run: |
             echo "==========OUTPUTS=========="
             echo exists:  : ${{ steps.release.outputs.exists }}
-            echo sha      : ${{ steps.commit.outputs.sha }}
-            echo is-draft : ${{ steps.draft.outputs.is-draft }}
+            echo sha      : ${{ steps.release-exists.outputs.sha }}
+            echo is-draft : ${{ steps.release-exists.outputs.is-draft }}
