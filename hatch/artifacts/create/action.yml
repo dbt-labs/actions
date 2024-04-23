@@ -1,13 +1,7 @@
-name: "Build release artifacts"
+name: "Create hatch artifacts"
 description: "Build release artifacts using `hatch` as the default build frontend"
 
 inputs:
-    build-command:
-        description: "The command to build distributable artifacts"
-        required: true
-    check-command:
-        description: "The command to check built artifacts"
-        required: true
     archive-name:
         description: "Name for the GitHub archive for uploading built artifacts, leave blank for no upload"
         default: ""
@@ -24,30 +18,25 @@ runs:
     -   name: "[DEBUG] Inputs"
         shell: bash
         run: |
-            echo build-command     : ${{ inputs.build-command }}
-            echo check-command     : ${{ inputs.check-command }}
+            echo "==========INPUTS=========="
             echo archive-name      : ${{ inputs.archive-name }}
             echo archive-retention : ${{ inputs.archive-retention }}
             echo working-directory : ${{ inputs.working-directory }}
 
     -   name: "Build artifacts"
         shell: bash
-        run: ${{ inputs.build-command }}
+        run: |
+            hatch build
+            hatch run build:check-all
         working-directory: ${{ inputs.working-directory }}
 
     -   name: "[INFO] Built artifacts"
         shell: bash
-        run: |
-            echo "::notice title=$TITLE::$MESSAGE"
+        run: echo "::notice title=$TITLE::$MESSAGE"
         env:
             TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Built artifacts"
             MESSAGE: $(ls ./dist)
         working-directory: ${{ inputs.working-directory }}
-
-    -   name: "Check artifacts"
-        shell: bash
-        working-directory: ${{ inputs.working-dir }}
-        run: ${{ inputs.check-command }}
 
     -   name: "Upload artifacts"
         if: ${{ !(inputs.archive-name == '') }}
@@ -60,8 +49,13 @@ runs:
     -   name: "[INFO] Uploaded artifacts"
         if: ${{ !(inputs.archive-name == '') }}
         shell: bash
-        run: |
-            echo "::notice title=$TITLE::$MESSAGE"
+        run: echo "::notice title=$TITLE::$MESSAGE"
         env:
             TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Uploaded artifacts"
             MESSAGE: "Uploaded artifacts to ${{ inputs.archive-name }}"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo "N/A"
