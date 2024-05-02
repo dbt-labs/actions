@@ -24,7 +24,6 @@ on:
         default: "all"
         options:
           - "all"
-          - "homebrew"
           - "pip"
           - "docker"
           - "source"
@@ -34,23 +33,6 @@ on:
     - cron: "0 9,13,18 * * *" # 9:00, 13:00, 18:00 UTC
 
 jobs:
-  dbt-installation-homebrew:
-    if: >-
-      github.event_name == 'schedule'
-      || (inputs.test-installation-method == 'all'
-      || inputs.test-installation-method == 'homebrew')
-
-    strategy:
-      fail-fast: false
-      matrix:
-        package:
-          ["dbt-postgres", "dbt-redshift", "dbt-snowflake", "dbt-bigquery"]
-
-    uses: ./.github/workflows/test-dbt-installation-homebrew.yml
-    with:
-      package_name: ${{ matrix.package }}
-    secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_ADAPTER_ALERTS }}
 
   dbt-installation-pip:
     if: >-
