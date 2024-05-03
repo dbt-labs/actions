@@ -1,0 +1,77 @@
+name: "Merge GitHub branch"
+description: "Merge a source branch into a target branch on GitHub and return the resulting SHA"
+
+inputs:
+    source-branch:
+        description: "The source branch to be merged"
+        required: true
+    target-branch:
+        description: "The target branch to receive the merge"
+        required: true
+    message:
+        description: "Commit message for the merge"
+        required: true
+    delete-source-branch:
+        description: "Will delete the source branch after merging"
+        default: "true"
+
+outputs:
+    sha:
+        description: "The commit SHA for the merge"
+        value: ${{ steps.merge.outputs.sha }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo "==========INPUTS=========="
+            echo source-branch        : ${{ inputs.source-branch }}
+            echo target-branch        : ${{ inputs.target-branch }}
+            echo message              : ${{ inputs.message }}
+            echo delete-source-branch : ${{ inputs.delete-source-branch }}
+
+    -   name: "Merge `${{ inputs.source-branch }}` into `${{ inputs.target-branch }}`"
+        uses: everlytic/branch-merge@1.1.5
+        with:
+            source_ref: ${{ inputs.source-branch }}
+            target_branch: ${{ inputs.target-branch }}
+            commit_message_template: "[automated] ${{ inputs.message }}"
+            github_token: ${{ secrets.FISHTOWN_BOT_PAT }}
+
+    -   name: "Checkout `${{ inputs.source-branch }}`"
+        if: ${{ fromJSON(inputs.delete-source-branch) }}
+        uses: actions/checkout@v3
+        with:
+            ref: ${{ inputs.target-branch }}
+
+    -   name: "Delete `${{ inputs.source-branch }}`"
+        if: ${{ fromJSON(inputs.delete-source-branch) }}
+        shell: bash
+        run: git push origin -d ${{ inputs.source-branch }}
+
+    -   name: "Checkout `${{ inputs.target-branch }}`"
+        uses: actions/checkout@v3
+        with:
+            ref: ${{ inputs.target-branch }}
+
+    -   name: "Get commit SHA for the merge"
+        id: merge
+        shell: bash
+        run: |
+            git pull
+            echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+    -   name: "[INFO] Merge Github branch"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Merge GitHub branch"
+            MESSAGE: "`${{ inputs.source-branch }}` was merged into `${{ inputs.target-branch }}` with SHA `${{ steps.merge.outputs.sha }}`"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo sha : ${{ steps.merge.outputs.sha }}
