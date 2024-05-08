@@ -1,12 +1,13 @@
 # **what?**
 # Open an issue in a specified repository with a specified title and body.  If the issue already exists, do nothing.
-# The calling workflow should be triggered off an issue.
+# The calling workflow should be triggered off an issue or PR.
 
 # **why?**
 # To be able to trigger issues to open in other repositories from a workflow in a different repository.
 
 # **when?**
-# This will be triggered from another workflow on a issue.  This could be triggered when a label is added to an issue.
+# This will be triggered from another workflow on an issue or PR.
+# This could also be triggered when a label is added to an issue or PR.
 
 
 name: Open Issue in Another Repository
@@ -77,13 +78,16 @@ jobs:
           echo "inputs.issue_title:           ${{ inputs.issue_title}}"
           echo "inputs.issue_body:            ${{ inputs.issue_body }}"
 
-      - name: "Determine Issue Values"
+      # Even thought Github treats issues and PRs as teh same thing behind the scenes, the event context has us access
+      # them in different ways.  On workflow call we want to be able to differentiate between a workflow trigger by
+      # an issue and one trigger by a PR.
+      - name: "Determine Issue or PR Values"
         id: issue_values
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "issue_number=${{ inputs.issue_number }}" >> $GITHUB_OUTPUT
           else
-            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "issue_number= ${{ github.event.pull_request.number || github.event.issue.number }}" >> $GITHUB_OUTPUT
           fi
       
       # this step uses the read permission from the GITHUB_TOKEN it inherits
@@ -105,7 +109,7 @@ jobs:
           else
             echo "exists=true" >> $GITHUB_OUTPUT
             title="Stop processing."
-            message="Comment already exists for this PR indicating associated issue. New issue will not be opened."
+            message="Comment already exists for this issue or PR indicating associated issue. New issue will not be opened."
           fi
           echo "::notice $title::$message"
 
@@ -136,7 +140,7 @@ jobs:
           issue_comment="Opened a new issue in ${{ inputs.issue_repository }}: ${{ steps.open_issue.outputs.issue_url }}"
           echo "issue_comment=$issue_comment" >> $GITHUB_OUTPUT
 
-      - name: "Leave Issue Comment Linking to Opened Issue"
+      - name: "Leave Comment Linking to Opened Issue"
         id: issue_comment
         run: |
           gh issue comment --repo ${{ github.repository }} \
