@@ -87,7 +87,7 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "issue_number=${{ inputs.issue_number }}" >> $GITHUB_OUTPUT
           else
-            echo "issue_number= ${{ github.event.pull_request.number || github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.pull_request.number || github.event.issue.number }}" >> $GITHUB_OUTPUT
           fi
       
       # this step uses the read permission from the GITHUB_TOKEN it inherits
