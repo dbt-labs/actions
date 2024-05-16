@@ -1,0 +1,50 @@
+name: "View GitHub release"
+description: "Get metadata about a GitHub tag"
+
+inputs:
+    tag:
+        description: "The tag to audit (e.g. v1.0.0b1)"
+        required: true
+
+outputs:
+    exists:
+        description: "Indicates if the tag exists"
+        value: ${{ steps.release.outputs.exists }}
+    sha:
+        description: "The commit associated with the tag if the tag exists"
+        value: ${{ steps.release-exists.outputs.sha }}
+    is-draft:
+        description: "If the tag exists, indicates if it is a draft"
+        value: ${{ steps.release-exists.outputs.is-draft }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo "==========INPUTS=========="
+            echo tag : ${{ inputs.tag }}
+
+    -   name: "Get release"
+        id: release
+        shell: bash
+        run: ./github/release/view/get_release.sh
+        env:
+            TAG: ${{ inputs.tag }}
+            REPO: "https://github.com/dbt-labs/${{ github.repository }}"
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    -   name: "Get release metadata"
+        id: release-exists
+        if: ${{ fromJSON(steps.release.outputs.exists) == true }}
+        shell: bash
+        run: ./github/release/view/get_release_metadata.sh
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo exists:  : ${{ steps.release.outputs.exists }}
+            echo sha      : ${{ steps.release-exists.outputs.sha }}
+            echo is-draft : ${{ steps.release-exists.outputs.is-draft }}
