@@ -2,11 +2,6 @@ name: "Run pre-commit autoupdate"
 
 on:
   workflow_call:
-    inputs:
-      python-version:
-        description: "The version of python to use"
-        type: "string"
-        default: "3.12"
 
 permissions:
   contents: write
@@ -25,30 +20,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: "Set up Python ${{ inputs.python-version }}"
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ inputs.python-version }}
-
       - name: "Add brew to the PATH"
         run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
 
       - name: "Install pre-commit"
         run: brew install pre-commit
 
-      - name: "Install pre-commit hooks"
-        run: pre-commit install
-
-      - name: "Update pre-commit hooks"
-        run: pre-commit autoupdate
-
-      - name: "Run pre-commit"
+      - name: "Check for pre-commit hook updates"
         id: pre-commit
         run: |
-          pre-commit run --all-files
+          pre-commit autoupdate
           updates=$(git diff)
           echo "updates=$updates" >> $GITHUB_OUTPUT
 
+      - name: "Check for updates"
       - name: "Create a PR if there are updates"
         if: ${{ steps.pre-commit.outputs.updates }}
         uses: ./.github/actions/commit-and-create-pull-request
