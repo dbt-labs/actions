@@ -46,7 +46,7 @@ jobs:
         id: updates
         run: |
           results=$(pre-commit run --all-files)
-          echo "results=results" >> $GITHUB_OUTPUT
+          echo "results=$results" >> $GITHUB_OUTPUT
 
       - name: "Create a PR if there are updates"
         if: ${{ steps.updates.outputs.results }}
