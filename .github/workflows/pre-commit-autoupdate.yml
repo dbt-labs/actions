@@ -35,7 +35,7 @@ jobs:
 
       - name: "Create a PR if there are updates"
         if: ${{ steps.pre-commit.outputs.updates }}
-        uses: dbt-labs/actions/.github/actions/commit-and-create-pull-request@pre-commit-auto-update
+        uses: ./.github/actions/commit-and-create-pull-request@pre-commit-auto-update
         with:
           message: "[automated] Update pre-commit hooks"
           title: "[Automated] Update pre-commit hooks"
