@@ -7,6 +7,10 @@ on:
         description: "The branch to issue the PR against"
         type: "string"
         default: "main"
+    secrets:
+      GITHUB_TOKEN:
+        description: "Your token"
+        required: true
 
 permissions:
   contents: write
@@ -62,7 +66,7 @@ jobs:
           url=$(gh pr create -B $TARGET -H $HEAD -t "$TITLE" -b "$BODY")
           echo "url=$url" >> $GITHUB_OUTPUT
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TITLE: "[Automated] Update pre-commit hooks"
           BODY: "Pre-commit hooks have updates that require resolution."
           HEAD: ${{ steps.branch.outputs.name }}
