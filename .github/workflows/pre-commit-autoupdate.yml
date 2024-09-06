@@ -2,6 +2,11 @@ name: "Run pre-commit autoupdate"
 
 on:
   workflow_call:
+    inputs:
+      target:
+        description: "The branch to issue the PR against"
+        type: "string"
+        default: "main"
 
 permissions:
   contents: write
@@ -17,8 +22,13 @@ jobs:
     steps:
       - name: "Check out repository"
         uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+
+      - name: "Create a new branch"
+        id: branch
+        run: |
+          branch = pre-commit/$(date +'%Y-%m-%dT%H_%M_%S')
+          git checkout -b $branch
+          echo "name=$branch" >> $GITHUB_OUTPUT
 
       - name: "Add brew to the PATH"
         run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
@@ -33,10 +43,32 @@ jobs:
           updates=$(git diff --raw)
           echo "updates=$updates" >> $GITHUB_OUTPUT
 
-      - name: "Create a PR if there are updates"
+      - name: "Commit local changes"
         if: ${{ steps.pre-commit.outputs.updates }}
-        uses: ./.github/actions/commit-and-create-pull-request@pre-commit-auto-update
-        with:
-          message: "[automated] Update pre-commit hooks"
-          title: "[Automated] Update pre-commit hooks"
-          body: "Pre-commit hooks have updates that require resolution."
+        run: |
+          git config user.name $USER
+          git config user.email $EMAIL
+          git status
+          git add .
+          git commit -m $MESSAGE
+        env:
+          USER: "Github Build Bot"
+          EMAIL: "buildbot@fishtownanalytics.com"
+          MESSAGE: "[automated] update pre-commit hooks"
+
+      - name: "Open pull request"
+        id: pull_request
+        run: |
+          url=$(gh pr create -B $TARGET -H $HEAD -t $TITLE -b $BODY)
+          echo "url=$url" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+          TITLE: "[Automated] Update pre-commit hooks"
+          BODY: "Pre-commit hooks have updates that require resolution."
+          HEAD: ${{ steps.branch.outputs.name }}
+          TARGET: ${{ inputs.target }}
+
+      - name: "[Notification] Pull request opened"
+        run: |
+          message="PR opened at ${{ steps.pull_request.outputs.url }}"
+          echo "::notice title="Pull request opened": $title::$message"
