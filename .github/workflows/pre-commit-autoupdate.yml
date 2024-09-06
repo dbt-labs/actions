@@ -63,6 +63,7 @@ jobs:
       - name: "Open pull request"
         id: pull_request
         run: |
+          git push --set-upstream origin $BRANCH
           url=$(gh pr create -B $TARGET -H $HEAD -t "$TITLE" -b "$BODY")
           echo "url=$url" >> $GITHUB_OUTPUT
         env:
