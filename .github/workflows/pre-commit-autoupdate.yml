@@ -1,0 +1,56 @@
+name: "Run pre-commit autoupdate"
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: "The version of python to use"
+        type: "string"
+        default: "3.12"
+
+permissions:
+  contents: write
+
+default:
+  shell: bash
+
+jobs:
+  precommit-autoupdate:
+    name: "pre-commit autoupdate"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: "Set up Python ${{ inputs.python-version }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: "Add brew to the PATH"
+        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+
+      - name: "Install pre-commit"
+        run: brew install pre-commit
+
+      - name: "Install pre-commit hooks"
+        run: pre-commit install
+
+      - name: "Update pre-commit hooks"
+        run: pre-commit autoupdate
+
+      - name: "Determine updates"
+        id: updates
+        run: |
+          results=$(pre-commit run --all-files)
+          echo "results=results" >> $GITHUB_OUTPUT
+
+      - name: "Create a PR if there are updates"
+        if: ${{ steps.updates.outputs.results }}
+        uses: ./.github/actions/commit-and-create-pull-request
+        with:
+          message: "[automated] Update pre-commit hooks"
+          title: "[Automated] Update pre-commit hooks"
+          body: "Pre-commit hooks have updates that require resolution.\n${{ steps.updates.outputs.results }}"
