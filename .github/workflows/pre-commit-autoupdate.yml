@@ -45,7 +45,7 @@ jobs:
       - name: "Determine updates"
         id: updates
         run: |
-          results=$(pre-commit run --all-files)
+          results=$(pre-commit run --all-files --color never)
           echo "results=$results" >> $GITHUB_OUTPUT
 
       - name: "Create a PR if there are updates"
