@@ -45,7 +45,8 @@ jobs:
       - name: "Run pre-commit"
         id: pre-commit
         run: |
-          updates=$(pre-commit run --all-files)
+          pre-commit run --all-files
+          updates=$(git diff)
           echo "updates=$updates" >> $GITHUB_OUTPUT
 
       - name: "Create a PR if there are updates"
