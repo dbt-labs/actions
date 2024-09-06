@@ -46,11 +46,11 @@ jobs:
       - name: "Commit local changes"
         if: ${{ steps.pre-commit.outputs.updates }}
         run: |
-          git config user.name $USER
-          git config user.email $EMAIL
+          git config user.name "$USER"
+          git config user.email "$EMAIL"
           git status
           git add .
-          git commit -m $MESSAGE
+          git commit -m "$MESSAGE"
         env:
           USER: "Github Build Bot"
           EMAIL: "buildbot@fishtownanalytics.com"
