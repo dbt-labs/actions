@@ -1,14 +1,6 @@
 name: "Run pre-commit autoupdate"
 description: "Runs pre-commit autoupdate and opens a PR if there are updates"
 
-inputs:
-  method:
-    description: "The installation type to be used in the notification"
-    required: true
-  scenario:
-    description: "The test scenario, e.g. dbt-postgres@main on Python 3.11"
-    required: true
-
 runs:
   using: composite
   steps:
