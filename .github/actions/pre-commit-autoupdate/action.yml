@@ -1,9 +1,28 @@
 name: "Run pre-commit autoupdate"
 description: "Runs pre-commit autoupdate and opens a PR if there are updates"
 
+inputs:
+  python-version:
+    description: "The version of python to use"
+    default: "3.12"
+
 runs:
   using: composite
   steps:
+
+    - name: "Set up Python ${{ inputs.python-version }}"
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: "Add brew to the PATH"
+      shell: bash
+      run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+
+    - name: "Install pre-commit"
+      shell: bash
+      run: brew install pre-commit
+
     - name: "Install pre-commit hooks"
       shell: bash
       run: pre-commit install
