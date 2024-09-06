@@ -35,7 +35,7 @@ jobs:
 
       - name: "Create a PR if there are updates"
         if: ${{ steps.pre-commit.outputs.updates }}
-        uses: ./.github/actions/commit-and-create-pull-request
+        uses: .github/actions/commit-and-create-pull-request
         with:
           message: "[automated] Update pre-commit hooks"
           title: "[Automated] Update pre-commit hooks"
