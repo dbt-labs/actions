@@ -1,0 +1,36 @@
+name: "Run pre-commit autoupdate"
+description: "Runs pre-commit autoupdate and opens a PR if there are updates"
+
+inputs:
+  method:
+    description: "The installation type to be used in the notification"
+    required: true
+  scenario:
+    description: "The test scenario, e.g. dbt-postgres@main on Python 3.11"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: "Install pre-commit hooks"
+      shell: bash
+      run: pre-commit install
+
+    - name: "Update pre-commit hooks"
+      shell: bash
+      run: pre-commit autoupdate
+
+    - name: "Determine updates"
+      id: updates
+      shell: bash
+      run: |
+        results=$(pre-commit run --all-files)
+        echo "results=results" >> $GITHUB_OUTPUT
+
+    - name: "Create a PR if there are updates"
+      if: ${{ steps.updates.outputs.results }}
+      uses: ./.github/actions/commit-and-create-pull-request
+      with:
+        message: "[automated] Update pre-commit hooks"
+        title: "[Automated] Update pre-commit hooks"
+        body: "Pre-commit hooks have updates that require resolution.\n${{ steps.updates.outputs.results }}"
