@@ -42,14 +42,14 @@ jobs:
       - name: "Update pre-commit hooks"
         run: pre-commit autoupdate
 
-      - name: "Determine updates"
-        id: updates
+      - name: "Run pre-commit"
+        id: pre-commit
         run: |
-          results=$(pre-commit run --all-files --color never)
-          echo "results=$results" >> $GITHUB_OUTPUT
+          updates=$(pre-commit run --all-files)
+          echo "updates=$updates" >> $GITHUB_OUTPUT
 
       - name: "Create a PR if there are updates"
-        if: ${{ steps.updates.outputs.results }}
+        if: ${{ steps.pre-commit.outputs.updates }}
         uses: ./.github/actions/commit-and-create-pull-request
         with:
           message: "[automated] Update pre-commit hooks"
