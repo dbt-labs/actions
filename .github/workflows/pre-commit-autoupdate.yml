@@ -33,7 +33,6 @@ jobs:
           updates=$(git diff)
           echo "updates=$updates" >> $GITHUB_OUTPUT
 
-      - name: "Check for updates"
       - name: "Create a PR if there are updates"
         if: ${{ steps.pre-commit.outputs.updates }}
         uses: ./.github/actions/commit-and-create-pull-request
