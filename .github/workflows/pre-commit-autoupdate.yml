@@ -11,8 +11,9 @@ on:
 permissions:
   contents: write
 
-default:
-  shell: bash
+defaults:
+  run:
+    shell: bash
 
 jobs:
   precommit-autoupdate:
