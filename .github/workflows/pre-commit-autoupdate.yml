@@ -30,7 +30,7 @@ jobs:
         id: pre-commit
         run: |
           pre-commit autoupdate
-          updates=$(git diff)
+          updates=$(git diff --raw)
           echo "updates=$updates" >> $GITHUB_OUTPUT
 
       - name: "Create a PR if there are updates"
@@ -39,4 +39,4 @@ jobs:
         with:
           message: "[automated] Update pre-commit hooks"
           title: "[Automated] Update pre-commit hooks"
-          body: "Pre-commit hooks have updates that require resolution.\n${{ steps.updates.outputs.results }}"
+          body: "Pre-commit hooks have updates that require resolution."
