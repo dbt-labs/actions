@@ -2,15 +2,13 @@ name: "Run pre-commit autoupdate"
 
 on:
   workflow_call:
-    inputs:
-      target:
-        description: "The branch to issue the PR against"
-        type: "string"
-        default: "main"
     secrets:
       TOKEN:
         description: "Your token"
         required: true
+      SLACK_WEBHOOK_URL:
+        description: "The webhook for the Slack channel to post the notification"
+        required: false
 
 permissions:
   contents: write
@@ -61,19 +59,32 @@ jobs:
           MESSAGE: "[automated] update pre-commit hooks"
 
       - name: "Open pull request"
+        if: ${{ steps.pre-commit.outputs.updates }}
         id: pull_request
         run: |
           git push --set-upstream origin $HEAD
-          url=$(gh pr create -B $TARGET -H $HEAD -t "$TITLE" -b "$BODY")
+          url=$(gh pr create --base $TARGET --head $HEAD --title "$TITLE" --body "$BODY")
           echo "url=$url" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.TOKEN }}
           TITLE: "[Automated] Update pre-commit hooks"
           BODY: "Pre-commit hooks have updates that require resolution."
           HEAD: ${{ steps.branch.outputs.name }}
-          TARGET: ${{ inputs.target }}
+          TARGET: "main"
 
       - name: "[Notification] Pull request opened"
+        if: ${{ steps.pre-commit.outputs.updates }}
         run: |
           message="PR opened at ${{ steps.pull_request.outputs.url }}"
           echo "::notice title="Pull request opened": $title::$message"
+
+      - name: "[Slack] Pull request opened"
+        if: ${{ steps.pre-commit.outputs.updates && secrets.SLACK_WEBHOOK_URL }}
+        uses: ravsamhq/notify-slack-action@v2
+        with:
+          status: "success"
+          token: ${{ secrets.TOKEN }}
+          notification_title: "[Automated] Update pre-commit hooks"
+          notify_when: "success,failure"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
