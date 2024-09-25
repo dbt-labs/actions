@@ -78,6 +78,36 @@ jobs:
           message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: ${{ steps.add-main.outputs.full_branch_list }}"
           echo "::notice $title::$message"
 
+  publish_failure_events:
+    # this runs here just for the previous job.  The next job sends one alert per matrix run.
+    name: "Publish Failure Slack Message"
+    if: ${{ always() && needs.fetch-latest-branches.result != 'success' }}
+
+    needs: [fetch-latest-branches]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post failure to core Slack
+        uses: ravsamhq/notify-slack-action@v2
+        if: ${{ github.event.repository.name == 'dbt-core' || github.event.repository.name == 'dbt-common'}}
+        with:
+          status: ${{ job.status }}
+          notification_title: '${{ github.event.repository.name }} release branch scheduled testing not successful'
+          message_format: ':x: Job setup failed'
+          footer: "<{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
+
+      - name: Post failure to adapter Slack
+        uses: ravsamhq/notify-slack-action@v2
+        if: ${{ github.event.repository.name != 'dbt-core' }}
+        with:
+          status: ${{ job.status }}
+          notification_title: '${{ github.event.repository.name }} release branch scheduled testing not successful'
+          message_format: ':x: Job setup failed'
+          footer: "<{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_ADAPTER_ALERTS }}
+  
   kick-off-ci:
     needs: [fetch-latest-branches]
     name: Kick-off CI
