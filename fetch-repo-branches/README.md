@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: "Fetch ${{ inputs.package_name }} Protected Branches Metadata"
-        uses: dbt-labs/actions/fetch-repo-branches
+        uses: dbt-labs/actions/fetch-repo-branches@main
         id: get-latest-branches
         with:
           repo_name: "dbt-core"
