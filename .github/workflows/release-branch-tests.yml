@@ -90,7 +90,7 @@ jobs:
         uses: ravsamhq/notify-slack-action@v2
         if: ${{ github.event.repository.name == 'dbt-core' || github.event.repository.name == 'dbt-common'}}
         with:
-          status: ${{ job.status }}
+          status: "failure"
           notification_title: '${{ github.event.repository.name }} release branch scheduled testing not successful'
           message_format: ':x: Job setup failed'
           footer: "<{run_url}|View Run>"
@@ -101,7 +101,7 @@ jobs:
         uses: ravsamhq/notify-slack-action@v2
         if: ${{ github.event.repository.name != 'dbt-core' }}
         with:
-          status: ${{ job.status }}
+          status: "failure"
           notification_title: '${{ github.event.repository.name }} release branch scheduled testing not successful'
           message_format: ':x: Job setup failed'
           footer: "<{run_url}|View Run>"
