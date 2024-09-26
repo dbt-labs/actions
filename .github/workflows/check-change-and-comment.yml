@@ -1,0 +1,109 @@
+# **what?**
+# Checks that a file has been added/modified under the specified directory
+# And comment on the PR if the requested change is missing.
+#
+
+# Example Usage including required permissions
+
+# on:
+#   pull_request_target:
+#     types: [opened, reopened, labeled, unlabeled, synchronize]
+#
+# permissions:
+#   contents: read
+#   pull-requests: write
+#
+# name: Check Changelog Entry
+# jobs:
+#   changelog:
+#     uses: dbt-labs/actions/.github/workflows/changelog-check.yml@main
+#    with:
+#      changelog_comment: 'Thank you for your pull request! We could not find a changelog entry for this change. For details on how to document a change, see [the contributing guide](https://github.com/dbt-labs/dbt-core/blob/main/CONTRIBUTING.md#adding-changelog-entry).'
+#      path: '.changes/unreleased/**.yaml'
+#    secrets: inherit # this is only acceptable because we own the action we're calling
+#
+
+name: Check Change at path exists in current PR
+
+on:
+  workflow_call:
+    inputs:
+      comment:
+        description: The comment text when no change in given path is found
+        type: string
+        required: true
+      path_filter:
+        description: The path filter to check for changes
+        type: string
+        required: true
+        
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  changelog_existence:
+    name: Check if Changelog Exists
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "[DEBUG] - Print Inputs"
+        shell: bash
+        id: echo_inputs
+        run: |
+          echo "all variables defined as inputs"
+          echo "inputs.comment:    ${{ inputs.comment }}"
+          echo "inputs.path_filter:           ${{ inputs.path_filter }}"
+
+      - name: Check if a file in file was added matching the path filter
+        # https://github.com/marketplace/actions/paths-changes-filter
+        # For each filter, it sets output variable named by the filter to the text:
+        #  'true' - if any of changed files matches any of filter rules
+        #  'false' - if none of changed files matches any of filter rules
+        uses: dorny/paths-filter@v3
+        id: file_change_check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            exists:
+              - added|modified: ${{ inputs.path_filter }}
+
+      # this step uses the read permission from the GITHUB_TOKEN it inherits
+      - name: Check for comment
+        if: steps.file_change_check.outputs.exists == 'false'
+        uses: peter-evans/find-comment@v3
+        id: comment_exists
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: ${{ inputs.comment }}
+
+      - name: Set if comment already exists
+        if: steps.file_change_check.outputs.exists == 'false'
+        shell: bash
+        id: comment_check
+        run: |
+          if [ '${{ steps.comment_exists.outputs.comment-body }}' = '' ]; then
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Comment does not exist for this PR"
+          else
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Comment already exists for this PR"
+          fi
+
+      # this step uses the write permission on the PR from the GITHUB_TOKEN it inherits
+      - name: Create PR comment if changelog entry is missing, required, and does not exist
+        if: |
+          steps.file_change_check.outputs.exists == 'false' &&
+          steps.comment_exists.outputs.exists == 'false'
+        run: |
+          gh issue comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "${{ inputs.comment }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail job if changelog entry is missing and required
+        if: steps.file_change_check.outputs.exists == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: core.setFailed('Changelog entry required to merge.')
