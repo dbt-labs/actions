@@ -1,0 +1,36 @@
+name: "View GitHub team"
+description: "Get metadata about a GitHub team"
+
+inputs:
+    team:
+        description: "The name of the team"
+        required: true
+
+outputs:
+    members:
+        description: "A space delimited list of team members"
+        value: ${{ steps.team.outputs.members }}
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo "==========INPUTS=========="
+            echo team : ${{ inputs.team }}
+
+    -   name: "Get team metadata"
+        id: team
+        shell: bash
+        run: ./github/team/view/get_team_metadata.sh
+        env:
+            ENDPOINT: "orgs/dbt-labs/teams/${{ inputs.team }}/members"
+            HEADER: "Accept: application/vnd.github+json"
+            GH_TOKEN: ${{ secrets.IT_TEAM_MEMBERSHIP }}
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo members : ${{ steps.team.outputs.members }}
