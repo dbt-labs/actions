@@ -1,0 +1,50 @@
+name: "Create PyPI release"
+description: "Publish release artifacts from an archive to PyPI"
+
+inputs:
+    archive-name:
+        description: "Name of the archive containing the artifacts, leave blank if local"
+        default: ""
+    index-url:
+        description: "The url for the PyPI index"
+        required: true
+
+runs:
+    using: composite
+    steps:
+    -   name: "[DEBUG] Inputs"
+        shell: bash
+        run: |
+            echo "==========INPUTS=========="
+            echo archive-name : ${{ inputs.archive-name }}
+            echo index-url    : ${{ inputs.index-url }}
+
+    -   name: "Download release artifacts from `${{ inputs.archive-name }}`"
+        if: ${{ !(inputs.archive-name == '') }}
+        uses: actions/download-artifact@v4
+        with:
+            name: ${{ inputs.archive-name }}
+            path: dist/
+
+    -   name: "[DEBUG] Release artifacts"
+        shell: bash
+        run: echo $(ls ./dist)
+
+    -   name: "Publish artifacts to PyPI"
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+            repository-url: ${{ inputs.index-url }}
+            packages-dir: dist/
+
+    -   name: "[INFO] Create PyPI release"
+        shell: bash
+        run: echo "::notice title=$TITLE::$MESSAGE"
+        env:
+            TITLE: "[${{ env.NOTIFICATION_PREFIX }}]: Create PyPI release"
+            MESSAGE: "artifacts: `$(ls ./dist)`"
+
+    -   name: "[DEBUG] Outputs"
+        shell: bash
+        run: |
+            echo "==========OUTPUTS=========="
+            echo "N/A"
