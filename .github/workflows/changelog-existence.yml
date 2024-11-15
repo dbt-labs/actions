@@ -44,11 +44,16 @@ on:
         description: Label on the PR that indicates CHANGELOGs are not required.
         type: string
         required: true
-      changelog_dir:
+      changes_dir:
         description: The directory changelogs are expected to be found. By default, this is '.changes'
         type: string
         required: false
         default: '.changes'
+      unreleased_dir:
+        description: The sub-directory unreleased changelogs are expected to be found. By default, this is 'unreleased'.
+        type: string
+        required: false
+        default: 'unreleased.'
 
 permissions:
   contents: read
@@ -69,6 +74,7 @@ jobs:
           echo "inputs.changelog_comment:    ${{ inputs.changelog_comment }}"
           echo "inputs.skip_label:           ${{ inputs.skip_label }}"
           echo "inputs.changelog_dir:        ${{ inputs.changelog_dir }}"
+          echo "inputs.unreleased_dir:       ${{ inputs.unreleased_dir }}"
 
       - name: Check if changelog file was added
         # https://github.com/marketplace/actions/paths-changes-filter
@@ -81,7 +87,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           filters: |
             exists:
-              - added|modified: '${{ inputs.changelog_dir }}/unreleased/**.yaml'
+              - added|modified: '${{ inputs.changelog_dir }}/${{ inputs.unreleased_dir }}/**.yaml'
 
       # this step uses the read permission from the GITHUB_TOKEN it inherits
       - name: Check for comment
