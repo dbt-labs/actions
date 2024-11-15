@@ -43,6 +43,11 @@ on:
         description: Label on the PR that indicates CHANGELOGs are not required.
         type: string
         required: true
+      changelog_directory:
+        description: The directory where the changelog files are stored.
+        type: string
+        required: true
+        default: 'unreleased'
 
 permissions:
   contents: read
@@ -74,7 +79,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           filters: |
             exists:
-              - added|modified: '.changes/unreleased/**.yaml'
+              - added|modified: '.changes/${{ inputs.changelog_directory }}/**.yaml'
 
       # this step uses the read permission from the GITHUB_TOKEN it inherits
       - name: Check for comment
