@@ -68,7 +68,7 @@ permissions:
   contents: write
 
 env:
-  PYTHON_TARGET_VERSION: 3.10
+  PYTHON_TARGET_VERSION: "3.10"
 
 jobs:
   prep_work:
@@ -210,7 +210,7 @@ jobs:
       - name: "Set up Python - ${{ env.PYTHON_TARGET_VERSION }}"
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_TARGET_VERSION }}
+          python-version: "${{ env.PYTHON_TARGET_VERSION }}"
 
       - name: "Install Spark Dependencies"
         if: ${{ contains(github.repository, 'dbt-labs/dbt-spark') }}
@@ -412,3 +412,4 @@ jobs:
           else
             echo "no $file seen skipping step"
           fi
+
