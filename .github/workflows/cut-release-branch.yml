@@ -68,7 +68,7 @@ permissions:
   contents: write
 
 env:
-  PYTHON_TARGET_VERSION: 3.8
+  PYTHON_TARGET_VERSION: 3.10
 
 jobs:
   prep_work:
