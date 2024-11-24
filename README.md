@@ -11,7 +11,7 @@ Actions and workflows should be self documented.  See individual actions for mor
 - [Parse Semver Action](parse-semver)
 - [Python Package Info Action](py-package-info)
 - [Fetch Repository branches](fetch-repo-branches)
-- [Fetch COntainer Tags](fetch-container-tags)
+- [Fetch Container Tags](fetch-container-tags)
 
 ### Workflows
 
@@ -51,7 +51,12 @@ Actions and workflows should be self documented.  See individual actions for mor
 - Want to report a bug or request a feature? Let us know and open [an issue](https://github.com/dbt-labs/actions/issues/new)
 - Want to help us build oss actions? Check out the [Contributing Guide](https://github.com/dbt-labs/actions/blob/HEAD/CONTRIBUTING.md)
 
+## ADRs
+
+Would you like to know why things look the way they do?
+Do you have questions about where to put something, or how to do something?
+Check out our [ADR section](docs/arch/README.md) to see if you can find you answer there.
+
 ## Code of Conduct
 
 Everyone interacting in the project's codebases, issue trackers, chat rooms, and mailing lists is expected to follow the [dbt Code of Conduct](https://community.getdbt.com/code-of-conduct).
-
