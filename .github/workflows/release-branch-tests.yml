@@ -21,6 +21,10 @@ on:
         description: 'A list of workflow(s) to run against ex: ["main.yml, "integration.yml"]'
         required: true
         type: string
+      include_main:
+        description: 'Include main when running release branch tests'
+        type: boolean
+        default: true
 
 # no special access is needed
 permissions: read-all
@@ -55,6 +59,7 @@ jobs:
 
       - name: "Add main to branch list"
         id: add-main
+        if: inputs.include_main == true
         run: |
           full_branch_list="${{ steps.get-latest-branches.outputs.repo-branches }}"
           # Swap single and double quotes because bash doesnt interpret correctly
