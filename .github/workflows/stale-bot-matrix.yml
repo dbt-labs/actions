@@ -43,6 +43,7 @@ jobs:
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
           close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 90
+          days-before-close: -1
           any-of-labels: 'awaiting_response,more_information_needed'
 
   stale-first-issue:
@@ -56,6 +57,7 @@ jobs:
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
           close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 360
+          days-before-close: -1
           any-of-labels: 'good_first_issue,help_wanted'
 
   stale-tech-debt:
@@ -69,6 +71,7 @@ jobs:
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
           close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 720
+          days-before-close: -1
           any-of-labels: 'tech_debt'
 
   stale-default:
@@ -82,4 +85,5 @@ jobs:
           close-pr-message: ${{ env.CLOSE_PR_MSG }}
           close-issue-reason: ${{ env.CLOSE_ISSUE_REASON }}
           days-before-stale: 180
+          days-before-close: -1
           exempt-issue-labels: 'tech_debt,good_first_issue,help_wanted'
