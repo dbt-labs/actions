@@ -28,7 +28,7 @@
 #    with:
 #      changelog_comment: 'Thank you for your pull request! We could not find a changelog entry for this change. For details on how to document a change, see [the contributing guide](https://github.com/dbt-labs/dbt-core/blob/main/CONTRIBUTING.md#adding-changelog-entry).'
 #      skip_label: 'Skip Changelog'
-#      unreleased_dir: 'unreleased'
+#      unreleased_dir: '.changes/unreleased'
 #    secrets: inherit # this is only acceptable because we own the action we're calling
 #
 
@@ -49,7 +49,7 @@ on:
         description: The subdirectory unreleased changelogs are expected to be found. By default, this is 'unreleased'.
         type: string
         required: false
-        default: 'unreleased'
+        default: '.changes/unreleased'
 
 permissions:
   contents: read
@@ -82,7 +82,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           filters: |
             exists:
-              - added|modified: '.changes/${{ inputs.unreleased_dir }}/**.yaml'
+              - added|modified: '${{ inputs.unreleased_dir }}/**.yaml'
 
       # this step uses the read permission from the GITHUB_TOKEN it inherits
       - name: Check for comment
