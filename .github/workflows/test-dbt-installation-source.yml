@@ -92,7 +92,7 @@ jobs:
           echo "name=$name" >> $GITHUB_OUTPUT
 
       - name: "Checkout ${{ steps.repo-info.outputs.name }} Branch ${{ matrix.branch }}"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ steps.repo-info.outputs.name }}
           persist-credentials: false
