@@ -64,7 +64,7 @@ jobs:
 
       - name: "Add ${{ inputs.label }} label"
         if: ${{ steps.community.outputs.category == 'external' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             github.rest.issues.addLabels({
