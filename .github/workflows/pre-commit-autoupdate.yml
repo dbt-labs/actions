@@ -28,7 +28,7 @@ jobs:
       pull-request-url: ${{ steps.pull-request.outputs.url }}
     steps:
       - name: "Check out repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: "Create a new branch"
         id: branch

@@ -135,7 +135,7 @@ jobs:
           echo "matrix.workflow_name:    ${{ matrix.workflow_name }}"
 
       - name: Check out ${{ matrix.branch }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ matrix.branch }}
 
