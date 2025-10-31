@@ -62,7 +62,7 @@ jobs:
           echo "issue_number=${{ github.event.pull_request.number || github.event.issue.number }}" >> $GITHUB_OUTPUT
       
       - name: "Check for comment"
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e  # peter-evans/find-comment@v3
         id: issue_comment
         with:
           issue-number: ${{ steps.issue_values.outputs.issue_number }}
@@ -90,7 +90,7 @@ jobs:
 
     steps:
       - name: "Check out ${{ github.repository }}"
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # actions/checkout@v4
         with:
           repository: ${{ github.repository }}
           token: ${{ secrets.FISHTOWN_BOT_PAT }}

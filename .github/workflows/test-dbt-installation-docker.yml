@@ -99,7 +99,7 @@ jobs:
 
       - name: "Verify ${{ inputs.package_name }} Version"
         id: installation-test
-        uses: addnab/docker-run-action@v3
+        uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185  # addnab/docker-run-action@v3
         with:
           registry: ${{ env.GITHUB_PACKAGES_LINK }}
           image: ${{ steps.image-info.outputs.ref }}

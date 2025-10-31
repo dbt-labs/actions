@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post failure to core Slack
-        uses: ravsamhq/notify-slack-action@v2
+        uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2  # ravsamhq/notify-slack-action@v2
         if: ${{ github.event.repository.name == 'dbt-core' || github.event.repository.name == 'dbt-common'}}
         with:
           status: "failure"
@@ -103,7 +103,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
 
       - name: Post failure to adapter Slack
-        uses: ravsamhq/notify-slack-action@v2
+        uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2  # ravsamhq/notify-slack-action@v2
         if: ${{ github.event.repository.name != 'dbt-core' }}
         with:
           status: "failure"
@@ -135,7 +135,7 @@ jobs:
           echo "matrix.workflow_name:    ${{ matrix.workflow_name }}"
 
       - name: Check out ${{ matrix.branch }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # actions/checkout@v4
         with:
           ref: ${{ matrix.branch }}
 
@@ -169,7 +169,7 @@ jobs:
 
       - name: Wait for run to complete
         id: monitor-run
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08  # nick-fields/retry@v3
         with:
           timeout_minutes: 180
           max_attempts: 3
@@ -189,7 +189,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post failure to core Slack
-        uses: ravsamhq/notify-slack-action@v2
+        uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2  # ravsamhq/notify-slack-action@v2
         if: ${{ always() && steps.monitor-run.outcome != 'success' && (github.event.repository.name == 'dbt-core' || github.event.repository.name == 'dbt-common')}}
         with:
           status: ${{ job.status }}
@@ -200,7 +200,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEV_CORE_ALERTS }}
 
       - name: Post failure to adapter Slack
-        uses: ravsamhq/notify-slack-action@v2
+        uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2  # ravsamhq/notify-slack-action@v2
         if: ${{ always() && steps.monitor-run.outcome != 'success' && github.event.repository.name != 'dbt-core' }}
         with:
           status: ${{ job.status }}

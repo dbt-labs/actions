@@ -92,7 +92,7 @@ jobs:
           echo "name=$name" >> $GITHUB_OUTPUT
 
       - name: "Checkout ${{ steps.repo-info.outputs.name }} Branch ${{ matrix.branch }}"
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # actions/checkout@v4
         with:
           repository: ${{ steps.repo-info.outputs.name }}
           persist-credentials: false
@@ -102,7 +102,7 @@ jobs:
         run: ls -lh
 
       - name: "Set up Python - ${{ matrix.python-version }}"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # actions/setup-python@v5
         with:
           python-version: "${{ matrix.python-version }}"
 
