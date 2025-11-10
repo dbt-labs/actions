@@ -37,10 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "check out repo"
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # actions/checkout@v4
 
       - name: "setup python"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # actions/setup-python@v5
         with:
           python-version: "3.10"
 
@@ -56,7 +56,7 @@ jobs:
           GH_TOKEN: ${{ secrets.VARIABLE_CORE_TRIAGE_ONLY }}
 
       - name: "Post failure to core Slack channel"
-        uses: ravsamhq/notify-slack-action@v2
+        uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2  # ravsamhq/notify-slack-action@v2
         if: ${{ always() && steps.run-script.outcome != 'success' }}
         with:
           status: ${{ job.status }}

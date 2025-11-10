@@ -43,7 +43,7 @@ jobs:
       issueId: ${{ steps.save-id.outputs.issueId }}
     steps:
       - name: Login
-        uses: atlassian/gajira-login@v3
+        uses: atlassian/gajira-login@ca13f8850ea309cf44a6e4e0c49d9aa48ac3ca4c  # atlassian/gajira-login@v3
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
@@ -51,7 +51,7 @@ jobs:
 
       - name: Create JIRA Ticket
         id: create
-        uses: atlassian/gajira-create@v3
+        uses: atlassian/gajira-create@1ff0b6bd115a780592b47bfbb63fc4629132e6ec  # atlassian/gajira-create@v3
         with:
           project: ${{ inputs.project_key }}
           issuetype: "GitHub Issue"
@@ -113,10 +113,10 @@ jobs:
           echo "Issue ID:            ${{ needs.create-issue.outputs.issueId }}"
 
       - name: Setup Jira
-        uses: atlassian/gajira-cli@v3
+        uses: atlassian/gajira-cli@7b8487d76cd88bf5d50ba00c6cca6edff1ddd507  # atlassian/gajira-cli@v3
 
       - name: Login
-        uses: atlassian/gajira-login@v3
+        uses: atlassian/gajira-login@ca13f8850ea309cf44a6e4e0c49d9aa48ac3ca4c  # atlassian/gajira-login@v3
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}

@@ -34,10 +34,10 @@ jobs:
           echo "The version_number:          ${{ github.event.inputs.version_number }}"
 
       - name: "Check out the repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # actions/checkout@v4
 
       - name: "Setup Python"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # actions/setup-python@v5
         with:
           python-version: "3.10"
 
@@ -139,7 +139,7 @@ jobs:
           git status
 
       - name: "Commit & Create Pull Request"
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c  # peter-evans/create-pull-request@v6
         with:
           author: "Github Build Bot <buildbot@fishtownanalytics.com>"
           base: ${{github.ref}}

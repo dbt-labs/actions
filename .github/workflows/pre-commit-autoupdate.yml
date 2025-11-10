@@ -28,7 +28,7 @@ jobs:
       pull-request-url: ${{ steps.pull-request.outputs.url }}
     steps:
       - name: "Check out repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # actions/checkout@v4
 
       - name: "Create a new branch"
         id: branch
@@ -91,7 +91,7 @@ jobs:
 
       - name: "[Slack] Pull request opened"
         if: ${{ secrets.SLACK_WEBHOOK_PR_URL }}
-        uses: ravsamhq/notify-slack-action@v2
+        uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2  # ravsamhq/notify-slack-action@v2
         with:
           status: "success"
           notify_when: "success"
@@ -115,7 +115,7 @@ jobs:
 
       - name: "[Slack] Workflow failure"
         if: ${{ secrets.SLACK_WEBHOOK_ALERT_URL }}
-        uses: ravsamhq/notify-slack-action@v2
+        uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2  # ravsamhq/notify-slack-action@v2
         with:
           status: "failure"
           notify_when: "failure"
