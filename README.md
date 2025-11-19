@@ -25,26 +25,20 @@ Actions and workflows should be self documented.  See individual actions for mor
         - .github/workflows/test-dbt-installation-pip.yml
         - .github/workflows/test-dbt-installation-source.yml
     - [Release Branch Tests](.github/workflows/release-branch-tests.yml)
-- [Cut the `.latest` Branch for an rc1](.github/workflows/cut-release-branch.yml)
 - Generic Shared Workflows
     - [Label Swapping](.github/workflows/swap-labels.yml)
     - [Open Issue in Another repo](.github/workflows/open-issue-in-repo.yml )
     - [Scheduled Repository Cleanup After Releases](.github/workflows/repository-cleanup.yml )
     - [Stale Bot Matrix](.github/workflows/stale-bot-matrix.yml )
 
-- Jira Issue Syncing <deprecated>
+- Jira Issue Syncing - used by dbt-metrics
     - .github/workflows/core-triage.yml
-    - .github/workflows/cut-release-branch.yml
     - .github/workflows/jira-creation-actions.yml
     - .github/workflows/jira-creation.yml
     - .github/workflows/jira-label-actions.yml
     - .github/workflows/jira-label.yml
     - .github/workflows/jira-transition-actions.yml
     - .github/workflows/jira-transition.yml
-- Version Bump <deprecated once `dbt-spark` moves off CircleCI>
-    - .github/workflows/version-bump.yml
-- Releasing <deprecated for [dbt-labs/dbt-release](https://github.com/dbt-labs/dbt-release/)>
-    - .github/workflows/release.yml 
 
 ## Reporting bugs and contributing code
 
