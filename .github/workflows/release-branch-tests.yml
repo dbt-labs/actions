@@ -63,7 +63,7 @@ jobs:
           retries: 3
 
       - name: "Filter branches dynamically"
-        uses: dbt-labs/actions/filter-release-branches@feature/dynamic-branch-seletction
+        uses: dbt-labs/actions/filter-release-branches@main
         id: filter-branches
         with:
           branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
