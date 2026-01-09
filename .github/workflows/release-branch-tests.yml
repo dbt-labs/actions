@@ -25,6 +25,10 @@ on:
         description: 'Include main when running release branch tests'
         type: boolean
         default: true
+      dry_run:
+        description: 'Dry run mode - select branches but do not kick off CI workflows'
+        type: boolean
+        default: false
 
 # no special access is needed
 permissions: read-all
@@ -37,14 +41,22 @@ jobs:
       - name: "[DEBUG] Print Inputs"
         run: |
           echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
+          echo "dry_run:             ${{ inputs.dry_run }}"
 
   fetch-latest-branches:
     runs-on: ubuntu-latest
 
     outputs:
-      branches_to_test: ${{ steps.add-main.outputs.full_branch_list }}
+      branches_to_test: ${{ steps.filter-branches.outputs.full_branch_list }}
 
     steps:
+      - name: "Checkout actions repo for filter script"
+        uses: actions/checkout@v4
+        with:
+          repository: dbt-labs/actions
+          ref: main
+          path: .actions-repo
+
       - name: "Fetch ${{ github.event.repository.name }} Latest Branches"
         uses: dbt-labs/actions/fetch-repo-branches@main
         id: get-latest-branches
@@ -53,34 +65,26 @@ jobs:
           organization: "dbt-labs"
           pat: ${{ secrets.GITHUB_TOKEN }}
           fetch_protected_branches_only: true
-          regex: '^(1.(?:[7,9]|[123]\d)+|[2-9].[0-9]+).latest$' # exclude branches 1.6.latest and below
+          regex: '.*\.latest$' # fetch all *.latest branches for dynamic filtering
           perform_match_method: "match"
           retries: 3
 
-      - name: "Add main to branch list"
-        id: add-main
-        if: inputs.include_main == true
+      - name: "Filter branches dynamically"
+        id: filter-branches
+        env:
+          BRANCHES: ${{ steps.get-latest-branches.outputs.repo-branches }}
+          INCLUDE_MAIN: ${{ inputs.include_main }}
         run: |
-          full_branch_list="${{ steps.get-latest-branches.outputs.repo-branches }}"
-          # Swap single and double quotes because bash doesnt interpret correctly
-          full_branch_list="${full_branch_list//\'/__SINGLE_QUOTE__}"
-          full_branch_list="${full_branch_list//\"/\'}"
-          full_branch_list="${full_branch_list//__SINGLE_QUOTE__/\"}"
-          # now convert it to a bash array and add the main branch
-          full_branch_list=($(echo "$full_branch_list" | jq -r '.[]'))
-          for item in "${full_branch_list[@]}"; do   echo "$item"; done
-          full_branch_list+=("main")
-          # Convert the array to a string
-          full_branch_list_string=$(printf "'%s', " "${full_branch_list[@]}")
-          full_branch_list_string="[${full_branch_list_string%, }]"
-          # Assign the string to a variable
-          echo $full_branch_list_string
-          echo "full_branch_list=$full_branch_list_string" >> $GITHUB_OUTPUT
+          python3 .actions-repo/scripts/filter_branches.py
 
       - name: "[ANNOTATION] ${{ github.event.repository.name }} - branches to test"
         run: |
           title="${{ github.event.repository.name }} - branches to test"
-          message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: ${{ steps.add-main.outputs.full_branch_list }}"
+          branches="${{ steps.filter-branches.outputs.full_branch_list }}"
+          message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: $branches"
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            message="[DRY RUN] $message (CI will not be triggered)"
+          fi
           echo "::notice $title::$message"
 
   publish_failure_events:
@@ -115,6 +119,7 @@ jobs:
   
   kick-off-ci:
     needs: [fetch-latest-branches]
+    if: ${{ !inputs.dry_run }}
     name: Kick-off CI
     runs-on: ubuntu-latest
 
