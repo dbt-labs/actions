@@ -1,0 +1,16 @@
+name: "Filter Release Branches"
+description: "Filters release branches to include baseline (1.7.latest) + last 2 minor versions, optionally adds main"
+inputs:
+  branches:
+    description: "List of branches in JSON or Python list format"
+    required: true
+  include_main:
+    description: "Include main branch in output (true/false)"
+    required: false
+    default: "true"
+outputs:
+  filtered-branches:
+    description: "Filtered list of branches in JSON format"
+runs:
+  using: "docker"
+  image: "Dockerfile"
