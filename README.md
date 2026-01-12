@@ -12,7 +12,6 @@ Actions and workflows should be self documented.  See individual actions for mor
 - [Python Package Info Action](py-package-info)
 - [Fetch Repository Branches](fetch-repo-branches)
 - [Fetch Container Tags](fetch-container-tags)
-- [Filter Release Branches](filter-release-branches)
 
 ### Workflows
 

@@ -62,12 +62,26 @@ jobs:
           perform_match_method: "match"
           retries: 3
 
-      - name: "Filter branches dynamically"
-        uses: dbt-labs/actions/filter-release-branches@main
+      - name: "Filter to 1.7.latest + last 2 + main"
         id: filter-branches
-        with:
-          branches: ${{ steps.get-latest-branches.outputs.repo-branches }}
-          include_main: ${{ inputs.include_main }}
+        env:
+          BRANCHES: ${{ steps.get-latest-branches.outputs.repo-branches }}
+          INCLUDE_MAIN: ${{ inputs.include_main }}
+        run: |
+          # Parse input branches and extract last 2 versions
+          last_two=$(echo "$BRANCHES" | jq -r '.[]' | \
+            grep -E '^[0-9]+\.[0-9]+\.latest$' | \
+            sort -t. -k1,1n -k2,2n | tail -2)
+          
+          # Build final branch list: baseline + last 2 + optionally main
+          branches=("1.7.latest" ${last_two[@]})
+          if [ "$INCLUDE_MAIN" == "true" ]; then
+            branches+=("main")
+          fi
+          
+          # Convert to JSON array
+          json=$(printf '%s\n' "${branches[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "filtered-branches=$json" >> $GITHUB_OUTPUT
 
       - name: "[ANNOTATION] ${{ github.event.repository.name }} - branches to test"
         run: |
