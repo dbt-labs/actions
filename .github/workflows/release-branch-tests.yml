@@ -68,14 +68,17 @@ jobs:
           BRANCHES: ${{ steps.get-latest-branches.outputs.repo-branches }}
           INCLUDE_MAIN: ${{ inputs.include_main }}
         run: |
+          # Convert Python list syntax to JSON (single quotes to double quotes)
+          branches_json=$(echo "$BRANCHES" | sed "s/'/\"/g")
+          
           # Parse input branches and extract last 2 versions
-          last_two=$(echo "$BRANCHES" | jq -r '.[]' | \
+          last_two=$(echo "$branches_json" | jq -r '.[]' | \
             grep -E '^[0-9]+\.[0-9]+\.latest$' | \
             sort -t. -k1,1n -k2,2n | tail -2)
           
           # Build final branch list: baseline + last 2 + optionally main
-          branches=("1.7.latest" ${last_two[@]})
-          if [ "$INCLUDE_MAIN" == "true" ]; then
+          branches=("1.7.latest" $last_two)
+          if [ "$INCLUDE_MAIN" = "true" ]; then
             branches+=("main")
           fi
           
