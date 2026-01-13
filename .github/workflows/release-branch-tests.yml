@@ -25,6 +25,10 @@ on:
         description: 'Include main when running release branch tests'
         type: boolean
         default: true
+      dry_run:
+        description: 'Dry run mode - select branches but do not kick off CI workflows'
+        type: boolean
+        default: false
 
 # no special access is needed
 permissions: read-all
@@ -37,12 +41,13 @@ jobs:
       - name: "[DEBUG] Print Inputs"
         run: |
           echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
+          echo "dry_run:             ${{ inputs.dry_run }}"
 
   fetch-latest-branches:
     runs-on: ubuntu-latest
 
     outputs:
-      branches_to_test: ${{ steps.add-main.outputs.full_branch_list }}
+      branches_to_test: ${{ steps.filter-branches.outputs.filtered-branches }}
 
     steps:
       - name: "Fetch ${{ github.event.repository.name }} Latest Branches"
@@ -57,30 +62,38 @@ jobs:
           perform_match_method: "match"
           retries: 3
 
-      - name: "Add main to branch list"
-        id: add-main
-        if: inputs.include_main == true
+      - name: "Filter to 1.7.latest + last 2 + main"
+        id: filter-branches
+        env:
+          BRANCHES: ${{ steps.get-latest-branches.outputs.repo-branches }}
+          INCLUDE_MAIN: ${{ inputs.include_main }}
         run: |
-          full_branch_list="${{ steps.get-latest-branches.outputs.repo-branches }}"
-          # Swap single and double quotes because bash doesnt interpret correctly
-          full_branch_list="${full_branch_list//\'/__SINGLE_QUOTE__}"
-          full_branch_list="${full_branch_list//\"/\'}"
-          full_branch_list="${full_branch_list//__SINGLE_QUOTE__/\"}"
-          # now convert it to a bash array and add the main branch
-          full_branch_list=($(echo "$full_branch_list" | jq -r '.[]'))
-          for item in "${full_branch_list[@]}"; do   echo "$item"; done
-          full_branch_list+=("main")
-          # Convert the array to a string
-          full_branch_list_string=$(printf "'%s', " "${full_branch_list[@]}")
-          full_branch_list_string="[${full_branch_list_string%, }]"
-          # Assign the string to a variable
-          echo $full_branch_list_string
-          echo "full_branch_list=$full_branch_list_string" >> $GITHUB_OUTPUT
+          # Convert Python list syntax to JSON (single quotes to double quotes)
+          branches_json=$(echo "$BRANCHES" | sed "s/'/\"/g")
+          
+          # Parse input branches and extract last 2 versions
+          last_two=$(echo "$branches_json" | jq -r '.[]' | \
+            grep -E '^[0-9]+\.[0-9]+\.latest$' | \
+            sort -t. -k1,1n -k2,2n | tail -2)
+          
+          # Build final branch list: baseline + last 2 + optionally main
+          branches=("1.7.latest" $last_two)
+          if [ "$INCLUDE_MAIN" = "true" ]; then
+            branches+=("main")
+          fi
+          
+          # Convert to JSON array
+          json=$(printf '%s\n' "${branches[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "filtered-branches=$json" >> $GITHUB_OUTPUT
 
       - name: "[ANNOTATION] ${{ github.event.repository.name }} - branches to test"
         run: |
           title="${{ github.event.repository.name }} - branches to test"
-          message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: ${{ steps.add-main.outputs.full_branch_list }}"
+          branches="${{ steps.filter-branches.outputs.filtered-branches }}"
+          message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: $branches"
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            message="[DRY RUN] $message (CI will not be triggered)"
+          fi
           echo "::notice $title::$message"
 
   publish_failure_events:
@@ -115,6 +128,7 @@ jobs:
   
   kick-off-ci:
     needs: [fetch-latest-branches]
+    if: ${{ !inputs.dry_run }}
     name: Kick-off CI
     runs-on: ubuntu-latest
 

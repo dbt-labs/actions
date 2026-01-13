@@ -10,8 +10,8 @@ Actions and workflows should be self documented.  See individual actions for mor
 
 - [Parse Semver Action](parse-semver)
 - [Python Package Info Action](py-package-info)
-- [Fetch Repository branches](fetch-repo-branches)
-- [Fetch COntainer Tags](fetch-container-tags)
+- [Fetch Repository Branches](fetch-repo-branches)
+- [Fetch Container Tags](fetch-container-tags)
 
 ### Workflows
 
