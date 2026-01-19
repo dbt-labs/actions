@@ -29,6 +29,10 @@ on:
         description: 'Dry run mode - select branches but do not kick off CI workflows'
         type: boolean
         default: false
+      branch_override:
+        description: 'A list of branches to test. If provided, will override the release branches filtering'
+        type: string
+        default: ''
 
 # no special access is needed
 permissions: read-all
@@ -42,12 +46,14 @@ jobs:
         run: |
           echo "workflows_to_run:    ${{ inputs.workflows_to_run }}"
           echo "dry_run:             ${{ inputs.dry_run }}"
+          echo "branch_override:     ${{ inputs.branch_override }}"
+          echo "include_main:        ${{ inputs.include_main }}"
 
   fetch-latest-branches:
     runs-on: ubuntu-latest
 
     outputs:
-      branches_to_test: ${{ steps.filter-branches.outputs.filtered-branches }}
+      branches_to_test: ${{ steps.verify-overrides.outputs.filtered-branches || steps.filter-branches.outputs.filtered-branches }}
 
     steps:
       - name: "Fetch ${{ github.event.repository.name }} Latest Branches"
@@ -62,8 +68,19 @@ jobs:
           perform_match_method: "match"
           retries: 3
 
+      - name: "Use branch overrides"
+        id: verify-overrides
+        if: ${{ inputs.branch_override != '' }}
+        env:
+          BRANCH_OVERRIDE: ${{ inputs.branch_override }}
+        run: |
+          # Convert Python list syntax to JSON (single quotes to double quotes)
+          override_json=$(echo "$BRANCH_OVERRIDE" | sed "s/'/\"/g")
+          echo "filtered-branches=$override_json" >> $GITHUB_OUTPUT
+
       - name: "Filter to 1.7.latest + last 2 + main"
         id: filter-branches
+        if: ${{ inputs.branch_override == '' }}
         env:
           BRANCHES: ${{ steps.get-latest-branches.outputs.repo-branches }}
           INCLUDE_MAIN: ${{ inputs.include_main }}
@@ -89,8 +106,15 @@ jobs:
       - name: "[ANNOTATION] ${{ github.event.repository.name }} - branches to test"
         run: |
           title="${{ github.event.repository.name }} - branches to test"
-          branches="${{ steps.filter-branches.outputs.filtered-branches }}"
-          message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: $branches"
+          
+          if [ "${{ inputs.branch_override }}" != "" ]; then
+            branches="${{ steps.verify-overrides.outputs.filtered-branches }}"
+            message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following OVERRIDE branches of the ${{ github.event.repository.name }} repo: $branches"
+          else
+            branches="${{ steps.filter-branches.outputs.filtered-branches }}"
+            message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: $branches"
+          fi
+          
           if [ "${{ inputs.dry_run }}" == "true" ]; then
             message="[DRY RUN] $message (CI will not be triggered)"
           fi
