@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - name: "Fetch ${{ github.event.repository.name }} Latest Branches"
-        uses: dbt-labs/actions/fetch-repo-branches@main
+        uses: dbt-labs/actions/fetch-repo-branches@v1
         id: get-latest-branches
         with:
           repo_name: ${{ github.event.repository.name }}
