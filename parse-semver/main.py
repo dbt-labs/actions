@@ -3,7 +3,8 @@ from packaging.version import parse, Version
 
 
 def set_output(name, value):
-    os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
+    with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+        f.write(f"{name}={value}\n")
 
 
 def get_next_minor_version(version: Version) -> Version:

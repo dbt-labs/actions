@@ -50,7 +50,8 @@ class SupportedMatchMethod(Enum):
 
 
 def set_output(name, value):
-    os.system(f"""echo "{name}={value}" >> $GITHUB_OUTPUT""")
+    with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+        f.write(f"{name}={value}\n")
 
 
 def get_exponential_backoff_in_seconds(attempt_number: int) -> int:
