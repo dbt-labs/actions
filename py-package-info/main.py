@@ -1,8 +1,8 @@
 import codecs
 import json
 import os
-import pkg_resources
 import time
+from packaging.version import Version
 from contextlib import closing
 from dataclasses import dataclass
 from typing import Optional
@@ -76,7 +76,7 @@ def get_package_info(package_metadata):
 def get_artifact_version(metadata, version):
     artifact = None
     for pypi_version in metadata['releases']:
-        if pkg_resources.safe_version(pypi_version) == version:
+        if str(Version(pypi_version)) == version:
             for version_artifact in metadata['releases'][pypi_version]:
                 if version_artifact['packagetype'] == 'sdist':
                     artifact = version_artifact
