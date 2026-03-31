@@ -1,5 +1,5 @@
 # **what?**
-# Will label a newly opened PR as a community cobtribution
+# Will label a newly opened PR or issue as a community contribution
 #
 # **why?**
 # To make triaging easier and faster
@@ -9,7 +9,7 @@
 
 ## Important: Your repository will need to be added to the included repositories for IT_TEAM_MEMBERSHIP
 
-name: Label Community PR
+name: Label Community Contribution
 
 on:
   workflow_call:
@@ -20,7 +20,7 @@ on:
         required: true
         default: 'core-group'
       label:
-        description: The label to add to the PR
+        description: The label to add
         type: string
         required: true
         default: 'community'
@@ -31,6 +31,7 @@ defaults:
 
 permissions:
   pull-requests: write # labels PRs
+  issues: write # labels issues
   contents: read # reads the team membership file
 
 jobs:
@@ -51,14 +52,15 @@ jobs:
         run: |
           echo ${{ inputs.github_team}} membership: ${{ needs.determine-team-membership.outputs.membership_list }}
       
-      - name: "Determine if Community PR"
+      - name: "Determine if Community Contribution"
         id: community
         run: |
-          if [[ " ${{ needs.determine-team-membership.outputs.membership_list }} " =~ " ${{ github.event.pull_request.user.login }} " ]]; then
-              echo "Author of the PR is in the list."
+          AUTHOR="${{ github.event.pull_request.user.login || github.event.issue.user.login }}"
+          if [[ " ${{ needs.determine-team-membership.outputs.membership_list }} " =~ " ${AUTHOR} " ]]; then
+              echo "Author is in the list."
               echo "category=internal" >> $GITHUB_OUTPUT
           else
-              echo "Author of the PR is not in the list."
+              echo "Author is not in the list."
               echo "category=external" >> $GITHUB_OUTPUT
           fi
 
