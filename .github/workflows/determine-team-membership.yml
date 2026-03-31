@@ -19,6 +19,10 @@ on:
         type: string
         required: true
         default: 'core-group'
+    secrets:
+      IT_TEAM_MEMBERSHIP:
+        description: "Token that can view org level teams"
+        required: true
     outputs:
       membership_list:
         description: "Space delimited list of GitHub handles"
