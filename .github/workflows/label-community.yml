@@ -24,6 +24,10 @@ on:
         type: string
         required: true
         default: 'community'
+    secrets:
+      IT_TEAM_MEMBERSHIP:
+        description: "Token that can view org level teams"
+        required: true
 
 defaults:
   run:
@@ -41,7 +45,8 @@ jobs:
     with:
       github_team: ${{ inputs.github_team }}
 
-    secrets: inherit
+    secrets:
+      IT_TEAM_MEMBERSHIP: ${{ secrets.IT_TEAM_MEMBERSHIP }}
 
   community_label:
     runs-on: ubuntu-latest
