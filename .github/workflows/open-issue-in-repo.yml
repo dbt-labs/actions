@@ -50,16 +50,22 @@ jobs:
       - name: "[DEBUG] Print variables"
         id: print_variables
         run: |
-          echo "inputs.issue_repository:      ${{ inputs.issue_repository }}"
-          echo "inputs.issue_title:           ${{ inputs.issue_title}}"
-          echo "inputs.issue_body:            ${{ inputs.issue_body }}"
+          echo "inputs.issue_repository:      $ISSUE_REPOSITORY"
+          echo "inputs.issue_title:           $ISSUE_TITLE"
+          echo "inputs.issue_body:            $ISSUE_BODY"
+        env:
+          ISSUE_REPOSITORY: ${{ inputs.issue_repository }}
+          ISSUE_TITLE: ${{ inputs.issue_title }}
+          ISSUE_BODY: ${{ inputs.issue_body }}
 
       # Even though GitHub treats issues and PRs as the same thing behind the scenes, the event context accesses
       # them in different ways.  Choose an issue number of PR number.  Only 1 will be filled.
       - name: "Determine Issue or PR Values"
         id: issue_values
         run: |
-          echo "issue_number=${{ github.event.pull_request.number || github.event.issue.number }}" >> $GITHUB_OUTPUT
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+        env:
+          ISSUE_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
       
       - name: "Check for comment"
         uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e  # peter-evans/find-comment@v3
@@ -72,16 +78,19 @@ jobs:
       - name: "Set if comment already exists"
         id: comment_check
         run: |
-          if [ '${{ steps.issue_comment.outputs.comment-body }}' = '' ]; then
+          if [ -z "$COMMENT_BODY" ]; then
             echo "exists=false" >> $GITHUB_OUTPUT
             title="Continue Processing."
-            message="Opening a new issue in ${{ inputs.issue_repository }}."
+            message="Opening a new issue in $ISSUE_REPOSITORY."
           else
             echo "exists=true" >> $GITHUB_OUTPUT
             title="Stop processing."
             message="Comment already exists for this issue or PR indicating an associated issue. New issue will not be opened."
           fi
           echo "::notice $title::$message"
+        env:
+          COMMENT_BODY: ${{ steps.issue_comment.outputs.comment-body }}
+          ISSUE_REPOSITORY: ${{ inputs.issue_repository }}
 
   open_new_issue:
     needs: [prep]
@@ -98,24 +107,33 @@ jobs:
       - name: "Open Issue in ${{ inputs.issue_repository }}"
         id: open_issue
         run: |
-          issue=$(gh issue create --repo ${{ inputs.issue_repository }} \
-            --title "${{ inputs.issue_title }}" \
-            --body "${{ inputs.issue_body }}")
+          issue=$(gh issue create --repo "$ISSUE_REPOSITORY" \
+            --title "$ISSUE_TITLE" \
+            --body "$ISSUE_BODY")
           echo "issue_url=$issue" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+          ISSUE_REPOSITORY: ${{ inputs.issue_repository }}
+          ISSUE_TITLE: ${{ inputs.issue_title }}
+          ISSUE_BODY: ${{ inputs.issue_body }}
 
       - name: "Set Issue Comment"
         id: set_issue_comment
         run: |
-          issue_comment="Opened a new issue in ${{ inputs.issue_repository }}: ${{ steps.open_issue.outputs.issue_url }}"
+          issue_comment="Opened a new issue in $ISSUE_REPOSITORY: $ISSUE_URL"
           echo "issue_comment=$issue_comment" >> $GITHUB_OUTPUT
+        env:
+          ISSUE_REPOSITORY: ${{ inputs.issue_repository }}
+          ISSUE_URL: ${{ steps.open_issue.outputs.issue_url }}
 
       - name: "Leave Comment Linking to Opened Issue"
         id: issue_comment
         run: |
-          gh issue comment --repo ${{ github.repository }} \
-            ${{ needs.prep.outputs.issue_number }} \
-            --body "${{ steps.set_issue_comment.outputs.issue_comment }}"
+          gh issue comment --repo "$REPOSITORY" \
+            "$ISSUE_NUMBER" \
+            --body "$ISSUE_COMMENT"
         env:
           GITHUB_TOKEN: ${{ secrets.FISHTOWN_BOT_PAT }}
+          REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ needs.prep.outputs.issue_number }}
+          ISSUE_COMMENT: ${{ steps.set_issue_comment.outputs.issue_comment }}
