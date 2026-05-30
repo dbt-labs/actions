@@ -33,6 +33,10 @@ on:
         description: 'A list of branches to test. If provided, will override the release branches filtering'
         type: string
         default: ''
+      include_branches:
+        description: 'A list of additional branches to test alongside the default release branch filtering ex: ["my-feature-branch", "1.latest"]'
+        type: string
+        default: ''
 
 # no special access is needed
 permissions: read-all
@@ -48,6 +52,7 @@ jobs:
           echo "dry_run:             ${{ inputs.dry_run }}"
           echo "branch_override:     ${{ inputs.branch_override }}"
           echo "include_main:        ${{ inputs.include_main }}"
+          echo "include_branches:    ${{ inputs.include_branches }}"
 
   fetch-latest-branches:
     runs-on: ubuntu-latest
@@ -84,6 +89,7 @@ jobs:
         env:
           BRANCHES: ${{ steps.get-latest-branches.outputs.repo-branches }}
           INCLUDE_MAIN: ${{ inputs.include_main }}
+          INCLUDE_BRANCHES: ${{ inputs.include_branches }}
         run: |
           # Convert Python list syntax to JSON (single quotes to double quotes)
           branches_json=$(echo "$BRANCHES" | sed "s/'/\"/g")
@@ -97,10 +103,18 @@ jobs:
           branches=("1.7.latest" $last_two)
           if [ "$INCLUDE_MAIN" = "true" ]; then
             branches+=("main")
+          fi 
+
+          # Append any additional branches requested via include_branches
+          if [ -n "$INCLUDE_BRANCHES" ]; then
+            include_json=$(echo "$INCLUDE_BRANCHES" | sed "s/'/\"/g")
+            while IFS= read -r extra_branch; do
+              branches+=("$extra_branch")
+            done < <(echo "$include_json" | jq -r '.[]')
           fi
-          
-          # Convert to JSON array
-          json=$(printf '%s\n' "${branches[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+
+          # Convert to JSON array (dedupe while preserving order)
+          json=$(printf '%s\n' "${branches[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0)) | reduce .[] as $b ([]; if index($b) then . else . + [$b] end)')
           echo "filtered-branches=$json" >> $GITHUB_OUTPUT
 
       - name: "[ANNOTATION] ${{ github.event.repository.name }} - branches to test"
