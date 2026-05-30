@@ -127,6 +127,9 @@ jobs:
           else
             branches="${{ steps.filter-branches.outputs.filtered-branches }}"
             message="The workflow will run tests in ${{ inputs.workflows_to_run }} for the following branches of the ${{ github.event.repository.name }} repo: $branches"
+            if [ "${{ inputs.include_branches }}" != "" ]; then
+              message="$message (including additional branches: ${{ inputs.include_branches }})"
+            fi
           fi
           
           if [ "${{ inputs.dry_run }}" == "true" ]; then
