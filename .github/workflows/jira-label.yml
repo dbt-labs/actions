@@ -45,8 +45,8 @@ jobs:
         env:
           TITLE: "${{ github.event.issue.title }}"
         run: |
-          echo $TITLE
-          issueId=$(echo -n $TITLE | awk '{print $1}' | awk -F'[][]' '{print $2}')
+          echo "$TITLE"
+          issueId=$(echo -n "$TITLE" | awk '{print $1}' | awk -F'[][]' '{print $2}')
           echo "issueId=${issueId}" >> $GITHUB_OUTPUT
 
   edit-label:
@@ -61,9 +61,11 @@ jobs:
       - name: "[DEBUG] - Print Job Inputs"
         shell: bash
         id: echo_inputs
+        env:
+          ISSUE_ID: ${{ needs.extract-id.outputs.issueId }}
         run: |
           echo "all variables defined as ouputs in previous jobs"
-          echo "Issue ID:            ${{ needs.extract-id.outputs.issueId }}"
+          echo "Issue ID:            $ISSUE_ID"
 
       - name: Setup Jira
         uses: atlassian/gajira-cli@7b8487d76cd88bf5d50ba00c6cca6edff1ddd507  # atlassian/gajira-cli@v3
@@ -73,8 +75,14 @@ jobs:
 
       - name: Add label
         if: github.event.action == 'labeled'
-        run: jira labels add ${{ needs.extract-id.outputs.issueId }} ${{ github.event.label.name }}
+        env:
+          ISSUE_ID: ${{ needs.extract-id.outputs.issueId }}
+          LABEL_NAME: ${{ github.event.label.name }}
+        run: jira labels add "$ISSUE_ID" "$LABEL_NAME"
 
       - name: Remove label
         if: github.event.action == 'unlabeled'
-        run: jira labels remove ${{ needs.extract-id.outputs.issueId }} ${{ github.event.label.name }}
+        env:
+          ISSUE_ID: ${{ needs.extract-id.outputs.issueId }}
+          LABEL_NAME: ${{ github.event.label.name }}
+        run: jira labels remove "$ISSUE_ID" "$LABEL_NAME"
