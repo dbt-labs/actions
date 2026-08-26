@@ -60,16 +60,19 @@ jobs:
 
       - name: Update Issue Title
         env:
-          title: "${{github.event.issue.title}}"
+          TITLE: ${{ github.event.issue.title }}
+          JIRA_KEY: ${{ steps.create.outputs.issue }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          escapedTitle="${title//\"/\\\"}"
-          echo "$escapedTitle"
-          curl --request PATCH \
-          --url https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }} \
-          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-          --header 'content-type: application/json' \
-          --header 'Accept: application/vnd.github.v3+json' \
-          --data '{ "title": "[${{ steps.create.outputs.issue }}] '"$escapedTitle"'" }'
+          jq -n --arg title "[$JIRA_KEY] $TITLE" '{title: $title}' > "$RUNNER_TEMP/title.json"
+          curl --fail-with-body --request PATCH \
+            --url "https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER" \
+            --header "authorization: Bearer $GH_TOKEN" \
+            --header 'content-type: application/json' \
+            --header 'Accept: application/vnd.github.v3+json' \
+            --data @"$RUNNER_TEMP/title.json"
 
       - name: Save Issue ID
         id: save-id
