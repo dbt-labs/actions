@@ -41,7 +41,7 @@ jobs:
         env:
           TITLE: "${{ github.event.issue.title }}"
         run: |
-          issueId=$(echo -n $TITLE | awk '{print $1}' | awk -F'[][]' '{print $2}')
+          issueId=$(echo -n "$TITLE" | awk '{print $1}' | awk -F'[][]' '{print $2}')
           echo "issueId=${issueId}" >> $GITHUB_OUTPUT
 
   transition-issue:
@@ -51,9 +51,11 @@ jobs:
       - name: "[DEBUG] - Print Job Inputs"
         shell: bash
         id: echo_inputs
+        env:
+          ISSUE_ID: ${{ needs.extract-id.outputs.issueId }}
         run: |
           echo "all variables defined as ouputs in previous jobs"
-          echo "Issue ID:            ${{ needs.extract-id.outputs.issueId }}"
+          echo "Issue ID:            $ISSUE_ID"
 
       - name: Jira login
         uses: atlassian/gajira-login@ca13f8850ea309cf44a6e4e0c49d9aa48ac3ca4c  # atlassian/gajira-login@v3

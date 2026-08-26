@@ -63,7 +63,7 @@ jobs:
           title: "${{github.event.issue.title}}"
         run: |
           escapedTitle="${title//\"/\\\"}"
-          echo $escapedTitle
+          echo "$escapedTitle"
           curl --request PATCH \
           --url https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }} \
           --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
@@ -73,9 +73,10 @@ jobs:
 
       - name: Save Issue ID
         id: save-id
+        env:
+          JIRA_ISSUE_ID: ${{ steps.create.outputs.issue }}
         run: |
-          ID='${{ steps.create.outputs.issue }}'
-          echo "issueId=${ID}" >> $GITHUB_OUTPUT
+          echo "issueId=${JIRA_ISSUE_ID}" >> $GITHUB_OUTPUT
 
   find-labels:
     runs-on: ubuntu-latest
@@ -86,10 +87,12 @@ jobs:
     steps:
       - name: Generate Labels
         id: generate-labels
+        env:
+          LABELS_JSON: ${{ toJSON(github.event.issue.labels.*.name) }}
         # Because there may be multiple labels we need to account for LABELS being a
         # multiline var and define the end of file
         run: |
-          LABELS='${{ toJSON(github.event.issue.labels.*.name) }}'
+          LABELS="$LABELS_JSON"
           echo "labels<<EOF" >> $GITHUB_OUTPUT
           echo "${LABELS}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -107,10 +110,13 @@ jobs:
       - name: "[DEBUG] - Print Job Inputs"
         shell: bash
         id: echo_inputs
+        env:
+          LABEL: ${{ matrix.label }}
+          ISSUE_ID: ${{ needs.create-issue.outputs.issueId }}
         run: |
           echo "all variables defined as ouputs in previous jobs"
-          echo "Running for label:   ${{ matrix.label }}"
-          echo "Issue ID:            ${{ needs.create-issue.outputs.issueId }}"
+          echo "Running for label:   $LABEL"
+          echo "Issue ID:            $ISSUE_ID"
 
       - name: Setup Jira
         uses: atlassian/gajira-cli@7b8487d76cd88bf5d50ba00c6cca6edff1ddd507  # atlassian/gajira-cli@v3
@@ -123,8 +129,10 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
       - name: Add label
-        run: jira labels add ${{ needs.create-issue.outputs.issueId }} "${{ matrix.label }}"
         env:
+          ISSUE_ID: ${{ needs.create-issue.outputs.issueId }}
+          LABEL_NAME: ${{ matrix.label }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: jira labels add "$ISSUE_ID" "$LABEL_NAME"
