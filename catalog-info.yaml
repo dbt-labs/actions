@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: actions
+  annotations:
+    github.com/project-slug: dbt-labs/actions
+spec:
+  type: other
+  lifecycle: unknown
+  owner: dbt-labs/guild-oss-tooling
